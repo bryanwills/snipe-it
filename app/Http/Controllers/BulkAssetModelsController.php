@@ -5,45 +5,46 @@ namespace App\Http\Controllers;
 use App\Helpers\Helper;
 use App\Models\AssetModel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Input;
-use Illuminate\Support\Facades\Redirect;
+use Illuminate\Http\RedirectResponse;
+use \Illuminate\Contracts\View\View;
 
 class BulkAssetModelsController extends Controller
 {
-  /**
+    /**
      * Returns a view that allows the user to bulk edit model attrbutes
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v1.7]
      * @param Request $request
-     * @return \Illuminate\Contracts\View\View
      */
-    public function edit(Request $request)
+    public function edit(Request $request) : View | RedirectResponse
     {
         $models_raw_array = $request->input('ids');
 
         // Make sure some IDs have been selected
         if ((is_array($models_raw_array)) && (count($models_raw_array) > 0)) {
-
             $models = AssetModel::whereIn('id', $models_raw_array)
                 ->withCount('assets as assets_count')
                 ->orderBy('assets_count', 'ASC')
                 ->get();
 
             // If deleting....
-            if ($request->input('bulk_actions')=='delete') {
+            if ($request->input('bulk_actions') == 'delete') {
+                $this->authorize('delete', AssetModel::class);
                 $valid_count = 0;
                 foreach ($models as $model) {
                     if ($model->assets_count == 0) {
                         $valid_count++;
                     }
                 }
+
                 return view('models/bulk-delete', compact('models'))->with('valid_count', $valid_count);
 
-            // Otherwise display the bulk edit screen
+                // Otherwise display the bulk edit screen
             }
-
+            $this->authorize('update', AssetModel::class);
             $nochange = ['NC' => 'No Change'];
+
             return view('models/bulk-edit', compact('models'))
                 ->with('fieldset_list', $nochange + Helper::customFieldsetList())
                 ->with('depreciation_list', $nochange + Helper::depreciationList());
@@ -59,38 +60,41 @@ class BulkAssetModelsController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v1.7]
      * @param Request $request
-     * @return \Illuminate\Contracts\View\View
      */
-    public function update(Request $request)
+    public function update(Request $request): View | RedirectResponse
     {
-
+        $this->authorize('update', AssetModel::class);
+      
         $models_raw_array = $request->input('ids');
-        $update_array = array();
+        $update_array = [];
 
-        if (($request->filled('manufacturer_id') && ($request->input('manufacturer_id')!='NC'))) {
+        if (($request->filled('manufacturer_id') && ($request->input('manufacturer_id') != 'NC'))) {
             $update_array['manufacturer_id'] = $request->input('manufacturer_id');
         }
-        if (($request->filled('category_id') && ($request->input('category_id')!='NC'))) {
+        if (($request->filled('category_id') && ($request->input('category_id') != 'NC'))) {
             $update_array['category_id'] = $request->input('category_id');
         }
-        if ($request->input('fieldset_id')!='NC') {
+        if ($request->input('fieldset_id') != 'NC') {
             $update_array['fieldset_id'] = $request->input('fieldset_id');
         }
-        if ($request->input('depreciation_id')!='NC') {
+        if ($request->input('depreciation_id') != 'NC') {
             $update_array['depreciation_id'] = $request->input('depreciation_id');
         }
 
+        if ($request->filled('requestable') != '') {
+            $update_array['requestable'] = $request->input('requestable');
+        }
 
-        
+
         if (count($update_array) > 0) {
             AssetModel::whereIn('id', $models_raw_array)->update($update_array);
+
             return redirect()->route('models.index')
-                ->with('success', trans('admin/models/message.bulkedit.success'));
+                ->with('success', trans_choice('admin/models/message.bulkedit.success', count($models_raw_array), ['model_count' => count($models_raw_array)]));
         }
 
         return redirect()->route('models.index')
             ->with('warning', trans('admin/models/message.bulkedit.error'));
-
     }
 
     /**
@@ -99,14 +103,14 @@ class BulkAssetModelsController extends Controller
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v1.0]
-     * @return Redirect
      */
-    public function destroy(Request $request)
+    public function destroy(Request $request) : RedirectResponse
     {
+        $this->authorize('delete', AssetModel::class);
+      
         $models_raw_array = $request->input('ids');
 
         if ((is_array($models_raw_array)) && (count($models_raw_array) > 0)) {
-
             $models = AssetModel::whereIn('id', $models_raw_array)->withCount('assets as assets_count')->get();
 
             $del_error_count = 0;
@@ -123,7 +127,7 @@ class BulkAssetModelsController extends Controller
 
             if ($del_error_count == 0) {
                 return redirect()->route('models.index')
-                    ->with('success', trans('admin/models/message.bulkdelete.success',['success_count'=> $del_count] ));
+                    ->with('success', trans('admin/models/message.bulkdelete.success', ['success_count'=> $del_count]));
             }
 
             return redirect()->route('models.index')
@@ -132,7 +136,5 @@ class BulkAssetModelsController extends Controller
 
         return redirect()->route('models.index')
             ->with('error', trans('admin/models/message.bulkdelete.error'));
-
     }
-
 }

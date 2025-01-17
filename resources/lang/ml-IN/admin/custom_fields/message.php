@@ -5,6 +5,7 @@ return array(
     'field' => array(
         'invalid'   => 'That field does not exist.',
         'already_added'   => 'Field already added',
+        'none_selected'   => 'No field selected',
 
         'create' => array(
             'error'   => 'Field was not created, please try again.',
@@ -46,6 +47,12 @@ return array(
             'success' => 'The fieldset was deleted successfully.',
             'in_use'   => 'Fieldset is still in use.',
         )
+
+    ),
+
+    'fieldset_default_value' => array(
+
+        'error' => 'Error validating default fieldset values.',
 
     ),
 

@@ -12,7 +12,7 @@ class AlterWarrantyColumnOnAssets extends Migration
     public function up()
     {
         Schema::table('assets', function ($table) {
-	        $table->renameColumn('warrantee_months', 'warranty_months');
+            $table->renameColumn('warrantee_months', 'warranty_months');
         });
     }
 
@@ -23,7 +23,8 @@ class AlterWarrantyColumnOnAssets extends Migration
      */
     public function down()
     {
-        //
+        Schema::table('assets', function ($table) {
+            $table->renameColumn('warranty_months', 'warrantee_months');
+        });
     }
-
 }

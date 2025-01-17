@@ -4,11 +4,9 @@ namespace App\Presenters;
 
 /**
  * Class ManufacturerPresenter
- * @package App\Presenters
  */
 class ManufacturerPresenter extends Presenter
 {
-
     /**
      * Json Column Layout for bootstrap table
      * @return string
@@ -18,130 +16,158 @@ class ManufacturerPresenter extends Presenter
         $layout = [
 
             [
-                "field" => "id",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('general.id'),
-                "visible" => false
+                'field' => 'id',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.id'),
+                'visible' => false,
             ],
             [
-                "field" => "name",
-                "searchable" => true,
-                "sortable" => true,
-                "title" => trans('admin/manufacturers/table.name'),
-                "visible" => true,
-                "formatter" => "manufacturersLinkFormatter"
+                'field' => 'name',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => false,
+                'title' => trans('admin/manufacturers/table.name'),
+                'visible' => true,
+                'formatter' => 'manufacturersLinkFormatter',
             ],
             [
-                "field" => "image",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('general.image'),
-                "visible" => true,
-                "formatter" => "imageFormatter"
+                'field' => 'image',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.image'),
+                'visible' => true,
+                'formatter' => 'imageFormatter',
             ],
             [
-                "field" => "url",
-                "searchable" => true,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('admin/manufacturers/table.url'),
-                "visible" => true,
-                "formatter" => "linkFormatter"
+                'field' => 'url',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.url'),
+                'visible' => true,
+                'formatter' => 'externalLinkFormatter',
             ],
             [
-                "field" => "support_url",
-                "searchable" => true,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('admin/manufacturers/table.support_url'),
-                "visible" => true,
-                "formatter" => "linkFormatter"
-            ],
-
-            [
-                "field" => "support_phone",
-                "searchable" => true,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('admin/manufacturers/table.support_phone'),
-                "visible" => true,
-                "formatter" => "phoneFormatter"
+                'field' => 'support_url',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/manufacturers/table.support_url'),
+                'visible' => true,
+                'formatter' => 'externalLinkFormatter',
             ],
 
             [
-                "field" => "support_email",
-                "searchable" => true,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('admin/manufacturers/table.support_email'),
-                "visible" => true,
-                "formatter" => "emailFormatter"
+                'field' => 'support_phone',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/manufacturers/table.support_phone'),
+                'visible' => true,
+                'formatter' => 'phoneFormatter',
             ],
 
             [
-                "field" => "assets_count",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => ' <span class="hidden-md hidden-lg">Assets</span>'
-                    .'<span class="hidden-xs"><i class="fa fa-barcode fa-lg"></i></span>',
-                "visible" => true,
+                'field' => 'support_email',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/manufacturers/table.support_email'),
+                'visible' => true,
+                'formatter' => 'emailFormatter',
             ],
             [
-                "field" => "licenses_count",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => ' <span class="hidden-md hidden-lg">Licenses</span>'
-                    .'<span class="hidden-xs"><i class="fa fa-floppy-o fa-lg"></i></span>',
-                "visible" => true,
-            ],
-            [
-                "field" => "consumables_count",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => ' <span class="hidden-md hidden-lg">Consumables</span>'
-                    .'<span class="hidden-xs"><i class="fa fa-tint fa-lg"></i></span>',
-                "visible" => true,
-            ],
-            [
-                "field" => "accessories_count",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => ' <span class="hidden-md hidden-lg">Accessories</span>'
-                    .'<span class="hidden-xs"><i class="fa fa-keyboard-o fa-lg"></i></span>',
-                "visible" => true,
-            ],
-            [
-                "field" => "created_at",
-                "searchable" => true,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('general.created_at'),
-                "visible" => false,
-                'formatter' => 'dateDisplayFormatter'
+                'field' => 'warranty_lookup_url',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/manufacturers/table.warranty_lookup_url'),
+                'visible' => false,
+                'formatter' => 'externalLinkFormatter',
             ],
 
             [
-                "field" => "actions",
-                "searchable" => false,
-                "sortable" => false,
-                "switchable" => false,
-                "title" => trans('table.actions'),
-                "visible" => true,
-                "formatter" => "manufacturersActionsFormatter",
-            ]
+                'field' => 'assets_count',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.assets'),
+                'visible' => true,
+                'class' => 'css-barcode',
+            ],
+            [
+                'field' => 'licenses_count',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.licenses'),
+                'visible' => true,
+                'class' => 'css-license',
+            ],
+            [
+                'field' => 'consumables_count',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.consumables'),
+                'visible' => true,
+                'class' => 'css-consumable',
+            ],
+            [
+                'field' => 'accessories_count',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.accessories'),
+                'visible' => true,
+                'class' => 'css-accessory',
+            ], [
+                'field' => 'components_count',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.components'),
+                'visible' => true,
+                'class' => 'css-component',
+            ], [
+                'field' => 'created_by',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.created_by'),
+                'visible' => false,
+                'formatter' => 'usersLinkObjFormatter',
+            ], [
+                'field' => 'created_at',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.created_at'),
+                'visible' => false,
+                'formatter' => 'dateDisplayFormatter',
+            ], [
+                'field' => 'updated_at',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.updated_at'),
+                'visible' => false,
+                'formatter' => 'dateDisplayFormatter',
+            ], [
+                'field' => 'actions',
+                'searchable' => false,
+                'sortable' => false,
+                'switchable' => false,
+                'title' => trans('table.actions'),
+                'visible' => true,
+                'formatter' => 'manufacturersActionsFormatter',
+            ],
         ];
 
         return json_encode($layout);
     }
-
-
 
     /**
      * Link to this manufacturers name

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Policies;
 
 use App\Models\Company;
@@ -18,38 +19,71 @@ use Illuminate\Auth\Access\HandlesAuthorization;
  * {
  *    return 'manufacturers';
  * }
- *
  */
-
 abstract class SnipePermissionsPolicy
 {
     /**
      * This should return the key of the model in the users json permission string.
      *
-     * @return boolean
+     * @return bool
      */
 
     //
     abstract protected function columnName();
 
-        use HandlesAuthorization;
+    use HandlesAuthorization;
 
     public function before(User $user, $ability, $item)
     {
-        // Lets move all company related checks here.
-        if ($item instanceof \App\Models\SnipeModel && !Company::isCurrentUserHasAccess($item)) {
-            return false;
-        }
-        // If an admin, they can do all asset related tasks.
+        /**
+         * If an admin, they can do all item related tasks, but ARE constrained by FMCSA company access.
+         * That scoping happens on the model level (except for the Users model) via the Companyable trait.
+         *
+         * This does lead to some inconsistencies in the responses, since attempting to edit assets,
+         * accessories, etc (anything other than users) will result in a Forbidden error, whereas the users
+         * area will redirect with "That user doesn't exist" since the scoping is handled directly on those queries.
+         *
+         * The *superuser* global permission gets handled in the AuthServiceProvider before() method.
+         *
+         * @see https://snipe-it.readme.io/docs/permissions
+         */
+
         if ($user->hasAccess('admin')) {
             return true;
         }
+
+        /**
+         * If we got here by $this→authorize('something', $actualModel) then we can continue on Il but if we got here
+         * via $this→authorize('something', Model::class) then calling Company:: isCurrentUserHasAccess($item) gets weird.
+         * Bail out here by returning "nothing" and allow the relevant method lower in this class to be called and handle authorization.
+         */
+        if (!$item instanceof Model){
+            return;
+        }
+
+
+        /**
+         * The Company::isCurrentUserHasAccess() method from the company model handles the check for FMCS already so we
+         * don't have to do that here.
+         */
+        if (!Company::isCurrentUserHasAccess($item)) {
+            return false;
+        }
+
     }
 
+
+    /**
+     * These methods handle the generic view/create/edit/delete permissions for the model.
+     *
+     * @param User $user
+     * @return bool
+     */
     public function index(User $user)
     {
         return $user->hasAccess($this->columnName().'.view');
     }
+
     /**
      * Determine whether the user can view the accessory.
      *
@@ -59,6 +93,11 @@ abstract class SnipePermissionsPolicy
     public function view(User $user, $item = null)
     {
         return $user->hasAccess($this->columnName().'.view');
+    }
+
+    public function files(User $user, $item = null)
+    {
+        return $user->hasAccess($this->columnName().'.files');
     }
 
     /**
@@ -83,6 +122,18 @@ abstract class SnipePermissionsPolicy
         return $user->hasAccess($this->columnName().'.edit');
     }
 
+
+    /**
+     * Determine whether the user can update the accessory.
+     *
+     * @param  \App\Models\User  $user
+     * @return mixed
+     */
+    public function checkout(User $user, $item = null)
+    {
+        return $user->hasAccess($this->columnName().'.checkout');
+    }
+
     /**
      * Determine whether the user can delete the accessory.
      *
@@ -93,12 +144,13 @@ abstract class SnipePermissionsPolicy
     {
         $itemConditional = true;
         if ($item) {
-            $itemConditional =  empty($item->deleted_at);
+            $itemConditional = empty($item->deleted_at);
         }
+
         return $itemConditional && $user->hasAccess($this->columnName().'.delete');
     }
 
-     /**
+    /**
      * Determine whether the user can manage the accessory.
      *
      * @param  \App\Models\User  $user
@@ -108,6 +160,4 @@ abstract class SnipePermissionsPolicy
     {
         return $user->hasAccess($this->columnName().'.edit');
     }
-
-
 }

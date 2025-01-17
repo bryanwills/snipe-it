@@ -1,8 +1,7 @@
 @extends('layouts/default')
-
 {{-- Page title --}}
 @section('title')
-Bulk Checkin &amp; Delete
+{!! trans('general.bulk_checkin_delete') !!}
 @parent
 @stop
 
@@ -18,16 +17,16 @@ Bulk Checkin &amp; Delete
           {{csrf_field()}}
           <div class="col-md-12">
             <div class="callout callout-danger">
-              <i class="fa fa-exclamation-circle"></i>
-              <strong>WARNING: </strong>
-              You are about to delete the {{ count($users) }} user(s) listed below. Super admin names are highlighted in red.
+              <i class="fas fa-exclamation-triangle"></i>
+              <strong>{{ trans('admin/users/general.warning_deletion_information', array('count' => count($users))) }} </strong>
+
             </div>
           </div>
 
           @if (config('app.lock_passwords'))
             <div class="col-md-12">
               <div class="callout callout-warning">
-                <p>{{ trans('feature_disabled') }}</p>
+                <p>{{ trans('general.feature_disabled') }}</p>
               </div>
             </div>
           @endif
@@ -37,12 +36,31 @@ Bulk Checkin &amp; Delete
               <table class="display table table-hover">
                 <thead>
                   <tr>
-                    <th class="col-md-1"></th>
-                    <th class="col-md-6">Name</th>
-                    <th class="col-md-5">Groups</th>
-                    <th class="col-md-5">Assets</th>
-                    <th class="col-md-5">Accessories</th>
-                    <th class="col-md-5">Licenses</th>
+                    <th class="col-md-1">
+                      <!-- <input type="checkbox" id="checkAll"> -->
+                      </th>
+                    <th class="col-md-3">{{ trans('general.name') }}</th>
+                    <th class="col-md-3">{{ trans('general.groups') }}</th>
+                    <th class="text-right">
+                      <i class="fas fa-barcode fa-fw" aria-hidden="true" style="font-size: 17px;"></i>
+                      <span class="sr-only">{{ trans('general.assets') }}</span>
+                    </th>
+                    <th class="text-right">
+                      <i class="far fa-keyboard fa-fw" aria-hidden="true" style="font-size: 17px;"></i>
+                      <span class="sr-only">{{ trans('general.accessories') }}</span>
+                    </th>
+                    <th class="text-right">
+                      <i class="far fa-save fa-fw" aria-hidden="true" style="font-size: 17px;"></i>
+                      <span class="sr-only">{{ trans('general.licenses') }}</span>
+                    </th>
+                    <th class="text-right">
+                      <i class="fas fa-tint fa-fw" aria-hidden="true" style="font-size: 17px;"></i>
+                      <span class="sr-only">{{ trans('general.consumables') }}</span>
+                    </th>
+                    <th class="text-right">
+                      <i class="fas fa-paperclip fa-fw" aria-hidden="true" style="font-size: 17px;"></i>
+                      <span class="sr-only">{{ trans('general.files') }}</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -50,14 +68,14 @@ Bulk Checkin &amp; Delete
                   <tr {!! ($user->isSuperUser() ? ' class="danger"':'') !!}>
                     <td>
                       @if (Auth::id()!=$user->id)
-                      <input type="checkbox" name="ids[]" value="{{ $user->id }}" checked="checked">
+                      <input type="checkbox" name="ids[]" value="{{ $user->id }}"  checked="checked">
                       @else
-                      <input type="checkbox" name="ids[]" value="{{ $user->id }}" disabled>
+                      <input type="checkbox" name="ids[]" class="cannot_delete" value="{{ $user->id }}" disabled>
                       @endif
                     </td>
 
                     <td>
-                      <span {{ (Auth::user()->id==$user->id ? ' style="text-decoration: line-through"' : '') }}>
+                      <span {!! (Auth::user()->id==$user->id ? ' style="text-decoration: line-through"' : '') !!}>
                         {{ $user->present()->fullName() }} ({{ $user->username }})
                       </span>
                       {{ (Auth::id()==$user->id ? ' (cannot delete yourself)' : '') }}
@@ -69,28 +87,38 @@ Bulk Checkin &amp; Delete
                       </a>&nbsp;
                       @endforeach
                     </td>
-                    <td>
-                      {{ number_format($user->assets()->count())  }}
+                    <td class="text-right">
+                      {{ number_format($user->assets->count())  }}
                     </td>
-                    <td>
-                      {{ number_format($user->accessories()->count())  }}
+                    <td class="text-right">
+                      {{ number_format($user->accessories->count())  }}
                     </td>
-                    <td>
-                      {{ number_format($user->licenses()->count())  }}
+                    <td class="text-right">
+                      {{ number_format($user->licenses->count())  }}
+                    </td>
+                    <td class="text-right">
+                      {{ number_format($user->consumables->count())  }}
+                    </td>
+                    <td class="text-right">
+                      {{ number_format($user->uploads->count())  }}
                     </td>
                   </tr>
                   @endforeach
                 </tbody>
                 <tfoot>
+
                   <tr>
-                    <td colspan="6" class="warning">
-                      {{ Form::select('status_id', $statuslabel_list , Request::old('status_id'), array('class'=>'select2', 'style'=>'width:250px')) }}
-                      <label>Update all assets for these users to this status</label>
+                    <td colspan="8">
+                      {{ Form::select('status_id', $statuslabel_list , old('status_id'), array('class'=>'select2', 'style'=>'width:250px', 'required' => true)) }}
+                      <label>{{ trans('admin/users/general.update_user_assets_status') }}</label>
                     </td>
                   </tr>
                   <tr>
-                    <td colspan="6" class="warning">
-                      <label><input type="checkbox" name="ids['.e($user->id).']" checked> Check in all properties associated with these users</label>
+                    <td colspan="8" class="col-md-12 alert-danger">
+                      <label class="form-control">
+                        <input type="checkbox" name="delete_user" value="1">
+                        <span><i class="fa fa-warning fa-2x"></i> {{ trans('general.bulk_soft_delete') }}</span>
+                      </label>
                     </td>
                   </tr>
                 </tfoot>
@@ -99,12 +127,36 @@ Bulk Checkin &amp; Delete
           </div><!--/col-md-12-->
         </div> <!--/box-body-->
         <div class="box-footer text-right">
-          <a class="btn btn-link" href="{{ URL::previous() }}">{{ trans('button.cancel') }}</a>
-          <button type="submit" class="btn btn-success"><i class="fa fa-check icon-white" aria-hidden="true"></i> {{ trans('button.submit') }}</button>
+          <a class="btn btn-link pull-left" href="{{ URL::previous() }}">{{ trans('button.cancel') }}</a>
+
+          <button type="submit" class="btn btn-success"{{ (config('app.lock_passwords') ? ' disabled' : '') }} disabled="disabled"><x-icon type="checkmark" /> {{ trans('button.submit') }}</button>
+
         </div><!-- /.box-footer -->
       </form>
     </div>
   </div>
 </div>
 
+@stop
+
+@section('moar_scripts')
+<script>
+
+
+  // TODO: include a class that excludes certain checkboxes by class to not be select-all'd
+  // $("#checkAll").change(function () {
+  //   $("input:checkbox").prop('checked', $(this).prop("checked"));
+  // });
+
+
+  $(":submit").attr("disabled", "disabled");
+   $("[name='status_id']").on('select2:select', function (e) {
+     if (e.params.data.id != "") {
+       console.log(e.params.data.id);
+       $(":submit").removeAttr("disabled");
+     } else {
+       $(":submit").attr("disabled", "disabled");
+     }
+   });
+</script>
 @stop

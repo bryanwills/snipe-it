@@ -10,6 +10,7 @@ use App\Models\Supplier;
 use Illuminate\Http\Request;
 use App\Http\Requests\ImageUploadRequest;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\JsonResponse;
 
 class SuppliersController extends Controller
 {
@@ -20,26 +21,82 @@ class SuppliersController extends Controller
      * @since [v4.0]
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index(Request $request): array
     {
         $this->authorize('view', Supplier::class);
-        $allowed_columns = ['id','name','address','phone','contact','fax','email','image','assets_count','licenses_count', 'accessories_count','url'];
+        $allowed_columns = ['
+            id',
+            'name',
+            'address',
+            'phone',
+            'contact',
+            'fax',
+            'email',
+            'image',
+            'assets_count',
+            'licenses_count',
+            'accessories_count',
+            'components_count',
+            'consumables_count',
+            'url',
+        ];
         
         $suppliers = Supplier::select(
-                array('id','name','address','address2','city','state','country','fax', 'phone','email','contact','created_at','updated_at','deleted_at','image','notes')
-            )->withCount('assets as assets_count')->withCount('licenses as licenses_count')->withCount('accessories as accessories_count');
+                ['id', 'name', 'address', 'address2', 'city', 'state', 'country', 'fax', 'phone', 'email', 'contact', 'created_at', 'updated_at', 'deleted_at', 'image', 'notes', 'url'])
+                    ->withCount('assets as assets_count')
+                    ->withCount('licenses as licenses_count')
+                    ->withCount('accessories as accessories_count')
+                    ->withCount('components as components_count')
+                    ->withCount('consumables as consumables_count');
 
 
         if ($request->filled('search')) {
             $suppliers = $suppliers->TextSearch($request->input('search'));
         }
 
-        // Set the offset to the API call's offset, unless the offset is higher than the actual count of items in which
-        // case we override with the actual count, so we should return 0 items.
-        $offset = (($suppliers) && ($request->get('offset') > $suppliers->count())) ? $suppliers->count() : $request->get('offset', 0);
+        if ($request->filled('name')) {
+            $suppliers->where('name', '=', $request->input('name'));
+        }
 
-        // Check to make sure the limit is not higher than the max allowed
-        ((config('app.max_results') >= $request->input('limit')) && ($request->filled('limit'))) ? $limit = $request->input('limit') : $limit = config('app.max_results');
+        if ($request->filled('address')) {
+            $suppliers->where('address', '=', $request->input('address'));
+        }
+
+        if ($request->filled('address2')) {
+            $suppliers->where('address2', '=', $request->input('address2'));
+        }
+
+        if ($request->filled('city')) {
+            $suppliers->where('city', '=', $request->input('city'));
+        }
+
+        if ($request->filled('zip')) {
+            $suppliers->where('zip', '=', $request->input('zip'));
+        }
+
+        if ($request->filled('country')) {
+            $suppliers->where('country', '=', $request->input('country'));
+        }
+
+        if ($request->filled('fax')) {
+            $suppliers->where('fax', '=', $request->input('fax'));
+        }
+
+        if ($request->filled('email')) {
+            $suppliers->where('email', '=', $request->input('email'));
+        }
+
+        if ($request->filled('url')) {
+            $suppliers->where('url', '=', $request->input('url'));
+        }
+
+        if ($request->filled('notes')) {
+            $suppliers->where('notes', '=', $request->input('notes'));
+        }
+
+        // Make sure the offset and limit are actually integers and do not exceed system limits
+        $offset = ($request->input('offset') > $suppliers->count()) ? $suppliers->count() : app('api_offset_value');
+        $limit = app('api_limit_value');
 
         $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
         $sort = in_array($request->input('sort'), $allowed_columns) ? $request->input('sort') : 'created_at';
@@ -47,6 +104,7 @@ class SuppliersController extends Controller
 
         $total = $suppliers->count();
         $suppliers = $suppliers->skip($offset)->take($limit)->get();
+
         return (new SuppliersTransformer)->transformSuppliers($suppliers, $total);
     }
 
@@ -57,9 +115,8 @@ class SuppliersController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
      * @param  \App\Http\Requests\ImageUploadRequest  $request
-     * @return \Illuminate\Http\Response
      */
-    public function store(ImageUploadRequest $request)
+    public function store(ImageUploadRequest $request) : JsonResponse
     {
         $this->authorize('create', Supplier::class);
         $supplier = new Supplier;
@@ -79,12 +136,12 @@ class SuppliersController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
      * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($id) : array
     {
         $this->authorize('view', Supplier::class);
         $supplier = Supplier::findOrFail($id);
+
         return (new SuppliersTransformer)->transformSupplier($supplier);
     }
 
@@ -96,9 +153,8 @@ class SuppliersController extends Controller
      * @since [v4.0]
      * @param  \App\Http\Requests\ImageUploadRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
-    public function update(ImageUploadRequest $request, $id)
+    public function update(ImageUploadRequest $request, $id) : JsonResponse
     {
         $this->authorize('update', Supplier::class);
         $supplier = Supplier::findOrFail($id);
@@ -118,21 +174,20 @@ class SuppliersController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
      * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($id) : JsonResponse
     {
         $this->authorize('delete', Supplier::class);
-        $supplier = Supplier::with('asset_maintenances', 'assets', 'licenses')->withCount('asset_maintenances as asset_maintenances_count','assets as assets_count', 'licenses as licenses_count')->findOrFail($id);
+        $supplier = Supplier::with('asset_maintenances', 'assets', 'licenses')->withCount('asset_maintenances as asset_maintenances_count', 'assets as assets_count', 'licenses as licenses_count')->findOrFail($id);
         $this->authorize('delete', $supplier);
 
 
         if ($supplier->assets_count > 0) {
-            return response()->json(Helper::formatStandardApiResponse('error', null,  trans('admin/suppliers/message.delete.assoc_assets', ['asset_count' => (int) $supplier->assets_count])));
+            return response()->json(Helper::formatStandardApiResponse('error', null, trans('admin/suppliers/message.delete.assoc_assets', ['asset_count' => (int) $supplier->assets_count])));
         }
 
         if ($supplier->asset_maintenances_count > 0) {
-            return response()->json(Helper::formatStandardApiResponse('error', null,  trans('admin/suppliers/message.delete.assoc_maintenances', ['asset_maintenances_count' => $supplier->asset_maintenances_count])));
+            return response()->json(Helper::formatStandardApiResponse('error', null, trans('admin/suppliers/message.delete.assoc_maintenances', ['asset_maintenances_count' => $supplier->asset_maintenances_count])));
         }
 
         if ($supplier->licenses_count > 0) {
@@ -140,8 +195,8 @@ class SuppliersController extends Controller
         }
 
         $supplier->delete();
-        return response()->json(Helper::formatStandardApiResponse('success', null,  trans('admin/suppliers/message.delete.success')));
 
+        return response()->json(Helper::formatStandardApiResponse('success', null, trans('admin/suppliers/message.delete.success')));
     }
 
     /**
@@ -150,10 +205,11 @@ class SuppliersController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0.16]
      * @see \App\Http\Transformers\SelectlistTransformer
-     *
      */
-    public function selectlist(Request $request)
+    public function selectlist(Request $request) : array
     {
+
+        $this->authorize('view.selectlists');
 
         $suppliers = Supplier::select([
             'id',
@@ -176,7 +232,5 @@ class SuppliersController extends Controller
         }
 
         return (new SelectlistTransformer)->transformSelectlist($suppliers);
-
     }
-
 }

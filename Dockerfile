@@ -1,5 +1,5 @@
-FROM ubuntu:focal
-LABEL maintainer Brady Wetherington <bwetherington@grokability.com>
+FROM ubuntu:22.04
+LABEL maintainer="Brady Wetherington <bwetherington@grokability.com>"
 
 # No need to add `apt-get clean` here, reference:
 # - https://github.com/snipe/snipe-it/pull/9201
@@ -14,15 +14,17 @@ RUN export DEBIAN_FRONTEND=noninteractive; \
 apt-utils \
 apache2 \
 apache2-bin \
-libapache2-mod-php7.4 \
-php7.4-curl \
-php7.4-ldap \
-php7.4-mysql \
-php7.4-gd \
-php7.4-xml \
-php7.4-mbstring \
-php7.4-zip \
-php7.4-bcmath \
+libapache2-mod-php8.1 \
+php8.1-curl \
+php8.1-ldap \
+php8.1-mysql \
+php8.1-gd \
+php8.1-xml \
+php8.1-mbstring \
+php8.1-zip \
+php8.1-bcmath \
+php8.1-redis \
+php-memcached \
 patch \
 curl \
 wget  \
@@ -36,27 +38,29 @@ gcc \
 make \
 autoconf \
 libc-dev \
+libldap-common \
 pkg-config \
 libmcrypt-dev \
-php7.4-dev \
+php8.1-dev \
 ca-certificates \
 unzip \
+dnsutils \
 && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 
 RUN curl -L -O https://github.com/pear/pearweb_phars/raw/master/go-pear.phar
 RUN php go-pear.phar
 
-RUN pecl install mcrypt-1.0.3
+RUN pecl install mcrypt
 
-RUN bash -c "echo extension=/usr/lib/php/20190902/mcrypt.so > /etc/php/7.4/mods-available/mcrypt.ini"
+RUN bash -c "echo extension=/usr/lib/php/20210902/mcrypt.so > /etc/php/8.1/mods-available/mcrypt.ini"
 
 RUN phpenmod mcrypt
 RUN phpenmod gd
 RUN phpenmod bcmath
 
-RUN sed -i 's/variables_order = .*/variables_order = "EGPCS"/' /etc/php/7.4/apache2/php.ini
-RUN sed -i 's/variables_order = .*/variables_order = "EGPCS"/' /etc/php/7.4/cli/php.ini
+RUN sed -i 's/variables_order = .*/variables_order = "EGPCS"/' /etc/php/8.1/apache2/php.ini
+RUN sed -i 's/variables_order = .*/variables_order = "EGPCS"/' /etc/php/8.1/cli/php.ini
 
 RUN useradd -m --uid 1000 --gid 50 docker
 
@@ -76,6 +80,8 @@ RUN a2ensite 001-default-ssl.conf
 COPY . /var/www/html
 
 RUN a2enmod rewrite
+
+COPY docker/column-statistics.cnf /etc/mysql/conf.d/column-statistics.cnf
 
 ############ INITIAL APPLICATION SETUP #####################
 
@@ -99,7 +105,7 @@ RUN \
       && ln -fs "/var/lib/snipeit/keys/ldap_client_tls.cert" "/var/www/html/storage/ldap_client_tls.cert" \
       && ln -fs "/var/lib/snipeit/keys/ldap_client_tls.key" "/var/www/html/storage/ldap_client_tls.key" \
       && chown docker "/var/lib/snipeit/keys/" \
-      && chown -h docker "/var/www/html/storage/" \
+      && chown -Rh docker "/var/www/html/storage/" \
       && chmod +x /var/www/html/artisan \
       && echo "Finished setting up application in /var/www/html"
 

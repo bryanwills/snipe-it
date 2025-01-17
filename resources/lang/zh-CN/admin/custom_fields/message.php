@@ -5,6 +5,7 @@ return array(
     'field' => array(
         'invalid'   => '字段不存在',
         'already_added'   => '已经新增字段',
+        'none_selected'   => '未选择字段',
 
         'create' => array(
             'error'   => '新增字段失败，请重试',
@@ -46,6 +47,12 @@ return array(
             'success' => '删除字段集成功',
             'in_use'   => '字段集还在使用中',
         )
+
+    ),
+
+    'fieldset_default_value' => array(
+
+        'error' => '验证默认字段集时出错。',
 
     ),
 

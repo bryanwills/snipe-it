@@ -62,9 +62,12 @@ class DepreciationReportTransformer
          * Override the previously set null values if there is a valid model and associated depreciation
          */
         if (($asset->model) && ($asset->model->depreciation)) {
-            $depreciated_value = \App\Helpers\Helper::formatCurrencyOutput($asset->getDepreciatedValue());
-            $monthly_depreciation = \App\Helpers\Helper::formatCurrencyOutput(($asset->model->eol > 0 ? ($asset->purchase_cost / $asset->model->eol) : 0));
-            $diff = \App\Helpers\Helper::formatCurrencyOutput(($asset->purchase_cost - $asset->getDepreciatedValue()));
+            $depreciated_value = Helper::formatCurrencyOutput($asset->getDepreciatedValue());
+            $monthly_depreciation =Helper::formatCurrencyOutput($asset->purchase_cost / $asset->model->depreciation->months);
+            $diff = Helper::formatCurrencyOutput(($asset->purchase_cost - $asset->getDepreciatedValue()));
+        }
+        else if($asset->model->eol !== null) {
+            $monthly_depreciation = Helper::formatCurrencyOutput(($asset->model->eol > 0 ? ($asset->purchase_cost / $asset->model->eol) : 0));
         }
 
         if ($asset->assigned) {
@@ -98,7 +101,7 @@ class DepreciationReportTransformer
             'purchase_cost' => Helper::formatCurrencyOutput($asset->purchase_cost),
             'book_value' => Helper::formatCurrencyOutput($depreciated_value),
             'monthly_depreciation' => $monthly_depreciation,
-            'checked_out_to' => $checkout_target,
+            'checked_out_to' => ($checkout_target) ? e($checkout_target) : null,
             'diff' =>  Helper::formatCurrencyOutput($diff),
             'number_of_months' =>  ($asset->model && $asset->model->depreciation) ? e($asset->model->depreciation->months) : null,
             'depreciation' => (($asset->model) && ($asset->model->depreciation)) ?  e($asset->model->depreciation->name) : null,

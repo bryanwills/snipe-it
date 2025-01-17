@@ -2,7 +2,7 @@
 
 {{-- Page title --}}
 @section('title')
-    Update Branding Settings
+    {{ trans('admin/settings/general.branding_title') }}
     @parent
 @stop
 
@@ -32,7 +32,8 @@
             <div class="panel box box-default">
                 <div class="box-header with-border">
                     <h2 class="box-title">
-                        <i class="fa fa-copyright"></i> Branding
+                        <x-icon type="branding"/>
+                         {{ trans('admin/settings/general.brand') }}
                     </h2>
                 </div>
                 <div class="box-body">
@@ -48,11 +49,11 @@
                             </div>
                             <div class="col-md-7 required">
                                 @if (config('app.lock_passwords')===true)
-                                    {{ Form::text('site_name', Request::old('site_name', $setting->site_name), array('class' => 'form-control', 'disabled'=>'disabled','placeholder' => 'Snipe-IT Asset Management')) }}
-                                    <p class="text-warning"><i class="fa fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
+                                    {{ Form::text('site_name', old('site_name', $setting->site_name), array('class' => 'form-control', 'disabled'=>'disabled','placeholder' => 'Snipe-IT Asset Management')) }}
+                                    <p class="text-warning"><i class="fas fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
                                 @else
                                     {{ Form::text('site_name',
-                                        Request::old('site_name', $setting->site_name), array('class' => 'form-control','placeholder' => 'Snipe-IT Asset Management', 'data-validation' => 'required')) }}
+                                        old('site_name', $setting->site_name), array('class' => 'form-control','placeholder' => 'Snipe-IT Asset Management', 'required' => 'required')) }}
                                 @endif
                                 {!! $errors->first('site_name', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
                             </div>
@@ -77,7 +78,7 @@
                         "logoId" => "uploadLogo",
                         "logoLabel" => trans('admin/settings/general.logo'),
                         "logoClearVariable" => "clear_logo",
-                        "helpBlock" => trans('general.logo_size') . trans('general.image_filetypes_help', ['size' => \App\Helpers\Helper::file_upload_max_size_readable()]),
+                        "helpBlock" => trans('general.logo_size') . trans('general.image_filetypes_help', ['size' => Helper::file_upload_max_size_readable()]),
                     ])
 
                     <!-- Email Logo -->
@@ -86,7 +87,7 @@
                         "logoId" => "uploadEmailLogo",
                         "logoLabel" => trans('admin/settings/general.email_logo'),
                         "logoClearVariable" => "clear_email_logo",
-                        "helpBlock" => trans('admin/settings/general.email_logo_size') . trans('general.image_filetypes_help', ['size' => \App\Helpers\Helper::file_upload_max_size_readable()]),
+                        "helpBlock" => trans('admin/settings/general.email_logo_size') . trans('general.image_filetypes_help', ['size' => Helper::file_upload_max_size_readable()]),
                     ])
 
                     <!-- Label Logo -->
@@ -95,7 +96,7 @@
                         "logoId" => "uploadLabelLogo",
                         "logoLabel" => trans('admin/settings/general.label_logo'),
                         "logoClearVariable" => "clear_label_logo",
-                        "helpBlock" => trans('admin/settings/general.label_logo_size') . trans('general.image_filetypes_help', ['size' => \App\Helpers\Helper::file_upload_max_size_readable()]),
+                        "helpBlock" => trans('admin/settings/general.label_logo_size') . trans('general.image_filetypes_help', ['size' => Helper::file_upload_max_size_readable()]),
                     ])
 
                     <!-- Favicon -->
@@ -109,14 +110,62 @@
                         "maxSize" => 20000
                     ])
 
-                    <!-- Include logo in print assets -->
+                    <!-- Default Avatar -->
+                    @include('partials/forms/edit/uploadLogo', [
+                        "logoVariable" => "default_avatar",
+                        "logoId" => "defaultAvatar",
+                        "logoLabel" => trans('admin/settings/general.default_avatar'),
+                        "logoClearVariable" => "clear_default_avatar",
+                        "logoPath" => "avatars/",
+                        "helpBlock" => trans('admin/settings/general.default_avatar_help').' '.trans('general.image_filetypes_help', ['size' => Helper::file_upload_max_size_readable()]),
+                    ])
+
+                        @if (($setting->default_avatar == '') || (($setting->default_avatar == 'default.png') && (Storage::disk('public')->missing('default.png'))))
+                        <!-- Restore Default Avatar -->
                         <div class="form-group">
+
+                            <div class="col-md-9 col-md-offset-3">
+                                <label class="form-control">
+                                    {{ Form::checkbox('restore_default_avatar', '1', old('restore_default_avatar', $setting->restore_default_avatar)) }}
+                                    <span>{!! trans('admin/settings/general.restore_default_avatar', ['default_avatar'=> Storage::disk('public')->url('default.png')]) !!}</span>
+                                </label>
+                                <p class="help-block">
+                                    {{ trans('admin/settings/general.restore_default_avatar_help') }}
+                                </p>
+                            </div>
+                        </div>
+                        @endif
+
+                        <!-- Load gravatar -->
+                        <div class="form-group {{ $errors->has('load_remote') ? 'error' : '' }}">
                             <div class="col-md-3">
-                                {{ Form::label('logo_print_assets', trans('admin/settings/general.logo_print_assets')) }}
+                                <strong>{{ trans('admin/settings/general.load_remote') }}</strong>
                             </div>
                             <div class="col-md-9">
-                                {{ Form::checkbox('logo_print_assets', '1', old('logo_print_assets', $setting->logo_print_assets),array('class' => 'minimal', 'aria-label'=>'logo_print_assets')) }}
+                                <label class="form-control">
+                                    {{ Form::checkbox('load_remote', '1', old('load_remote', $setting->load_remote)) }}
+                                    {{ trans('general.yes') }}
+                                    {!! $errors->first('load_remote', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                                </label>
+
+                                <p class="help-block">
+                                    {{ trans('admin/settings/general.load_remote_help_text') }}
+                                </p>
+
+                            </div>
+                        </div>
+
+
+                        <!-- Include logo in print assets -->
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                <strong>{{ trans('admin/settings/general.logo_print_assets') }}</strong>
+                            </div>
+                            <div class="col-md-9">
+                                <label class="form-control">
+                                {{ Form::checkbox('logo_print_assets', '1', old('logo_print_assets', $setting->logo_print_assets),array('aria-label'=>'logo_print_assets')) }}
                                 {{ trans('admin/settings/general.logo_print_assets_help') }}
+                                </label>
 
                             </div>
                         </div>
@@ -125,11 +174,13 @@
                         <!-- show urls in emails-->
                         <div class="form-group">
                             <div class="col-md-3">
-                                {{ Form::label('show_url_in_emails', trans('admin/settings/general.show_url_in_emails')) }}
+                                <strong>{{ trans('admin/settings/general.show_url_in_emails') }}</strong>
                             </div>
                             <div class="col-md-9">
-                                {{ Form::checkbox('show_url_in_emails', '1', old('show_url_in_emails', $setting->show_url_in_emails),array('class' => 'minimal', 'aria-label'=>'show_url_in_emails')) }}
-                                {{ trans('general.yes') }}
+                                <label class="form-control">
+                                    {{ Form::checkbox('show_url_in_emails', '1', old('show_url_in_emails', $setting->show_url_in_emails),array('aria-label'=>'show_url_in_emails')) }}
+                                    {{ trans('general.yes') }}
+                                </label>
                                 <p class="help-block">{{ trans('admin/settings/general.show_url_in_emails_help_text') }}</p>
                             </div>
                         </div>
@@ -164,11 +215,13 @@
                         <!-- Allow User Skin -->
                         <div class="form-group">
                             <div class="col-md-3">
-                                {{ Form::label('allow_user_skin', trans('admin/settings/general.allow_user_skin')) }}
+                                <strong>{{ trans('admin/settings/general.allow_user_skin') }}</strong>
                             </div>
                             <div class="col-md-9">
-                                {{ Form::checkbox('allow_user_skin', '1', old('allow_user_skin', $setting->allow_user_skin),array('class' => 'minimal')) }}
-                                {{ trans('general.yes') }}
+                                <label class="form-control">
+                                    {{ Form::checkbox('allow_user_skin', '1', old('allow_user_skin', $setting->allow_user_skin)) }}
+                                    {{ trans('general.yes') }}
+                                </label>
                                 <p class="help-block">{{ trans('admin/settings/general.allow_user_skin_help_text') }}</p>
                             </div>
                         </div>
@@ -182,7 +235,7 @@
                                 @if (config('app.lock_passwords')===true)
                                     {{ Form::textarea('custom_css', old('custom_css', $setting->custom_css), array('class' => 'form-control','placeholder' => 'Add your custom CSS','disabled'=>'disabled', 'aria-label'=>'custom_css')) }}
                                     {!! $errors->first('custom_css', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                                    <p class="text-warning"><i class="fa fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
+                                    <p class="text-warning"><i class="fas fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
                                 @else
                                     {{ Form::textarea('custom_css', old('custom_css', $setting->custom_css), array('class' => 'form-control','placeholder' => 'Add your custom CSS', 'aria-label'=>'custom_css')) }}
                                     {!! $errors->first('custom_css', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
@@ -199,10 +252,10 @@
                             </div>
                             <div class="col-md-9">
                                 @if (config('app.lock_passwords')===true)
-                                    {!! Form::select('support_footer', array('on'=>'Enabled','off'=>'Disabled','admin'=>'Superadmin Only'), Request::old('support_footer', $setting->support_footer), ['class' => 'form-control select2 disabled', 'style'=>'width: 150px ;', 'disabled' => 'disabled']) !!}
-                                    <p class="text-warning"><i class="fa fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
+                                    {!! Form::select('support_footer', array('on'=>'Enabled','off'=>'Disabled','admin'=>'Superadmin Only'), old('support_footer', $setting->support_footer), ['class' => 'form-control select2 disabled', 'style'=>'width: 150px ;', 'disabled' => 'disabled']) !!}
+                                    <p class="text-warning"><i class="fas fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
                                 @else
-                                    {!! Form::select('support_footer', array('on'=>'Enabled','off'=>'Disabled','admin'=>'Superadmin Only'), Request::old('support_footer', $setting->support_footer), array('class' => 'form-control select2', 'style'=>'width: 150px ;')) !!}
+                                    {!! Form::select('support_footer', array('on'=>'Enabled','off'=>'Disabled','admin'=>'Superadmin Only'), old('support_footer', $setting->support_footer), array('class' => 'form-control select2', 'style'=>'width: 150px ;')) !!}
                                 @endif
 
 
@@ -218,10 +271,10 @@
                             </div>
                             <div class="col-md-9">
                                 @if (config('app.lock_passwords')===true)
-                                    {!! Form::select('version_footer', array('on'=>'Enabled','off'=>'Disabled','admin'=>'Superadmin Only'), Request::old('version_footer', $setting->version_footer), ['class' => 'form-control select2 disabled', 'style'=>'width: 150px ;', 'disabled' => 'disabled']) !!}
-                                    <p class="text-warning"><i class="fa fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
+                                    {!! Form::select('version_footer', array('on'=>'Enabled','off'=>'Disabled','admin'=>'Superadmin Only'), old('version_footer', $setting->version_footer), ['class' => 'form-control select2 disabled', 'style'=>'width: 150px ;', 'disabled' => 'disabled']) !!}
+                                    <p class="text-warning"><i class="fas fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
                                 @else
-                                    {!! Form::select('version_footer', array('on'=>'Enabled','off'=>'Disabled','admin'=>'Superadmin Only'), Request::old('version_footer', $setting->version_footer), array('class' => 'form-control select2', 'style'=>'width: 150px ;')) !!}
+                                    {!! Form::select('version_footer', array('on'=>'Enabled','off'=>'Disabled','admin'=>'Superadmin Only'), old('version_footer', $setting->version_footer), array('class' => 'form-control select2', 'style'=>'width: 150px ;')) !!}
                                 @endif
 
                                 <p class="help-block">{{ trans('admin/settings/general.version_footer_help') }}</p>
@@ -236,10 +289,10 @@
                             </div>
                             <div class="col-md-9">
                                 @if (config('app.lock_passwords')===true)
-                                    {{ Form::textarea('footer_text', Request::old('footer_text', $setting->footer_text), array('class' => 'form-control', 'rows' => '4', 'placeholder' => 'Optional footer text','disabled'=>'disabled')) }}
-                                    <p class="text-warning"><i class="fa fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
+                                    {{ Form::textarea('footer_text', old('footer_text', $setting->footer_text), array('class' => 'form-control', 'rows' => '4', 'placeholder' => 'Optional footer text','disabled'=>'disabled')) }}
+                                    <p class="text-warning"><i class="fas fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
                                 @else
-                                    {{ Form::textarea('footer_text', Request::old('footer_text', $setting->footer_text), array('class' => 'form-control','rows' => '4','placeholder' => 'Optional footer text')) }}
+                                    {{ Form::textarea('footer_text', old('footer_text', $setting->footer_text), array('class' => 'form-control','rows' => '4','placeholder' => 'Optional footer text')) }}
                                 @endif
                                 <p class="help-block">{!! trans('admin/settings/general.footer_text_help') !!}</p>
                                 {!! $errors->first('footer_text', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
@@ -258,7 +311,7 @@
                         <a class="btn btn-link text-left" href="{{ route('settings.index') }}">{{ trans('button.cancel') }}</a>
                     </div>
                     <div class="text-right col-md-6">
-                        <button type="submit" class="btn btn-primary"><i class="fa fa-check icon-white" aria-hidden="true"></i> {{ trans('general.save') }}</button>
+                        <button type="submit" class="btn btn-primary"><x-icon type="checkmark" /> {{ trans('general.save') }}</button>
                     </div>
 
                 </div>

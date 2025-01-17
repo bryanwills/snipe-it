@@ -12,7 +12,7 @@
 <div class="row">
   <div class="col-md-9">
 
-    <form class="form-horizontal" method="post" action="" autocomplete="off">
+    <form class="form-horizontal" id="checkout_form" method="post" action="" autocomplete="off">
       <!-- CSRF Token -->
       <input type="hidden" name="_token" value="{{ csrf_token() }}" />
 
@@ -37,48 +37,83 @@
           </div>
           @endif
 
+          <!-- total -->
+          <div class="form-group">
+              <label class="col-sm-3 control-label">{{  trans('admin/components/general.total') }}</label>
+              <div class="col-md-6">
+                  <p class="form-control-static">{{ $consumable->qty }}</p>
+              </div>
+          </div>
+
+          <!-- remaining -->
+          <div class="form-group">
+              <label class="col-sm-3 control-label">{{  trans('admin/components/general.remaining') }}</label>
+              <div class="col-md-6">
+                  <p class="form-control-static">{{ $consumable->numRemaining() }}</p>
+              </div>
+          </div>
+
+
+
+
           <!-- User -->
             @include ('partials.forms.edit.user-select', ['translated_name' => trans('general.select_user'), 'fieldname' => 'assigned_to', 'required'=> 'true'])
 
 
-            @if ($consumable->requireAcceptance() || $consumable->getEula() || ($snipeSettings->slack_endpoint!=''))
+            @if ($consumable->requireAcceptance() || $consumable->getEula() || ($snipeSettings->webhook_endpoint!=''))
               <div class="form-group notification-callout">
                 <div class="col-md-8 col-md-offset-3">
                   <div class="callout callout-info">
 
                     @if ($consumable->category->require_acceptance=='1')
-                      <i class="fa fa-envelope"></i>
+                      <i class="far fa-envelope"></i>
                       {{ trans('admin/categories/general.required_acceptance') }}
                       <br>
                     @endif
 
                     @if ($consumable->getEula())
-                      <i class="fa fa-envelope"></i>
+                      <i class="far fa-envelope"></i>
                       {{ trans('admin/categories/general.required_eula') }}
                         <br>
                     @endif
 
-                    @if ($snipeSettings->slack_endpoint!='')
-                        <i class="fa fa-slack"></i>
-                        A slack message will be sent
+                    @if ($snipeSettings->webhook_endpoint!='')
+                        <i class="fab fa-slack"></i>
+                        {{ trans('general.webhook_msg_note') }}
                     @endif
                   </div>
                 </div>
               </div>
             @endif
+
+          <!-- Checkout QTY -->
+          <div class="form-group {{ $errors->has('qty') ? 'error' : '' }} ">
+              <label for="qty" class="col-md-3 control-label">{{ trans('general.qty') }}</label>
+              <div class="col-md-7 col-sm-12 required">
+                  <div class="col-md-2" style="padding-left:0px">
+                    <input class="form-control" type="number" name="checkout_qty" id="checkout_qty" value="1" min="1" max="{{$consumable->numRemaining()}}" maxlength="999999"  />
+                  </div>
+              </div>
+              {!! $errors->first('qty', '<div class="col-md-8 col-md-offset-3"><span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span></div>') !!}
+          </div>
+          
           <!-- Note -->
           <div class="form-group {{ $errors->has('note') ? 'error' : '' }}">
             <label for="note" class="col-md-3 control-label">{{ trans('admin/hardware/form.notes') }}</label>
             <div class="col-md-7">
-              <textarea class="col-md-6 form-control" id="note" name="note">{{ old('note', $consumable->note) }}</textarea>
-              {!! $errors->first('note', '<span class="alert-msg" aria-hidden="true"><i class="fa fa-times" aria-hidden="true"></i> :message</span>') !!}
+              <textarea class="col-md-6 form-control" name="note">{{ old('note') }}</textarea>
+              {!! $errors->first('note', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
             </div>
           </div>
         </div> <!-- .box-body -->
-        <div class="box-footer">
-          <a class="btn btn-link" href="{{ URL::previous() }}">{{ trans('button.cancel') }}</a>
-          <button type="submit" class="btn btn-primary pull-right"><i class="fa fa-check icon-white" aria-hidden="true"></i> {{ trans('general.checkout') }}</button>
-       </div>
+            <x-redirect_submit_options
+                    index_route="consumables.index"
+                    :button_label="trans('general.checkout')"
+                    :options="[
+                                'index' => trans('admin/hardware/form.redirect_to_all', ['type' => trans('general.consumables')]),
+                                'item' => trans('admin/hardware/form.redirect_to_type', ['type' => trans('general.consumable')]),
+                                'target' => trans('admin/hardware/form.redirect_to_checked_out_to'),
+                                ]"/>
       </div>
     </form>
 

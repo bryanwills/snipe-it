@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Auth;
 // $asset->whereRequestedBy($user)
 trait Requestable
 {
-
     public function requests()
     {
         return $this->morphMany(CheckoutRequest::class, 'requestable');
@@ -17,7 +16,7 @@ trait Requestable
 
     public function isRequestedBy(User $user)
     {
-        return $this->requests->where('canceled_at', NULL)->where('user_id', $user->id)->first();
+        return $this->requests->where('canceled_at', null)->where('user_id', $user->id)->first();
     }
 
     public function scopeRequestedBy($query, User $user)
@@ -30,17 +29,21 @@ trait Requestable
     public function request($qty = 1)
     {
         $this->requests()->save(
-            new CheckoutRequest(['user_id' => Auth::id(), 'qty' => $qty])
+            new CheckoutRequest(['user_id' => auth()->id(), 'qty' => $qty])
         );
     }
 
     public function deleteRequest()
     {
-        $this->requests()->where('user_id', Auth::id())->delete();
+        $this->requests()->where('user_id', auth()->id())->delete();
     }
 
-    public function cancelRequest()
+    public function cancelRequest($user_id = null)
     {
-        $this->requests()->where('user_id', Auth::id())->update(['canceled_at' => \Carbon\Carbon::now()]);
+        if (!$user_id){
+            $user_id = auth()->id();
+        }
+
+        $this->requests()->where('user_id', $user_id)->update(['canceled_at' => \Carbon\Carbon::now()]);
     }
 }

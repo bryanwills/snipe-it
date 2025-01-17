@@ -2,164 +2,186 @@
 
 namespace App\Presenters;
 
+use App\Helpers\Helper;
+
 /**
  * Class AssetModelPresenter
- * @package App\Presenters
  */
 class AssetModelPresenter extends Presenter
 {
-    public static function dataTableLayout() {
-
+    public static function dataTableLayout()
+    {
         $layout = [
             [
-                "field" => "checkbox",
-                "checkbox" => true
+                'field' => 'checkbox',
+                'checkbox' => true,
             ],
             [
-                "field" => "id",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('general.id'),
-                "visible" => false
+                'field' => 'id',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.id'),
+                'visible' => false,
             ], [
-                "field" => "company",
-                "searchable" => true,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('admin/companies/table.title'),
-                "visible" => false,
-                "formatter" => "companiesLinkObjFormatter"
+                'field' => 'company',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/companies/table.title'),
+                'visible' => false,
+                'formatter' => 'companiesLinkObjFormatter',
             ], [
-                "field" => "name",
-                "searchable" => true,
-                "sortable" => true,
-                "visible" => true,
-                "title" => trans('general.name'),
-                "formatter" => "modelsLinkFormatter"
+                'field' => 'name',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => false,
+                'visible' => true,
+                'title' => trans('general.name'),
+                'formatter' => 'modelsLinkFormatter',
             ],
             [
-                "field" => "image",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('general.image'),
-                "visible" => true,
-                "formatter" => 'imageFormatter',
+                'field' => 'image',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.image'),
+                'visible' => true,
+                'formatter' => 'imageFormatter',
             ],
             [
-                "field" => "manufacturer",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('general.manufacturer'),
-                "visible" => false,
-                "formatter" => 'manufacturersLinkObjFormatter',
+                'field' => 'manufacturer',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.manufacturer'),
+                'visible' => false,
+                'formatter' => 'manufacturersLinkObjFormatter',
             ],
             [
-                "field" => "model_number",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('admin/models/table.modelnumber'),
-                "visible" => true,
+                'field' => 'model_number',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/models/table.modelnumber'),
+                'visible' => true,
             ],
             [
-                "field" => "assets_count",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('admin/models/table.numassets'),
-                "visible" => true,
+                'field' => 'min_amt',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('mail.min_QTY'),
+                'visible' => true,
             ],
             [
-                "field" => "depreciation",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('general.depreciation'),
-                "visible" => false,
-                "formatter" => "depreciationsLinkObjFormatter",
+                'field' => 'assets_count',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/models/table.numassets'),
+                'visible' => true,
             ],
             [
-                "field" => "category",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('general.category'),
-                "visible" => false,
-                "formatter" => "categoriesLinkObjFormatter",
+                'field' => 'depreciation',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.depreciation'),
+                'visible' => false,
+                'formatter' => 'depreciationsLinkObjFormatter',
             ],
             [
-                "field" => "eol",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('general.eol'),
-                "visible" => true,
+                'field' => 'category',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.category'),
+                'visible' => true,
+                'formatter' => 'categoriesLinkObjFormatter',
             ],
             [
-                "field" => "fieldset",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('admin/models/general.fieldset'),
-                "visible" => true,
-                "formatter" => "fieldsetsLinkObjFormatter",
+                'field' => 'eol',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/hardware/form.eol_rate'),
+                'visible' => true,
             ],
             [
-                "field" => "notes",
-                "searchable" => true,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('general.notes'),
-                "visible" => false,
+                'field' => 'fieldset',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/models/general.fieldset'),
+                'visible' => true,
+                'formatter' => 'fieldsetsLinkObjFormatter',
             ],
             [
-                "field" => "created_at",
-                "searchable" => true,
-                "sortable" => true,
-                "visible" => false,
-                "title" => trans('general.created_at'),
-                "formatter" => "dateDisplayFormatter"
+                'field' => 'requestable',
+                'searchable' => false,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('admin/hardware/general.requestable'),
+                'formatter' => 'trueFalseFormatter',
             ],
             [
-                "field" => "updated_at",
-                "searchable" => true,
-                "sortable" => true,
-                "visible" => false,
-                "title" => trans('general.updated_at'),
-                "formatter" => "dateDisplayFormatter"
+                'field' => 'notes',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.notes'),
+                'visible' => false,
+                'formatter' => 'notesFormatter',
+            ],
+            [
+                'field' => 'created_by',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.created_by'),
+                'visible' => false,
+                'formatter' => 'usersLinkObjFormatter',
+            ], [
+                'field' => 'created_at',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.created_at'),
+                'visible' => false,
+                'formatter' => 'dateDisplayFormatter',
+            ], [
+                'field' => 'updated_at',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.updated_at'),
+                'visible' => false,
+                'formatter' => 'dateDisplayFormatter',
             ],
 
         ];
-
 
         $layout[] = [
-            "field" => "actions",
-            "searchable" => false,
-            "sortable" => false,
-            "switchable" => false,
-            "title" => trans('table.actions'),
-            "formatter" => "modelsActionsFormatter",
+            'field' => 'actions',
+            'searchable' => false,
+            'sortable' => false,
+            'switchable' => false,
+            'title' => trans('table.actions'),
+            'formatter' => 'modelsActionsFormatter',
         ];
 
-
         return json_encode($layout);
-
     }
+
     /**
      * Formatted note for this model
      * @return string
      */
     public function note()
     {
-        $Parsedown = new \Parsedown();
-
         if ($this->model->note) {
-            return $Parsedown->text($this->model->note);
+            return Helper::parseEscapedMarkedown($this->model->note);
         }
-
     }
 
     public function eolText()
@@ -167,6 +189,7 @@ class AssetModelPresenter extends Presenter
         if ($this->eol) {
             return $this->eol.' '.trans('general.months');
         }
+
         return '';
     }
 
@@ -183,8 +206,9 @@ class AssetModelPresenter extends Presenter
         $name .= $this->name;
 
         if ($this->model_number) {
-            $name .=" (#".$this->model_number.')';
+            $name .= ' (#'.$this->model_number.')';
         }
+
         return $name;
     }
 
@@ -203,9 +227,10 @@ class AssetModelPresenter extends Presenter
      */
     public function imageUrl()
     {
-        if (!empty($this->image)) {
-            return '<img src="' . url('/') . '/uploads/models/' . $this->image . '" alt="'.$this->name.'" height="50" width="50">';
+        if (! empty($this->image)) {
+            return '<img src="'.config('app.url').'/uploads/models/'.$this->image.'" alt="'.$this->name.'" height="50" width="50">';
         }
+
         return '';
     }
 
@@ -215,9 +240,10 @@ class AssetModelPresenter extends Presenter
      */
     public function imageSrc()
     {
-        if (!empty($this->image)) {
-            return url('/') . '/uploads/models/' . $this->image;
+        if (! empty($this->image)) {
+            return config('app.url').'/uploads/models/'.$this->image;
         }
+
         return '';
     }
 

@@ -14,11 +14,8 @@ return array(
     */
 
     "password" => "Lozinke moraju imati šest znakova i odgovarati potvrdi.",
-
     "user"     => "Korisničko ime ili e-adresa nisu ispravni",
-
-    "token"    => "Token za reset lozinke nije ispravan.",
-
-    "sent" => "Ako je pronađena odgovarajuća adresa e-pošte, podsetnik za lozinku je poslat!",
+    "token"    => 'Token za resetovanje lozinke je neispravan, istekao ili se ne poklapa sa unešenim korisničkim imenom.',
+    'sent'	   => 'Ako odgovarajući korisnik sa ispravnom adresom e-pošte postoji u našem sistemu, e-poruka za promenu lozinke je poslata.',
 
 );

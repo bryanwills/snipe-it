@@ -4,9 +4,9 @@ namespace App\Notifications;
 
 use App\Models\Setting;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class SendUpcomingAuditNotification extends Notification
 {
@@ -40,7 +40,7 @@ class SendUpcomingAuditNotification extends Notification
      */
     public function toMail()
     {
-        $message = (new MailMessage)->markdown('notifications.markdown.upcoming-audits',
+        $message = (new MailMessage())->markdown('notifications.markdown.upcoming-audits',
             [
                 'assets'  => $this->assets,
                 'threshold'  => $this->threshold,

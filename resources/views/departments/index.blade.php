@@ -16,8 +16,6 @@
         <div class="col-md-12">
             <div class="box box-default">
                 <div class="box-body">
-                    <div class="table-responsive">
-
                         <table
                                 data-cookie-id-table="departmentsTable"
                                 data-pagination="true"
@@ -25,6 +23,7 @@
                                 data-search="true"
                                 data-side-pagination="server"
                                 data-show-columns="true"
+                                data-show-fullscreen="true"
                                 data-show-export="true"
                                 data-show-refresh="true"
                                 data-sort-order="asc"
@@ -49,7 +48,6 @@
                             </tr>
                             </thead>
                         </table>
-                    </div>
                 </div>
             </div>
         </div>

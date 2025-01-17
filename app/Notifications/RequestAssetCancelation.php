@@ -7,6 +7,7 @@ use App\Models\Setting;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\SlackMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 class RequestAssetCancelation extends Notification
 {
@@ -55,14 +56,12 @@ class RequestAssetCancelation extends Notification
      */
     public function via()
     {
-
         $notifyBy = [];
 
-        if (Setting::getSettings()->slack_endpoint!='') {
-            \Log::debug('use slack');
+        if (Setting::getSettings()->webhook_endpoint != '') {
+            Log::debug('use webhook');
             $notifyBy[] = 'slack';
         }
-
 
         $notifyBy[] = 'mail';
 
@@ -75,26 +74,29 @@ class RequestAssetCancelation extends Notification
         $item = $this->item;
         $note = $this->note;
         $qty = $this->item_quantity;
-        $botname = ($this->settings->slack_botname) ? $this->settings->slack_botname : 'Snipe-Bot' ;
+        $botname = ($this->settings->webhook_botname) ? $this->settings->webhook_botname : 'Snipe-Bot';
+        $channel = ($this->settings->webhook_channel) ? $this->settings->webhook_channel : '';
 
         $fields = [
             'QTY' => $qty,
             'Canceled By' => '<'.$target->present()->viewUrl().'|'.$target->present()->fullName().'>',
         ];
 
-        if (($this->expected_checkin) && ($this->expected_checkin!='')) {
+        if (($this->expected_checkin) && ($this->expected_checkin != '')) {
             $fields['Expected Checkin'] = $this->expected_checkin;
         }
 
         return (new SlackMessage)
-            ->content( trans('mail.a_user_canceled'))
+            ->content(trans('mail.a_user_canceled'))
             ->from($botname)
+            ->to($channel)
             ->attachment(function ($attachment) use ($item, $note, $fields) {
                 $attachment->title(htmlspecialchars_decode($item->present()->name), $item->present()->viewUrl())
                     ->fields($fields)
                     ->content($note);
             });
     }
+
     /**
      * Get the mail representation of the notification.
      *
@@ -103,7 +105,6 @@ class RequestAssetCancelation extends Notification
      */
     public function toMail()
     {
-
         $fields = [];
 
         // Check if the item has custom fields associated with it
@@ -125,8 +126,6 @@ class RequestAssetCancelation extends Notification
             ])
             ->subject(trans('Item Request Canceled'));
 
-
         return $message;
     }
-
 }

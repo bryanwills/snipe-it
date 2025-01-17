@@ -80,82 +80,121 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-
         $this->commands([
             \Laravel\Passport\Console\InstallCommand::class,
             \Laravel\Passport\Console\ClientCommand::class,
             \Laravel\Passport\Console\KeysCommand::class,
         ]);
 
-
         $this->registerPolicies();
-        Passport::routes();
         Passport::tokensExpireIn(Carbon::now()->addYears(config('passport.expiration_years')));
         Passport::refreshTokensExpireIn(Carbon::now()->addYears(config('passport.expiration_years')));
         Passport::personalAccessTokensExpireIn(Carbon::now()->addYears(config('passport.expiration_years')));
-        Passport::withCookieSerialization();
+
+        Passport::cookie(config('passport.cookie_name'));
 
 
-        // --------------------------------
-        // BEFORE ANYTHING ELSE
-        // --------------------------------
-        // If this condition is true, ANYTHING else below will be assumed
-        // to be true. This can cause weird blade behavior.
+        /**
+         * BEFORE ANYTHING ELSE
+         *
+         * If this condition is true, ANYTHING else below will be assumed to be true.
+         * This is where we set the superadmin permission to allow superadmins to be able to do everything within the system.
+         *
+         */
         Gate::before(function ($user) {
             if ($user->isSuperUser()) {
                 return true;
             }
         });
 
-        // --------------------------------
-        // GENERAL GATES
-        // These control general sections of the admin
-        // --------------------------------
+
+        /**
+         * GENERAL GATES
+         *
+         * These control general sections of the admin. These definitions are used in our blades via @can('blah) and also
+         * use in our controllers to determine if a user has access to a certain area.
+         */
+
         Gate::define('admin', function ($user) {
             if ($user->hasAccess('admin')) {
                 return true;
             }
         });
 
+        Gate::define('accessories.files', function ($user) {
+            if ($user->hasAccess('accessories.files')) {
+                return true;
+            }
+        });
+
+        Gate::define('components.files', function ($user) {
+            if ($user->hasAccess('components.files')) {
+                return true;
+            }
+        });
+
+        Gate::define('consumables.files', function ($user) {
+            if ($user->hasAccess('consumables.files')) {
+                return true;
+            }
+        });
 
         // Can the user import CSVs?
         Gate::define('import', function ($user) {
-            if ($user->hasAccess('import') ) {
+            if ($user->hasAccess('import')) {
                 return true;
             }
         });
 
 
-        # -----------------------------------------
-        # Reports
-        # -----------------------------------------
+        Gate::define('licenses.files', function ($user) {
+            if ($user->hasAccess('licenses.files')) {
+                return true;
+            }
+        });
+
+        Gate::define('assets.view.encrypted_custom_fields', function ($user) {
+            if($user->hasAccess('assets.view.encrypted_custom_fields')){
+                return true;
+            }
+        });
+
+        // -----------------------------------------
+        // Reports
+        // -----------------------------------------
         Gate::define('reports.view', function ($user) {
             if ($user->hasAccess('reports.view')) {
                 return true;
             }
         });
 
-        # -----------------------------------------
-        # Self
-        # -----------------------------------------
+        // -----------------------------------------
+        // Self
+        // -----------------------------------------
         Gate::define('self.two_factor', function ($user) {
             if (($user->hasAccess('self.two_factor')) || ($user->hasAccess('admin'))) {
                 return true;
             }
         });
 
-        Gate::define('self.api', function($user) {
+        Gate::define('self.api', function ($user) {
             return $user->hasAccess('self.api');
         });
 
-        Gate::define('self.edit_location', function($user) {
+        Gate::define('self.edit_location', function ($user) {
             return $user->hasAccess('self.edit_location');
         });
 
-        Gate::define('self.checkout_assets', function($user) {
+        Gate::define('self.checkout_assets', function ($user) {
             return $user->hasAccess('self.checkout_assets');
         });
 
+        Gate::define('self.view_purchase_cost', function ($user) {
+            return $user->hasAccess('self.view_purchase_cost');
+        });
+
+        // This is largely used to determine whether to display the gear icon sidenav 
+        // in the left-side navigation
         Gate::define('backend.interact', function ($user) {
             return $user->can('view', Statuslabel::class)
                 || $user->can('view', AssetModel::class)
@@ -167,8 +206,39 @@ class AuthServiceProvider extends ServiceProvider
                 || $user->can('view', Company::class)
                 || $user->can('view', Manufacturer::class)
                 || $user->can('view', CustomField::class)
-                || $user->can('view', CustomFieldset::class)                
+                || $user->can('view', CustomFieldset::class)
                 || $user->can('view', Depreciation::class);
         });
+
+
+        // This  determines whether or not an API user should be able to get the selectlists.
+        // This can seem a little confusing, since view properties may not have been granted
+        // to the logged in API user, but creating assets, licenses, etc won't work 
+        // if the user can't view and interact with the select lists.
+        Gate::define('view.selectlists', function ($user) {
+            return $user->can('update', Asset::class) 
+                || $user->can('create', Asset::class)    
+                || $user->can('checkout', Asset::class)
+                || $user->can('checkin', Asset::class)
+                || $user->can('audit', Asset::class)       
+                || $user->can('update', License::class)   
+                || $user->can('create', License::class)   
+                || $user->can('update', Component::class)
+                || $user->can('create', Component::class)   
+                || $user->can('update', Consumable::class)   
+                || $user->can('create', Consumable::class)   
+                || $user->can('update', Accessory::class)
+                || $user->can('create', Accessory::class)   
+                || $user->can('update', User::class)
+                || $user->can('create', User::class)
+                || ($user->hasAccess('reports.view'));
+        });
+
+
+        // This determines whether the user can edit their profile based on the setting in Admin > General
+        Gate::define('self.profile', function ($user) {
+            return $user->canEditProfile();
+        });
+
     }
 }

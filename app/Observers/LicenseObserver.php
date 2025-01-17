@@ -4,7 +4,7 @@ namespace App\Observers;
 
 use App\Models\Actionlog;
 use App\Models\License;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
 class LicenseObserver
 {
@@ -16,15 +16,13 @@ class LicenseObserver
      */
     public function updated(License $license)
     {
-
         $logAction = new Actionlog();
         $logAction->item_type = License::class;
         $logAction->item_id = $license->id;
-        $logAction->created_at =  date("Y-m-d H:i:s");
-        $logAction->user_id = Auth::id();
+        $logAction->created_at = date('Y-m-d H:i:s');
+        $logAction->created_by = auth()->id();
         $logAction->logaction('update');
     }
-
 
     /**
      * Listen to the License created event when
@@ -35,14 +33,15 @@ class LicenseObserver
      */
     public function created(License $license)
     {
-
         $logAction = new Actionlog();
         $logAction->item_type = License::class;
         $logAction->item_id = $license->id;
-        $logAction->created_at =  date("Y-m-d H:i:s");
-        $logAction->user_id = Auth::id();
+        $logAction->created_at = date('Y-m-d H:i:s');
+        $logAction->created_by = auth()->id();
+        if($license->imported) {
+            $logAction->setActionSource('importer');
+        }
         $logAction->logaction('create');
-
     }
 
     /**
@@ -56,8 +55,8 @@ class LicenseObserver
         $logAction = new Actionlog();
         $logAction->item_type = License::class;
         $logAction->item_id = $license->id;
-        $logAction->created_at =  date("Y-m-d H:i:s");
-        $logAction->user_id = Auth::id();
+        $logAction->created_at = date('Y-m-d H:i:s');
+        $logAction->created_by = auth()->id();
         $logAction->logaction('delete');
     }
 }

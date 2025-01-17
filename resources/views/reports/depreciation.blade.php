@@ -16,8 +16,6 @@
 
 
           @if (($depreciations) && ($depreciations->count() > 0))
-          <div class="table-responsive">
-
                   <table
                         data-cookie-id-table="depreciationReport"
                         data-pagination="true"
@@ -33,23 +31,19 @@
                         id="depreciationReport"
                         data-url="{{ route('api.depreciation-report.index') }}"
                         data-mobile-responsive="true"
-                        data-toggle="table"
+                        {{-- data-toggle="table" --}}
                         class="table table-striped snipe-table"
                         data-columns="{{ \App\Presenters\DepreciationReportPresenter::dataTableLayout() }}"
                         data-export-options='{
                           "fileName": "depreciation-report-{{ date('Y-m-d') }}",
                           "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
                           }'>
-
           </table>
-        </div> <!-- /.table-responsive-->
               @else
               <div class="col-md-12">
                   <div class="alert alert-warning fade in">
-                      <i class="fa fa-warning faa-pulse animated"></i>
-                      <strong>Warning: </strong>
-                      You do not currently have any depreciations set up.
-                      Please set up at least one depreciation to view the depreciation report.
+                      <i class="fas fa-exclamation-triangle faa-pulse animated"></i>
+                      {!! trans('admin/depreciations/general.no_depreciations_warning') !!}
                   </div>
               </div>
           @endif

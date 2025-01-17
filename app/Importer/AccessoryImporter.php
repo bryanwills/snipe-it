@@ -27,27 +27,31 @@ class AccessoryImporter extends ItemImporter
     {
         $accessory = Accessory::where('name', $this->item['name'])->first();
         if ($accessory) {
-            if (!$this->updating) {
-                $this->log('A matching Accessory ' . $this->item["name"] . ' already exists.  ');
+            if (! $this->updating) {
+                $this->log('A matching Accessory '.$this->item['name'].' already exists.  ');
+
                 return;
             }
 
             $this->log('Updating Accessory');
-            $this->item['model_number'] = $this->findCsvMatch($row, "model_number");
+            $this->item['model_number'] = trim($this->findCsvMatch($row, "model_number"));
             $accessory->update($this->sanitizeItemForUpdating($accessory));
             $accessory->save();
+
             return;
         }
-        $this->log("No Matching Accessory, Creating a new one");
+        $this->log('No Matching Accessory, Creating a new one');
         $accessory = new Accessory();
+        $accessory->created_by = auth()->id();
         $this->item['model_number'] = $this->findCsvMatch($row, "model_number");
+        $this->item['min_amt'] = $this->findCsvMatch($row, "min_amt");
         $accessory->fill($this->sanitizeItemForStoring($accessory));
 
-        //FIXME: this disables model validation.  Need to find a way to avoid double-logs without breaking everything.
-        // $accessory->unsetEventDispatcher();
+        // This sets an attribute on the Loggable trait for the action log
+        $accessory->setImported(true);
         if ($accessory->save()) {
-            $accessory->logCreate('Imported using CSV Importer');
-            $this->log('Accessory ' . $this->item["name"] . ' was created');
+            $this->log('Accessory '.$this->item['name'].' was created');
+
             return;
         }
         $this->logError($accessory, 'Accessory');

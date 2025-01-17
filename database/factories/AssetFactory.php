@@ -1,216 +1,401 @@
 <?php
 
+namespace Database\Factories;
+
 use App\Models\Asset;
 use App\Models\AssetModel;
-use App\Models\Category;
+use App\Models\CustomField;
+use App\Models\Location;
+use App\Models\Statuslabel;
+use App\Models\Supplier;
+use App\Models\User;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
-/*
-|--------------------------------------------------------------------------
-| Model Factories
-|--------------------------------------------------------------------------
-|
-| Factories related exclusively to modelling assets.
-|
-*/
+class AssetFactory extends Factory
+{
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
+    protected $model = Asset::class;
 
-$factory->define(Asset::class, function (Faker\Generator $faker) {
-    return [
-        'name' => null,
-        'rtd_location_id' => rand(1,10),
-        'serial' => $faker->uuid,
-        'status_id' => 1,
-        'user_id' => 1,
-        'asset_tag' => $faker->unixTime('now'),
-        'notes'   => 'Created by DB seeder',
-        'purchase_date' => $faker->dateTimeBetween('-1 years','now', date_default_timezone_get()),
-        'purchase_cost' => $faker->randomFloat(2, '299.99', '2999.99'),
-        'order_number' => $faker->numberBetween(1000000, 50000000),
-        'supplier_id' => 1,
-        'requestable' => $faker->boolean(),
-        'assigned_to' => null,
-        'assigned_type' => null,
-        'next_audit_date' => null,
-        'last_checkout' => null,
-    ];
-});
+    /**
+     * Define the model's default state.
+     *
+     * @return array
+     */
+    public function definition()
+    {
+        return [
+            'name' => null,
+            'model_id' => AssetModel::factory(),
+            'rtd_location_id' => Location::factory(),
+            'serial' => $this->faker->uuid(),
+            'status_id' => function () {
+                return Statuslabel::where('name', 'Ready to Deploy')->first() ?? Statuslabel::factory()->rtd()->create(['name' => 'Ready to Deploy']);
+            },
+            'created_by' => User::factory()->superuser(),
+            'asset_tag' => $this->faker->unixTime('now'),
+            'notes'   => 'Created by DB seeder',
+            'purchase_date' => $this->faker->dateTimeBetween('-1 years', 'now', date_default_timezone_get())->format('Y-m-d'),
+            'purchase_cost' => $this->faker->randomFloat(2, '299.99', '2999.99'),
+            'order_number' => (string) $this->faker->numberBetween(1000000, 50000000),
+            'supplier_id' => Supplier::factory(),
+            'requestable' => $this->faker->boolean(),
+            'assigned_to' => null,
+            'assigned_type' => null,
+            'next_audit_date' => null,
+            'last_checkout' => null,
+            'asset_eol_date' => null
+        ];
+    }
+   
+    
+    public function configure()
+    {
+        return $this->afterMaking(function (Asset $asset) {
+            // calculates the EOL date most of the time, but sometimes sets a random date so we have some explicits
+            // the explicit boolean gets set in the saving() method on the observer 
+            $asset->asset_eol_date = $this->faker->boolean(5) 
+                ? CarbonImmutable::parse($asset->purchase_date)->addMonths(rand(0, 20))->format('Y-m-d')
+                : CarbonImmutable::parse($asset->purchase_date)->addMonths($asset->model->eol)->format('Y-m-d');
+        });
+    }
 
+    public function laptopMbp()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'Macbook Pro 13"')->first() ?? AssetModel::factory()->mbp13Model();
+                },
+            ];
+        });
+    }
 
+    public function laptopMbpPending()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'Macbook Pro 13"')->first() ?? AssetModel::factory()->mbp13Model();
+                },
+                'status_id' => function () {
+                    return Statuslabel::where('name', 'Pending')->first() ?? Statuslabel::factory()->pending()->make(['name' => 'Pending']);
+                },
+            ];
+        });
+    }
 
+    public function laptopMbpArchived()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'Macbook Pro 13"')->first() ?? AssetModel::factory()->mbp13Model();
+                },
+                'status_id' => function () {
+                    return Statuslabel::where('name', 'Archived')->first() ?? Statuslabel::factory()->archived()->make(['name' => 'Archived']);
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'laptop-mbp', function ($faker) {
-    return [
-        'model_id' => 1
-    ];
-});
+    public function laptopAir()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'Macbook Air')->first() ?? AssetModel::factory()->mbpAirModel();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'laptop-mbp-pending', function ($faker) {
-    return [
-        'model_id' => 1,
-         'status_id' => 2,
-    ];
-});
+    public function laptopSurface()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'Surface')->first() ?? AssetModel::factory()->surfaceModel();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'laptop-mbp-archived', function ($faker) {
-    return [
-        'model_id' => 1,
-        'status_id' => 3,
-    ];
-});
+    public function laptopXps()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'XPS 13')->first() ?? AssetModel::factory()->xps13Model();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'laptop-air', function ($faker) {
-    return [
-        'model_id' => 2
-    ];
-});
+    public function laptopSpectre()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'Spectre')->first() ?? AssetModel::factory()->spectreModel();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'laptop-surface', function ($faker) {
-    return [
-        'model_id' => 3
-    ];
-});
+    public function laptopZenbook()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'ZenBook UX310')->first() ?? AssetModel::factory()->zenbookModel();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'laptop-xps', function ($faker) {
-    return [
-        'model_id' => 4
-    ];
-});
+    public function laptopYoga()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'Yoga 910')->first() ?? AssetModel::factory()->yogaModel();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'laptop-spectre', function ($faker) {
-    return [
-        'model_id' => 5
-    ];
-});
+    public function desktopMacpro()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'iMac Pro')->first() ?? AssetModel::factory()->macproModel();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'laptop-zenbook', function ($faker) {
-    return [
-        'model_id' => 6
-    ];
-});
+    public function desktopLenovoI5()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'Lenovo Intel Core i5')->first() ?? AssetModel::factory()->lenovoI5Model();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'laptop-yoga', function ($faker) {
-    return [
-        'model_id' => 7
-    ];
-});
+    public function desktopOptiplex()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'OptiPlex')->first() ?? AssetModel::factory()->optiplexModel();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'desktop-macpro', function ($faker) {
-    return [
-        'model_id' => 8
-    ];
-});
+    public function confPolycom()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'SoundStation 2')->first() ?? AssetModel::factory()->polycomModel();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'desktop-lenovo-i5', function ($faker) {
-    return [
-        'model_id' => 9
-    ];
-});
+    public function confPolycomcx()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'Polycom CX3000 IP Conference Phone')->first() ?? AssetModel::factory()->polycomcxModel();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'desktop-optiplex', function ($faker) {
-    return [
-        'model_id' => 10
-    ];
-});
+    public function tabletIpad()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'iPad Pro')->first() ?? AssetModel::factory()->ipadModel();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'conf-polycom', function ($faker) {
-    return [
-        'model_id' => 11
-    ];
-});
+    public function tabletTab3()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'Tab3')->first() ?? AssetModel::factory()->tab3Model();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'conf-polycomcx', function ($faker) {
-    return [
-        'model_id' => 12
-    ];
-});
+    public function phoneIphone11()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'iPhone 11')->first() ?? AssetModel::factory()->iphone11Model();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'tablet-ipad', function ($faker) {
-    return [
-        'model_id' => 13
-    ];
-});
+    public function phoneIphone12()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'iPhone 12')->first() ?? AssetModel::factory()->iphone12Model();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'tablet-tab3', function ($faker) {
-    return [
-        'model_id' => 14
-    ];
-});
+    public function ultrafine()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'Ultrafine 4k')->first() ?? AssetModel::factory()->ultrafine();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'phone-iphone6s', function ($faker) {
-    return [
-        'model_id' => 15
-    ];
-});
+    public function ultrasharp()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'Ultrasharp U2415')->first() ?? AssetModel::factory()->ultrasharp();
+                },
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'phone-iphone7', function ($faker) {
-    return [
-        'model_id' => 16
-    ];
-});
+    public function assignedToUser(User $user = null)
+    {
+        return $this->state(function () use ($user) {
+            return [
+                'assigned_to' => $user->id ?? User::factory(),
+                'assigned_type' => User::class,
+                'last_checkout' => now()->subDay(),
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'ultrafine', function ($faker) {
-    return [
-        'model_id' => 17
-    ];
-});
+    public function assignedToLocation(Location $location = null)
+    {
+        return $this->state(function () use ($location) {
+            return [
+                'assigned_to' => $location->id ?? Location::factory(),
+                'assigned_type' => Location::class,
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'ultrasharp', function ($faker) {
-    return [
-        'model_id' => 18
-    ];
-});
+    public function assignedToAsset()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => 1,
+                'assigned_to' => Asset::factory(),
+                'assigned_type' => Asset::class,
+            ];
+        });
+    }
 
+    public function requiresAcceptance()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'Macbook Pro 13')->first() ?? AssetModel::factory()->mbp13Model();
+                },
+            ];
+        });
+    }
 
-// These are just for unit tests, not to generate data
+    public function deleted()
+    {
+        return $this->state(function () {
+            return [
+                'model_id' => function () {
+                    return AssetModel::where('name', 'Macbook Pro 13')->first() ?? AssetModel::factory()->mbp13Model();
+                },
+                'deleted_at' => $this->faker->dateTime(),
+            ];
+        });
+    }
 
-$factory->state(Asset::class, 'assigned-to-user', function ($faker) {
-    return [
-        'model_id' => 1,
-        'assigned_to' => factory(App\Models\User::class)->create()->id,
-        'assigned_type' => App\Models\User::class,
-    ];
-});
-$factory->state(Asset::class, 'assigned-to-location', function ($faker) {
-    return [
-        'model_id' => 1,
-        'assigned_to' => factory(App\Models\Location::class)->create()->id,
-        'assigned_type' => App\Models\Location::class,
-    ];
-});
-$factory->state(Asset::class, 'assigned-to-asset', function ($faker) {
-    return [
-        'model_id' => 1,
-        'assigned_to' => factory(App\Models\Asset::class)->create()->id,
-        'assigned_type' => App\Models\Asset::class,
-    ];
-});
+    public function requestable()
+    {
+        return $this->state(['requestable' => true]);
+    }
 
-$factory->state(Asset::class, 'requires-acceptance', function ($faker) {
-    return [
-        'model_id' => 1,
-    ];
-});
+    public function nonrequestable()
+    {
+        return $this->state(['requestable' => false]);
+    }
 
+    public function noPurchaseOrEolDate()
+    {
+        return $this->afterCreating(function (Asset $asset) {
+            $asset->update([
+                'purchase_date' => null,
+                'asset_eol_date' => null
+            ]);
+        });
+    }
 
-$factory->state(Asset::class, 'deleted', function ($faker) {
-    return [
-        'model_id' => 1,
-        'deleted_at' => $faker->dateTime()
-    ];
-});
+  
+    public function hasEncryptedCustomField(CustomField $field = null)
+    {
+        return $this->state(function () use ($field) {
+            return [
+                'model_id' => AssetModel::factory()->hasEncryptedCustomField($field),
+            ];
+        });
+    }
 
+    public function hasMultipleCustomFields(array $fields = null): self
+    {
+        return $this->state(function () use ($fields) {
+            return [
+                'model_id' => AssetModel::factory()->hasMultipleCustomFields($fields),
+            ];
+        });
+    }
 
-$factory->define(App\Models\AssetMaintenance::class, function (Faker\Generator $faker) {
-    return [
-        'asset_id' => function () {
-            return factory(App\Models\Asset::class)->create()->id;
-        },
-        'supplier_id' => function () {
-            return factory(App\Models\Supplier::class)->create()->id;
-        },
-        'asset_maintenance_type' => $faker->randomElement(['maintenance', 'repair', 'upgrade']),
-        'title' => $faker->sentence,
-        'start_date' => $faker->date(),
-        'is_warranty' => $faker->boolean(),
-        'notes' => $faker->paragraph(),
-    ];
-});
+    /**
+     * This allows bypassing model level validation if you want to purposefully
+     * create an asset in an invalid state. Validation is turned back on
+     * after the model is created via the factory.
+     * @return AssetFactory
+     */
+    public function canBeInvalidUponCreation()
+    {
+        return $this->afterMaking(function (Asset $asset) {
+            $asset->setValidating(false);
+        })->afterCreating(function (Asset $asset) {
+            $asset->setValidating(true);
+        });
+    }
+}

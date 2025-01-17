@@ -1,25 +1,32 @@
 <?php
 
-return array(
+return [
 
     'asset_tag'   	=> 'Tag Aset',
     'asset_model'       => 'Model',
-    'book_value'  	=> 'Jumlah',
+    'assigned_to'   => 'Ditetapkan untuk',
+    'book_value'  	=> 'Current Value',
     'change' 		=> 'Masuk/keluar',
     'checkout_date' => 'Tanggal Check out',
     'checkoutto' 	=> 'Memeriksa',
+    'components_cost' => 'Total Components Cost',
+    'current_value' => 'Current Value',
     'diff' 			=> 'Diff',
     'dl_csv' 		=> 'Unduh CSV',
     'eol' 			=> 'EOL',
     'id'      		=> 'ID',
+    'last_checkin_date' => 'Last Checkin Date',
     'location' 		=> 'Lokasi',
     'purchase_cost'	=> 'Biaya',
     'purchase_date'	=> 'Dibeli',
     'serial'   		=> 'Serial',
     'status'   		=> 'Status',
     'title'      	=> 'Aset ',
-    'image'		=> 'Perangkat Gambar',
+    'image'		    => 'Perangkat Gambar',
     'days_without_acceptance' => 'Hari tanpa penerimaan',
-    'monthly_depreciation' => 'Penyusutan Bulanan'
-
-);
+    'monthly_depreciation' => 'Penyusutan Bulanan',
+    'requesting_user' => 'Requesting User',
+    'requested_date' => 'Requested Date',
+    'changed'       => 'Changed',
+    'icon' => 'Icon',
+];

@@ -3,33 +3,13 @@
 namespace App\Http\Controllers\Users;
 
 use App\Http\Controllers\Controller;
-use App\Services\LdapAd;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
-use App\Models\User; // Note that this is awful close to 'Users' the namespace above; be careful
+use Illuminate\Support\Facades\Artisan; // Note that this is awful close to 'Users' the namespace above; be careful
 
 class LDAPImportController extends Controller
 {
-    /**
-     * An Ldap instance.
-     *
-     * @var LdapAd
-     */
-    protected $ldap;
-
-    /**
-     * __construct.
-     *
-     * @param LdapAd $ldap
-     */
-    public function __construct(LdapAd $ldap)
-    {
-        parent::__construct();
-        $this->ldap = $ldap;
-        $this->ldap->init();
-    }
-
-    /**
+     /**
      * Return view for LDAP import.
      *
      * @author Aladin Alaily
@@ -43,6 +23,7 @@ class LDAPImportController extends Controller
      */
     public function create()
     {
+        // I guess this prolly oughtta... I dunno. Do something?
         $this->authorize('update', User::class);
         try {
             //$this->ldap->connect(); I don't think this actually exists in LdapAd.php, and we don't really 'persist' LDAP connections anyways...right?
@@ -68,15 +49,19 @@ class LDAPImportController extends Controller
     {
         $this->authorize('update', User::class);
         // Call Artisan LDAP import command.
-        $location_id = $request->input('location_id');
-        Artisan::call('snipeit:ldap-sync', ['--location_id' => $location_id, '--json_summary' => true]);
+
+        Artisan::call('snipeit:ldap-sync', ['--location_id' => $request->input('location_id'), '--json_summary' => true]);
 
         // Collect and parse JSON summary.
         $ldap_results_json = Artisan::output();
         $ldap_results = json_decode($ldap_results_json, true);
+        if (!$ldap_results) {
+            return redirect()->back()->withInput()->with('error', trans('general.no_results'));
+        }
 
         // Direct user to appropriate status page.
         if ($ldap_results['error']) {
+
             return redirect()->back()->withInput()->with('error', $ldap_results['error_message']);
         }
 

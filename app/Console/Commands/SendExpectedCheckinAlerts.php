@@ -3,12 +3,12 @@
 namespace App\Console\Commands;
 
 use App\Models\Asset;
+use App\Models\Recipients\AlertRecipient;
 use App\Models\Setting;
 use App\Notifications\ExpectedCheckinAdminNotification;
 use App\Notifications\ExpectedCheckinNotification;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
-use App\Models\Recipients\AlertRecipient;
 
 class SendExpectedCheckinAlerts extends Command
 {
@@ -41,25 +41,32 @@ class SendExpectedCheckinAlerts extends Command
      */
     public function handle()
     {
-        $settings   = Setting::getSettings();
-        $whenNotify = Carbon::now()->addDays(7);
-        $assets     = Asset::with('assignedTo')->whereNotNull('assigned_to')->whereNotNull('expected_checkin')->where('expected_checkin', '<=', $whenNotify)->get();
+        $settings = Setting::getSettings();
+        $interval = $settings->audit_warning_days ?? 0;
+        $today = Carbon::now();
+        $interval_date = $today->copy()->addDays($interval);
+        
+        $assets = Asset::whereNull('deleted_at')->DueOrOverdueForCheckin($settings)->orderBy('assets.expected_checkin', 'desc')->get();
 
-        $this->info($whenNotify . ' is deadline');
-        $this->info($assets->count() . ' assets');
+        $this->info($assets->count().' assets must be checked in on or before '.$interval_date.' is deadline');
+
 
         foreach ($assets as $asset) {
-            if ($asset->assigned && $asset->checkedOutToUser()) {
-                $asset->assigned->notify((new ExpectedCheckinNotification($asset)));
+            if ($asset->assignedTo && (isset($asset->assignedTo->email)) && ($asset->assignedTo->email!='') && $asset->checkedOutToUser()) {
+                $this->info('Sending User ExpectedCheckinNotification to: '.$asset->assignedTo->email);
+                $asset->assignedTo->notify((new ExpectedCheckinNotification($asset)));
             }
         }
 
         if (($assets) && ($assets->count() > 0) && ($settings->alert_email != '')) {
             // Send a rollup to the admin, if settings dictate
-            $recipients = collect(explode(',', $settings->alert_email))->map(function ($item, $key) {
+            $recipients = collect(explode(',', $settings->alert_email))->map(function ($item) {
                 return new AlertRecipient($item);
             });
+
+            $this->info('Sending Admin ExpectedCheckinNotification to: '.$settings->alert_email);
             \Notification::send($recipients, new ExpectedCheckinAdminNotification($assets));
+
         }
     }
 }

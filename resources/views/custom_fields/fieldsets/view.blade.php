@@ -27,15 +27,15 @@
             <tr>
               {{-- Hide the sorting handle if we can't update the fieldset --}}
               @can('update', $custom_fieldset)
-              <th class="col-md-1"><span class="sr-only">Reorder</span></th>
+              <th class="col-md-1"><span class="sr-only">{{ trans('admin/custom_fields/general.reorder') }}</span></th>
               @endcan
-              <th class="col-md-1">{{ trans('admin/custom_fields/general.order') }}</th>
+              <th class="col-md-1" style="display: none;">{{ trans('admin/custom_fields/general.order') }}</th>
               <th class="col-md-3">{{ trans('admin/custom_fields/general.field_name') }}</th>
               <th class="col-md-2">{{ trans('admin/custom_fields/general.field_format') }}</th>
               <th class="col-md-2">{{ trans('admin/custom_fields/general.field_element') }}</th>
               <th class="col-md-1">{{ trans('admin/custom_fields/general.encrypted') }}</th>
               <th class="col-md-1">{{ trans('admin/custom_fields/general.required') }}</th>
-              <th class="col-md-1"><span class="sr-only">Remove</span></th>
+              <th class="col-md-1"><span class="sr-only">{{ trans('button.remove') }}</span></th>
             </tr>
           </thead>
           <tbody>
@@ -46,18 +46,18 @@
               <td>
                 <!-- drag handle -->
                 <span class="handle">
-                <i class="fa fa-ellipsis-v"></i>
-                <i class="fa fa-ellipsis-v"></i>
+                <i class="fas fa-ellipsis-v"></i>
+                <i class="fas fa-ellipsis-v"></i>
                 </span>
               </td>
               @endcan
-              <td class="index">{{$field->pivot->order}}</td>
+              <td class="index" style="display: none;">{{$field->pivot->order + 1}}</td> {{--this +1 needs to exist to keep the first row from reverting to 0 if you edit/delete fields in/from a fielset--}}
               <td>{{$field->name}}</td>
               <td>{{$field->format}}</td>
               <td>{{$field->element}}</td>
               <td>{{ $field->field_encrypted=='1' ?  trans('general.yes') : trans('general.no') }}</td>
                 <td>
-                  
+
                     @if ($field->pivot->required)
                     <form method="post" action="{{ route('fields.optional', [$custom_fieldset->id, $field->id]) }}">
                       @csrf 
@@ -71,13 +71,13 @@
                       <button type="submit" class="btn btn-link"><i class="fa fa-times text-danger" aria-hidden="true"></i></button>
                       </form>
                     @endif
-                    
+
                 </td>
               <td>
                 @can('update', $custom_fieldset)
                 <form method="post" action="{{ route('fields.disassociate', [$field, $custom_fieldset->id]) }}">
                   @csrf 
-                  <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                  <button type="submit" class="btn btn-sm btn-danger" data-tooltip="true" title="{{ trans('general.remove_customfield_association') }}"><i class="fa fa-minus icon-white" aria-hidden="true"></i></button>
                 </form>
                 @endcan
               </td>
@@ -90,35 +90,34 @@
               <td colspan="8">
                 {{ Form::open(['route' =>
                 ["fieldsets.associate",$custom_fieldset->id],
-                'class'=>'form-horizontal',
+                'class'=>'form-inline',
                 'id' => 'ordering']) }}
 
 
-                <div class="form-group col-md-4">
+                <div class="form-group">
                   <label for="field_id" class="sr-only">
-                   Add Field to Fieldset
+                    {{ trans('admin/custom-field/general.add_field_to_fieldset')}}
                   </label>
-                  {{ Form::select("field_id",$custom_fields_list,"",['aria-label'=>'field_id', 'class'=>'select2']) }}
+                  {{ Form::select("field_id",$custom_fields_list,"",['aria-label'=>'field_id', 'class'=>'select2', 'style' => 'min-width:400px;']) }}
 
                 </div>
 
-                <div class="form-group col-md-2" style="vertical-align: middle;">
-
-                  <label for="required">
-                    {{ Form::checkbox('required', 'on', old('required'), array('class' => 'minimal', 'aria-label'=>'required')) }}
-                    {{ trans('admin/custom_fields/general.required') }}
-                  </label>
-
-                </div>
-                <div class="form-group col-md-2">
-
-                  {{ Form::text('order', $maxid, array('class' => 'form-control col-sm-1 col-md-1', 'style'=> 'width: 80px; padding-;right: 10px;', 'aria-label'=>'order', 'maxlength'=>'3', 'size'=>'3')) }}
-                  <label for="order">   Order </label>
+                <div class="form-group" style="display: none;">
+                  {{ Form::text('order', $maxid, array('aria-label'=>'order', 'maxlength'=>'3', 'size'=>'3')) }}
+                  <label for="order">{{ trans('admin/custom_fields/general.order') }}</label>
                 </div>
 
-                <div class="form-group col-md-3">
+                <div class="checkbox-inline">
+                    <label>
+                    {{ Form::checkbox('required', 'on', old('required')) }}
+                      <span style="padding-left: 10px;">{{ trans('admin/custom_fields/general.required') }}</span>
+                    </label>
+                </div>
+
+                <span style="padding-left: 10px;">
                   <button type="submit" class="btn btn-primary"> {{ trans('general.save') }}</button>
-                </div>
+                </span>
+
                 {{ Form::close() }}
 
               </td>

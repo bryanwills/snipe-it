@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 
 class AddShowInNavToStatusLabels extends Migration
 {
@@ -13,7 +13,7 @@ class AddShowInNavToStatusLabels extends Migration
     public function up()
     {
         Schema::table('status_labels', function (Blueprint $table) {
-            $table->boolean('show_in_nav')->default(0);
+            $table->boolean('show_in_nav')->nullable()->default(0);
         });
     }
 
@@ -25,7 +25,7 @@ class AddShowInNavToStatusLabels extends Migration
     public function down()
     {
         Schema::table('status_labels', function (Blueprint $table) {
-            $table->dropColumn('show_in_nav', 'field_encrypted');
+            $table->dropColumn('show_in_nav');
         });
     }
 }

@@ -5,6 +5,7 @@ return array(
     'field' => array(
         'invalid'   => 'Níl an réimse sin ann.',
         'already_added'   => 'Réimse curtha cheana féin',
+        'none_selected'   => 'No field selected',
 
         'create' => array(
             'error'   => 'Níor cruthaíodh réimse, déan iarracht arís.',
@@ -46,6 +47,12 @@ return array(
             'success' => 'Scriosadh an frithbhealach go rathúil.',
             'in_use'   => 'Tá Fieldset fós in úsáid.',
         )
+
+    ),
+
+    'fieldset_default_value' => array(
+
+        'error' => 'Error validating default fieldset values.',
 
     ),
 

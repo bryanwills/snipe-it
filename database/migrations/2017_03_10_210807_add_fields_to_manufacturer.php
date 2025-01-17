@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 class AddFieldsToManufacturer extends Migration
 {
@@ -28,7 +28,7 @@ class AddFieldsToManufacturer extends Migration
      */
     public function down()
     {
-        Schema::table('settings', function ($table) {
+        Schema::table('manufacturers', function ($table) {
             $table->dropColumn('url');
             $table->dropColumn('support_url');
             $table->dropColumn('support_phone');

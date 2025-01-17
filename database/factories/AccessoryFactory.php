@@ -1,74 +1,173 @@
 <?php
 
-/*
-|--------------------------------------------------------------------------
-| Asset Model Factories
-|--------------------------------------------------------------------------
-|
-| Factories related exclusively to creating models ..
-|
-*/
+namespace Database\Factories;
 
-$factory->define(App\Models\Accessory::class, function (Faker\Generator $faker) {
-    return [
-        'user_id' => 1,
-        'model_number' => $faker->numberBetween(1000000, 50000000),
-        'location_id' => rand(1,5),
-    ];
-});
+use App\Models\Accessory;
+use App\Models\Category;
+use App\Models\Location;
+use App\Models\Manufacturer;
+use App\Models\Supplier;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
-$factory->state(App\Models\Accessory::class, 'apple-bt-keyboard', function ($faker) {
+class AccessoryFactory extends Factory
+{
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
+    protected $model = Accessory::class;
 
-    return [
-        'name' => 'Bluetooth Keyboard',
-        'image' => 'bluetooth.jpg',
-        'category_id' => 8,
-        'manufacturer_id' => 1,
-        'qty' => 10,
-        'min_amt' => 2,
-        'supplier_id' => rand(1,5)
-    ];
+    /**
+     * Define the model's default state.
+     *
+     * @return array
+     */
+    public function definition()
+    {
+        return [
+            'name' => sprintf(
+                '%s %s',
+                $this->faker->randomElement(['Bluetooth', 'Wired']),
+                $this->faker->randomElement(['Keyboard', 'Wired'])
+            ),
+            'created_by' => User::factory()->superuser(),
+            'category_id' => Category::factory()->forAccessories(),
+            'model_number' => $this->faker->numberBetween(1000000, 50000000),
+            'location_id' => Location::factory(),
+            'qty' => 1,
+        ];
+    }
 
-});
+    public function appleBtKeyboard()
+    {
+        return $this->state(function () {
+            return [
+                'name' => 'Bluetooth Keyboard',
+                'image' => 'bluetooth.jpg',
+                'category_id' => function () {
+                    return Category::where('name', 'Keyboards')->first() ?? Category::factory()->accessoryKeyboardCategory();
+                },
+                'manufacturer_id' => function () {
+                    return Manufacturer::where('name', 'Apple')->first() ?? Manufacturer::factory()->apple();
+                },
+                'qty' => 10,
+                'min_amt' => 2,
+                'supplier_id' => Supplier::factory(),
+            ];
+        });
+    }
 
-$factory->state(App\Models\Accessory::class, 'apple-usb-keyboard', function ($faker) {
+    public function appleUsbKeyboard()
+    {
+        return $this->state(function () {
+            return [
+                'name' => 'USB Keyboard',
+                'image' => 'usb-keyboard.jpg',
+                'category_id' => function () {
+                    return Category::where('name', 'Keyboards')->first() ?? Category::factory()->accessoryKeyboardCategory();
+                },
+                'manufacturer_id' => function () {
+                    return Manufacturer::where('name', 'Apple')->first() ?? Manufacturer::factory()->apple();
+                },
+                'qty' => 15,
+                'min_amt' => 2,
+                'supplier_id' => Supplier::factory(),
+            ];
+        });
+    }
 
-    return [
-        'name' => 'USB Keyboard',
-        'image' => 'usb-keyboard.jpg',
-        'category_id' => 8,
-        'manufacturer_id' => 1,
-        'qty' => 15,
-        'min_amt' => 2,
-        'supplier_id' => rand(1,5)
-    ];
+    public function appleMouse()
+    {
+        return $this->state(function () {
+            return [
+                'name' => 'Magic Mouse',
+                'image' => 'magic-mouse.jpg',
+                'category_id' => function () {
+                    return Category::where('name', 'Mouse')->first() ?? Category::factory()->accessoryMouseCategory();
+                },
+                'manufacturer_id' => function () {
+                    return Manufacturer::where('name', 'Apple')->first() ?? Manufacturer::factory()->apple();
+                },
+                'qty' => 13,
+                'min_amt' => 2,
+                'supplier_id' => Supplier::factory(),
+            ];
+        });
+    }
 
-});
+    public function microsoftMouse()
+    {
+        return $this->state(function () {
+            return [
+                'name' => 'Sculpt Comfort Mouse',
+                'image' => 'comfort-mouse.jpg',
+                'category_id' => function () {
+                    return Category::where('name', 'Mouse')->first() ?? Category::factory()->accessoryMouseCategory();
+                },
+                'manufacturer_id' => function () {
+                    return Manufacturer::where('name', 'Microsoft')->first() ?? Manufacturer::factory()->microsoft();
+                },
+                'qty' => 13,
+                'min_amt' => 2,
+            ];
+        });
+    }
 
-$factory->state(App\Models\Accessory::class, 'apple-mouse', function ($faker) {
+    public function withoutItemsRemaining()
+    {
+        return $this->state(function () {
+            return [
+                'qty' => 1,
+            ];
+        })->afterCreating(function ($accessory) {
+            $user = User::factory()->create();
 
-    return [
-        'name' => 'Magic Mouse',
-        'image' => 'magic-mouse.jpg',
-        'category_id' => 9,
-        'manufacturer_id' => 1,
-        'qty' => 13,
-        'min_amt' => 2,
-        'supplier_id' => rand(1,5)
-    ];
+            $accessory->checkouts()->create([
+                'accessory_id' => $accessory->id,
+                'created_at' => Carbon::now(),
+                'created_by' => $user->id,
+                'assigned_to' => $user->id,
+                'assigned_type' => User::class,
+                'note' => '',
+            ]);
+        });
+    }
 
-});
+    public function requiringAcceptance()
+    {
+        return $this->afterCreating(function ($accessory) {
+            $accessory->category->update(['require_acceptance' => 1]);
+        });
+    }
 
-$factory->state(App\Models\Accessory::class, 'microsoft-mouse', function ($faker) {
+    public function checkedOutToUser(User $user = null)
+    {
+        return $this->afterCreating(function (Accessory $accessory) use ($user) {
+            $accessory->checkouts()->create([
+                'accessory_id' => $accessory->id,
+                'created_at' => Carbon::now(),
+                'created_by' => 1,
+                'assigned_to' => $user->id ?? User::factory()->create()->id,
+                'assigned_type' => User::class,
+            ]);
+        });
+    }
 
-    return [
-        'name' => 'Sculpt Comfort Mouse',
-        'image' => 'comfort-mouse.jpg',
-        'category_id' => 9,
-        'manufacturer_id' => 2,
-        'qty' => 13,
-        'min_amt' => 2
-    ];
-
-});
-
+    public function checkedOutToUsers(array $users)
+    {
+        return $this->afterCreating(function (Accessory $accessory) use ($users) {
+            foreach ($users as $user) {
+                $accessory->checkouts()->create([
+                    'accessory_id' => $accessory->id,
+                    'created_at' => Carbon::now(),
+                    'created_by' => 1,
+                    'assigned_to' => $user->id,
+                    'assigned_type' => User::class,
+                ]);
+            }
+        });
+    }
+}

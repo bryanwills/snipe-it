@@ -1,4 +1,3 @@
-
 window._ = require('lodash');
 
 /**
@@ -6,7 +5,7 @@ window._ = require('lodash');
  * for JavaScript based Bootstrap features such as modals and tabs. This
  * code may be modified to fit the specific needs of your application.
  */
-window.$ = window.jQuery = require('jquery');
+//window.$ = window.jQuery = require('jquery');
 
 /**
  * jQuery UI is loaded here and then the tooltip is assigned another funtion name
@@ -20,28 +19,11 @@ jQuery.fn.uitooltip = jQuery.fn.tooltip;
  */
 require('bootstrap-less');
 
-/**
- * Vue is a modern JavaScript library for building interactive web interfaces
- * using reactive data binding and reusable components. Vue's API is clean
- * and simple, leaving you to focus on building your next great project.
- */
+// require('admin-lte');
 
-window.Vue = require('vue');
-window.eventHub = new Vue();
-require('vue-resource');
+// require('chart.js');
 
-/**
- * We'll register a HTTP interceptor to attach the "CSRF" header to each of
- * the outgoing requests issued by this application. The CSRF middleware
- * included with Laravel will automatically verify the header's value.
- */
-
-Vue.http.interceptors.push(function (request, next) {
-    request.headers.set('X-CSRF-TOKEN', Laravel.csrfToken);
-
-    next();
-});
-
+// require('jquery-form-validator'); //says something about dependency
 /**
  * Echo exposes an expressive API for subscribing to channels and listening
  * for events that are broadcast by Laravel. Echo and event broadcasting

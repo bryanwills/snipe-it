@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
 
     /*
     |--------------------------------------------------------------------------
@@ -13,9 +13,9 @@ return array(
     |
     */
 
-    "more_info_title" => "Mais Informações",
+    'more_info_title' => 'Mais Informações',
 
-    "audit_help" => "Marcar esta caixa irá editar o registro de ativos para refletir esse novo local. Deixando-o desmarcado irá simplesmente anotar o local no log de auditoria.<br><br>Note que este ativo é verificado, não irá alterar a localização da pessoa, ativo ou local para onde for reservado.",
+    'audit_help' => 'Marcar esta caixa irá editar o registro de ativos para refletir esse novo local. Deixando-o desmarcado irá simplesmente anotar o local no log de auditoria.<br><br>Note que se este ativo for verificado, não irá alterar a localização da pessoa, ativo ou local para onde for reservado.',
 
     'assets' => 'Ativos são itens que são controlados e rastreáveis pelo número de série ou por uma etiqueta de ativo (patrimônio). Eles tendem a ser de valor elevado onde a identificação de itens específicos é relevante.',
 
@@ -30,7 +30,6 @@ return array(
     'consumables'   => 'Consumíveis é todo e qualquer item comprado que será usado ao longo do tempo, por exemplo, papel ou tinta de impressora.',
 
     'depreciations' => 'Você pode configurar depreciações para depreciar ativos baseados na depreciação linear.',
-
-
-
-);
+    
+    'empty_file'    => 'O importador detectou que este arquivo está vazio.'
+];

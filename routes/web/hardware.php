@@ -1,4 +1,13 @@
 <?php
+
+use App\Http\Controllers\AssetMaintenancesController;
+use App\Http\Controllers\Assets\AssetsController;
+use App\Http\Controllers\Assets\BulkAssetsController;
+use App\Http\Controllers\Assets\AssetCheckoutController;
+use App\Http\Controllers\Assets\AssetCheckinController;
+use App\Http\Controllers\Assets\AssetFilesController;
+use Illuminate\Support\Facades\Route;
+
 /*
 |--------------------------------------------------------------------------
 | Asset Routes
@@ -8,188 +17,163 @@
 |
 */
 Route::group(
-    ['prefix' => 'hardware',
-    'middleware' => ['auth']],
+    [
+        'prefix' => 'hardware',
+        'middleware' => ['auth'], 
+    ],
+    
     function () {
+        
+        Route::get('bulkaudit',
+            [AssetsController::class, 'quickScan']
+        )->name('assets.bulkaudit');
 
-        Route::get( 'bulkaudit',  [
-            'as' => 'assets.bulkaudit',
-            'uses' => 'Assets\AssetsController@quickScan'
+        Route::get('quickscancheckin',
+            [AssetsController::class, 'quickScanCheckin']
+        )->name('hardware/quickscancheckin');
+
+        // Asset Maintenances
+        Route::resource('maintenances', 
+            AssetMaintenancesController::class, [
+            'parameters' => ['maintenance' => 'maintenance_id', 'asset' => 'asset_id'],
         ]);
 
-        # Asset Maintenances
-        Route::resource('maintenances', 'AssetMaintenancesController', [
-            'parameters' => ['maintenance' => 'maintenance_id', 'asset' => 'asset_id']
-        ]);
+        Route::get('requested', [
+            AssetsController::class, 'getRequestedIndex']
+        )->name('assets.requested');
 
-        Route::get('requested', [ 'as' => 'assets.requested', 'uses' => 'Assets\AssetsController@getRequestedIndex']);
+        Route::get('scan',
+            [AssetsController::class, 'scan']
+        )->name('asset.scan');
 
-        Route::get('scan', [
-            'as' => 'asset.scan',
-            'uses' => 'Assets\AssetsController@scan'
-        ]);
+        Route::get('audit/due',
+            [AssetsController::class, 'dueForAudit']
+        )->name('assets.audit.due');
 
-        Route::get('audit/due', [
-            'as' => 'assets.audit.due',
-            'uses' => 'Assets\AssetsController@dueForAudit'
-        ]);
+        Route::get('checkins/due',
+            [AssetsController::class, 'dueForCheckin']
+        )->name('assets.checkins.due');
+        
+        Route::get('audit/{id}',
+            [AssetsController::class, 'audit']
+        )->name('asset.audit.create');
 
-        Route::get('audit/overdue', [
-            'as' => 'assets.audit.overdue',
-            'uses' => 'Assets\AssetsController@overdueForAudit'
-        ]);
+        Route::post('audit/{id}',
+            [AssetsController::class, 'auditStore']
+        )->name('asset.audit.store');
 
-        Route::get('audit/due', [
-            'as' => 'assets.audit.due',
-            'uses' => 'Assets\AssetsController@dueForAudit'
-        ]);
+        Route::get('history',
+            [AssetsController::class, 'getImportHistory']
+        )->name('asset.import-history');
 
-        Route::get('audit/overdue', [
-            'as' => 'assets.audit.overdue',
-            'uses' => 'Assets\AssetsController@overdueForAudit'
-        ]);
-
-        Route::get('audit/due', [
-            'as' => 'assets.audit.due',
-            'uses' => 'Assets\AssetsController@dueForAudit'
-        ]);
-
-        Route::get('audit/overdue', [
-            'as' => 'assets.audit.overdue',
-            'uses' => 'Assets\AssetsController@overdueForAudit'
-        ]);
-
-        Route::get('audit/{id}', [
-            'as' => 'asset.audit.create',
-            'uses' => 'Assets\AssetsController@audit'
-        ]);
-
-        Route::post('audit/{id}', [
-            'as' => 'asset.audit.store',
-            'uses' => 'Assets\AssetsController@auditStore'
-        ]);
-
-
-        Route::get('history', [
-            'as' => 'asset.import-history',
-            'uses' => 'Assets\AssetsController@getImportHistory'
-        ]);
-
-        Route::post('history', [
-            'as' => 'asset.process-import-history',
-            'uses' => 'Assets\AssetsController@postImportHistory'
-        ]);
+        Route::post('history',
+            [AssetsController::class, 'postImportHistory']
+        )->name('asset.process-import-history');
 
         Route::get('bytag/{any?}',
-            [
-                'as'   => 'findbytag/hardware',
-                'uses' => 'Assets\AssetsController@getAssetByTag'
-            ]
-        )->where('any', '.*');
+            [AssetsController::class, 'getAssetByTag']
+        )->where('any', '.*')->name('findbytag/hardware');
 
         Route::get('byserial/{any?}',
-            [
-                'as'   => 'findbyserial/hardware',
-                'uses' => 'Assets\AssetsController@getAssetBySerial'
-            ]
-        )->where('any', '.*');
+            [AssetsController::class, 'getAssetBySerial']
+        )->where('any', '.*')->name('findbyserial/hardware');
 
+        Route::get('{asset}/clone',
+            [AssetsController::class, 'getClone']
+        )->name('clone/hardware')->withTrashed();
 
+        Route::get('{assetId}/label',
+            [AssetsController::class, 'getLabel']
+        )->name('label/hardware');
+        
 
-        Route::get('{assetId}/clone', [
-            'as' => 'clone/hardware',
-            'uses' => 'Assets\AssetsController@getClone'
-        ]);
+        Route::get('{assetId}/checkout',
+            [AssetCheckoutController::class, 'create']
+        )->name('hardware.checkout.create');
 
-        Route::get('{assetId}/label', [
-            'as' => 'label/hardware',
-            'uses' => 'Assets\AssetsController@getLabel'
-        ]);
+        Route::post('{assetId}/checkout',
+            [AssetCheckoutController::class, 'store']
+        )->name('hardware.checkout.store');
 
-        Route::post('{assetId}/clone', 'Assets\AssetsController@postCreate');
+        Route::get('{assetId}/checkin/{backto?}',
+            [AssetCheckinController::class, 'create']
+        )->name('hardware.checkin.create');
 
-        Route::get('{assetId}/checkout', [
-            'as' => 'checkout/hardware',
-            'uses' => 'Assets\AssetCheckoutController@create'
-        ]);
-        Route::post('{assetId}/checkout', [
-            'as' => 'checkout/hardware',
-            'uses' => 'Assets\AssetCheckoutController@store'
-        ]);
-        Route::get('{assetId}/checkin/{backto?}', [
-            'as' => 'checkin/hardware',
-            'uses' => 'Assets\AssetCheckinController@create'
-        ]);
+        Route::post('{assetId}/checkin/{backto?}',
+            [AssetCheckinController::class, 'store']
+        )->name('hardware.checkin.store');
 
-        Route::post('{assetId}/checkin/{backto?}', [
-            'as' => 'checkin/hardware',
-            'uses' => 'Assets\AssetCheckinController@store'
-        ]);
-        Route::get('{assetId}/view', [
-            'as' => 'hardware.view',
-            'uses' => 'Assets\AssetsController@show'
-        ]);
-        Route::get('{assetId}/qr_code', [ 'as' => 'qr_code/hardware', 'uses' => 'Assets\AssetsController@getQrCode' ]);
-        Route::get('{assetId}/barcode', [ 'as' => 'barcode/hardware', 'uses' => 'Assets\AssetsController@getBarCode' ]);
-        Route::post('{assetId}/restore', [
-            'as' => 'restore/hardware',
-            'uses' => 'Assets\AssetsController@getRestore'
-        ]);
-        Route::post('{assetId}/upload', [
-            'as' => 'upload/asset',
-            'uses' => 'Assets\AssetFilesController@store'
-        ]);
+        // Redirect old legacy /asset_id/view urls to the resource route version
+        Route::get('{assetId}/view', function ($assetId) {
+            return redirect()->route('hardware.show', ['hardware' => $assetId]);
+        });
 
-        Route::get('{assetId}/showfile/{fileId}/{download?}', [
-            'as' => 'show/assetfile',
-            'uses' => 'Assets\AssetFilesController@show'
-        ]);
+        Route::get('{assetId}/qr_code', 
+            [AssetsController::class, 'getQrCode']
+        )->name('qr_code/hardware');
 
-        Route::delete('{assetId}/showfile/{fileId}/delete', [
-            'as' => 'delete/assetfile',
-            'uses' => 'Assets\AssetFilesController@destroy'
-        ]);
+        Route::get('{assetId}/barcode', 
+            [AssetsController::class, 'getBarCode']
+        )->name('barcode/hardware');
 
+        Route::post('{assetId}/restore',
+            [AssetsController::class, 'getRestore']
+        )->name('restore/hardware');
+
+        Route::post('{assetId}/upload',
+            [AssetFilesController::class, 'store']
+        )->name('upload/asset');
+
+        Route::get('{assetId}/showfile/{fileId}/{download?}',
+            [AssetFilesController::class, 'show']
+        )->name('show/assetfile');
+
+        Route::delete('{assetId}/showfile/{fileId}/delete',
+            [AssetFilesController::class, 'destroy']
+        )->name('delete/assetfile');
 
         Route::post(
             'bulkedit',
-            [
-                'as'   => 'hardware/bulkedit',
-                'uses' => 'Assets\BulkAssetsController@edit'
-            ]
-        );
+            [BulkAssetsController::class, 'edit']
+        )->name('hardware/bulkedit');
+
         Route::post(
             'bulkdelete',
-            [
-                'as'   => 'hardware/bulkdelete',
-                'uses' => 'Assets\BulkAssetsController@destroy'
-            ]
-        );
+            [BulkAssetsController::class, 'destroy']
+        )->name('hardware/bulkdelete');
+
+        Route::post(
+            'bulkrestore',
+            [BulkAssetsController::class, 'restore']
+        )->name('hardware/bulkrestore');
+
         Route::post(
             'bulksave',
-            [
-                'as'   => 'hardware/bulksave',
-                'uses' => 'Assets\BulkAssetsController@update'
-            ]
-        );
+            [BulkAssetsController::class, 'update']
+        )->name('hardware/bulksave');
 
-        # Bulk checkout / checkin
-         Route::get( 'bulkcheckout',  [
-                 'as' => 'hardware/bulkcheckout',
-                 'uses' => 'Assets\BulkAssetsController@showCheckout'
-         ]);
-        Route::post( 'bulkcheckout',  [
-            'as' => 'hardware/bulkcheckout',
-            'uses' => 'Assets\BulkAssetsController@storeCheckout'
-        ]);
+        // Bulk checkout / checkin
+        Route::get('bulkcheckout',
+            [BulkAssetsController::class, 'showCheckout']
+        )->name('hardware.bulkcheckout.show');
 
+        Route::post('bulkcheckout',
+            [BulkAssetsController::class, 'storeCheckout']
+        )->name('hardware.bulkcheckout.store');
 
+    });
 
-
-});
-
-
-Route::resource('hardware', 'Assets\AssetsController', [
-    'middleware' => ['auth'],
-    'parameters' => ['asset' => 'asset_id']
+Route::resource('hardware', 
+        AssetsController::class, 
+        [
+            'middleware' => ['auth'],
+            'parameters' => ['asset' => 'asset_id',
+                'names' => [
+                    'show' => 'view',
+                ],
+        ],
 ]);
+
+Route::get('ht/{any?}',
+    [AssetsController::class, 'getAssetByTag']
+)->where('any', '.*')->name('ht/assetTag');

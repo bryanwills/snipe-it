@@ -1,68 +1,68 @@
 <?php
+
 namespace App\Models;
 
 use App\Http\Traits\UniqueUndeletedTrait;
 use App\Models\Traits\Searchable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Watson\Validating\ValidatingTrait;
 
 class Supplier extends SnipeModel
 {
+    use HasFactory;
     use SoftDeletes;
-    protected $dates = ['deleted_at'];
+
     protected $table = 'suppliers';
 
-    protected $rules = array(
-        'name'              => 'required|min:1|max:255|unique_undeleted',
-        'address'           => 'max:50|nullable',
-        'address2'          => 'max:50|nullable',
-        'city'              => 'max:255|nullable',
-        'state'             => 'max:32|nullable',
-        'country'           => 'max:3|nullable',
+    protected $rules = [
+        'name'               => 'required|min:1|max:255|unique_undeleted',
         'fax'               => 'min:7|max:35|nullable',
         'phone'             => 'min:7|max:35|nullable',
         'contact'           => 'max:100|nullable',
         'notes'             => 'max:191|nullable', // Default string length is 191 characters..
         'email'             => 'email|max:150|nullable',
+        'address'            => 'max:250|nullable',
+        'address2'           => 'max:250|nullable',
+        'city'               => 'max:191|nullable',
+        'state'              => 'min:2|max:191|nullable',
+        'country'            => 'min:2|max:191|nullable',
         'zip'               => 'max:10|nullable',
         'url'               => 'sometimes|nullable|string|max:250',
-    );
+    ];
 
     /**
-    * Whether the model should inject it's identifier to the unique
-    * validation rules before attempting validation. If this property
-    * is not set in the model it will default to true.
-    *
-    * @var boolean
-    */
+     * Whether the model should inject it's identifier to the unique
+     * validation rules before attempting validation. If this property
+     * is not set in the model it will default to true.
+     *
+     * @var bool
+     */
     protected $injectUniqueIdentifier = true;
     use ValidatingTrait;
     use UniqueUndeletedTrait;
-
     use Searchable;
-    
+
     /**
      * The attributes that should be included when searching the model.
-     * 
+     *
      * @var array
      */
     protected $searchableAttributes = ['name'];
 
     /**
      * The relations and their attributes that should be included when searching the model.
-     * 
+     *
      * @var array
      */
     protected $searchableRelations = [];
-
 
     /**
      * The attributes that are mass assignable.
      *
      * @var array
      */
-    protected $fillable = ['name','address','address2','city','state','country','zip','phone','fax','email','contact','url','notes'];
-
+    protected $fillable = ['name', 'address', 'address2', 'city', 'state', 'country', 'zip', 'phone', 'fax', 'email', 'contact', 'url', 'notes'];
 
     /**
      * Eager load counts
@@ -78,24 +78,7 @@ class Supplier extends SnipeModel
     {
         return $this->hasMany(Asset::class)->whereNull('deleted_at')->selectRaw('supplier_id, count(*) as count')->groupBy('supplier_id');
     }
-
-    /**
-     * Sets the license seat count attribute
-     *
-     * @todo I don't see the licenseSeatsRelation here?
-     *
-     * @author A. Gianotto <snipe@snipe.net>
-     * @since [v1.0]
-     * @return \Illuminate\Database\Eloquent\Relations\Relation
-     */
-    public function getLicenseSeatsCountAttribute()
-    {
-        if ($this->licenseSeatsRelation->first()) {
-            return $this->licenseSeatsRelation->first()->count;
-        }
-
-        return 0;
-    }
+    
 
     /**
      * Establishes the supplier -> assets relationship
@@ -106,7 +89,7 @@ class Supplier extends SnipeModel
      */
     public function assets()
     {
-        return $this->hasMany('\App\Models\Asset', 'supplier_id');
+        return $this->hasMany(\App\Models\Asset::class, 'supplier_id');
     }
 
     /**
@@ -118,7 +101,31 @@ class Supplier extends SnipeModel
      */
     public function accessories()
     {
-        return $this->hasMany('\App\Models\Accessory', 'supplier_id');
+        return $this->hasMany(\App\Models\Accessory::class, 'supplier_id');
+    }
+
+    /**
+     * Establishes the supplier -> component relationship
+     *
+     * @author A. Gianotto <snipe@snipe.net>
+     * @since [v6.1.1]
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public function components()
+    {
+        return $this->hasMany(\App\Models\Component::class, 'supplier_id');
+    }
+
+    /**
+     * Establishes the supplier -> component relationship
+     *
+     * @author A. Gianotto <snipe@snipe.net>
+     * @since [v6.1.1]
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public function consumables()
+    {
+        return $this->hasMany(\App\Models\Consumable::class, 'supplier_id');
     }
 
     /**
@@ -130,7 +137,7 @@ class Supplier extends SnipeModel
      */
     public function asset_maintenances()
     {
-        return $this->hasMany('\App\Models\AssetMaintenance', 'supplier_id');
+        return $this->hasMany(\App\Models\AssetMaintenance::class, 'supplier_id');
     }
 
     /**
@@ -158,7 +165,7 @@ class Supplier extends SnipeModel
      */
     public function licenses()
     {
-        return $this->hasMany('\App\Models\License', 'supplier_id');
+        return $this->hasMany(\App\Models\License::class, 'supplier_id');
     }
 
     /**
@@ -184,9 +191,10 @@ class Supplier extends SnipeModel
      */
     public function addhttp($url)
     {
-        if (!preg_match("~^(?:f|ht)tps?://~i", $url)) {
-            $url = "http://" . $url;
+        if (($url!='') && (! preg_match('~^(?:f|ht)tps?://~i', $url))) {
+            $url = 'http://'.$url;
         }
+
         return $url;
     }
 }

@@ -46,8 +46,6 @@ class RequestAssetNotification extends Notification
             $this->expected_checkin = Helper::getFormattedDateObject($this->item->expected_checkin, 'date',
                 false);
         }
-
-
     }
 
     /**
@@ -58,10 +56,9 @@ class RequestAssetNotification extends Notification
      */
     public function via()
     {
-
         $notifyBy = [];
 
-        if (Setting::getSettings()->slack_endpoint!='') {
+        if (Setting::getSettings()->webhook_endpoint != '') {
             $notifyBy[] = 'slack';
         }
 
@@ -76,7 +73,8 @@ class RequestAssetNotification extends Notification
         $qty = $this->item_quantity;
         $item = $this->item;
         $note = $this->note;
-        $botname = ($this->settings->slack_botname) ? $this->settings->slack_botname : 'Snipe-Bot' ;
+        $botname = ($this->settings->webhook_botname) ? $this->settings->webhook_botname : 'Snipe-Bot';
+        $channel = ($this->settings->webhook_channel) ? $this->settings->webhook_channel : '';
 
         $fields = [
             'QTY' => $qty,
@@ -86,12 +84,14 @@ class RequestAssetNotification extends Notification
         return (new SlackMessage)
             ->content(trans('mail.Item_Requested'))
             ->from($botname)
+            ->to($channel)
             ->attachment(function ($attachment) use ($item, $note, $fields) {
                 $attachment->title(htmlspecialchars_decode($item->present()->name), $item->present()->viewUrl())
                     ->fields($fields)
                     ->content($note);
             });
     }
+
     /**
      * Get the mail representation of the notification.
      *
@@ -99,7 +99,6 @@ class RequestAssetNotification extends Notification
      */
     public function toMail()
     {
-
         $fields = [];
 
         // Check if the item has custom fields associated with it
@@ -121,8 +120,6 @@ class RequestAssetNotification extends Notification
             ])
             ->subject(trans('mail.Item_Requested'));
 
-
         return $message;
     }
-
 }

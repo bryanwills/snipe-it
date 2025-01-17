@@ -1,41 +1,61 @@
 <?php
 
-/*
-|--------------------------------------------------------------------------
-| Asset Model Factories
-|--------------------------------------------------------------------------
-|
-| Factories related exclusively to creating models ..
-|
-*/
+namespace Database\Factories;
 
-$factory->define(App\Models\Depreciation::class, function (Faker\Generator $faker) {
-    return [
-        'user_id' => 1,
-    ];
-});
+use App\Models\Depreciation;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
-$factory->state(App\Models\Depreciation::class, 'computer', function ($faker) {
-    return [
-        'name' => 'Computer Depreciation',
-        'months' => 36,
-    ];
-});
+class DepreciationFactory extends Factory
+{
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
+    protected $model = Depreciation::class;
 
-$factory->state(App\Models\Depreciation::class, 'display', function ($faker) {
-    return [
-        'name' => 'Display Depreciation',
-        'months' => 12,
-    ];
-});
+    /**
+     * Define the model's default state.
+     *
+     * @return array
+     */
+    public function definition()
+    {
+        return [
+            'name' => $this->faker->unique()->catchPhrase(),
+            'created_by' => User::factory()->superuser(),
+            'months' => 36,
+        ];
+    }
 
-$factory->state(App\Models\Depreciation::class, 'mobile-phones', function ($faker) {
-    return [
-        'name' => 'Mobile Phone Depreciation',
-        'months' => 24,
-    ];
-});
+    public function computer()
+    {
+        return $this->state(function () {
+            return [
+                'name' => 'Computer Depreciation',
+                'months' => 36,
+            ];
+        });
+    }
 
+    public function display()
+    {
+        return $this->state(function () {
+            return [
+                'name' => 'Display Depreciation',
+                'months' => 12,
+            ];
+        });
+    }
 
-
-
+    public function mobilePhones()
+    {
+        return $this->state(function () {
+            return [
+                'name' => 'Mobile Phone Depreciation',
+                'months' => 24,
+            ];
+        });
+    }
+}

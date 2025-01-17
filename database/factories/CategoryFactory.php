@@ -1,131 +1,209 @@
 <?php
 
-/*
-|--------------------------------------------------------------------------
-| Category Factories
-|--------------------------------------------------------------------------
-|
-| Factories related exclusively to creating categories and the various states..
-|
-*/
+namespace Database\Factories;
+
+use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Models\Category;
+
+class CategoryFactory extends Factory
+{
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
+    protected $model = Category::class;
+
+    /**
+     * Define the model's default state.
+     *
+     * @return array
+     */
+    public function definition()
+    {
+        return [
+            'name' => $this->faker->catchPhrase(),
+            'category_type' => 'asset',
+            'checkin_email' => $this->faker->boolean(),
+            'eula_text' => $this->faker->paragraph(),
+            'require_acceptance' => false,
+            'use_default_eula' => $this->faker->boolean(),
+            'created_by' => User::factory()->superuser(),
+        ];
+    }
+
+    // usage: Category::factory()->assetLaptopCategory();
+    public function assetLaptopCategory()
+    {
+        return $this->state([
+            'name' => 'Laptops',
+            'category_type' => 'asset',
+            'require_acceptance' => true,
+        ]);
+    }
+
+    // usage: Category::factory()->assetDesktopCategory();
+    public function assetDesktopCategory()
+    {
+        return $this->state([
+            'name' => 'Desktops',
+            'category_type' => 'asset',
+            'require_acceptance' => true,
+        ]);
+    }
+
+    // usage: Category::factory()->assetDisplayCategory();
+    public function assetDisplayCategory()
+    {
+        return $this->state([
+            'name' => 'Displays',
+            'category_type' => 'asset',
+        ]);
+    }
+
+     // usage: Category::factory()->assetTabletCategory();
+     public function assetTabletCategory()
+     {
+         return $this->state([
+             'name' => 'Tablets',
+             'category_type' => 'asset',
+         ]);
+     }
+
+     // usage: Category::factory()->assetMobileCategory();
+     public function assetMobileCategory()
+     {
+         return $this->state([
+             'name' => 'Mobile Phones',
+             'category_type' => 'asset',
+         ]);
+     }
+
+     // usage: Category::factory()->assetConferenceCategory();
+     public function assetConferenceCategory()
+     {
+         return $this->state([
+             'name' => 'Conference Phones',
+             'category_type' => 'asset',
+         ]);
+     }
 
 
-$factory->define(App\Models\Category::class, function (Faker\Generator $faker) {
-    return [
-        'checkin_email' => $faker->boolean(),
-        'eula_text' => $faker->paragraph(),
-        'require_acceptance' => false,
-        'use_default_eula' => $faker->boolean(),
-        'user_id' => 1,
-     ];
-});
+     // usage: Category::factory()->assetVoipCategory();
+     public function assetVoipCategory()
+     {
+         return $this->state([
+             'name' => 'VOIP Phones',
+             'category_type' => 'asset',
+         ]);
+     }
 
-$factory->state(App\Models\Category::class, 'asset-laptop-category', function ($faker) {
-    return [
-        'name' => 'Laptops',
-        'category_type' => 'asset',
-        'require_acceptance' => true,
-    ];
-});
-
-$factory->state(App\Models\Category::class, 'asset-desktop-category', function ($faker) {
-    return [
-        'name' => 'Desktops',
-        'category_type' => 'asset',
-    ];
-});
-
-$factory->state(App\Models\Category::class, 'asset-display-category', function ($faker) {
-    return [
-        'name' => 'Displays',
-        'category_type' => 'asset',
-    ];
-});
-
-$factory->state(App\Models\Category::class, 'asset-tablet-category', function ($faker) {
-    return [
-        'name' => 'Tablets',
-        'category_type' => 'asset',
-    ];
-});
-
-$factory->state(App\Models\Category::class, 'asset-mobile-category', function ($faker) {
-    return [
-        'name' => 'Mobile Phones',
-        'category_type' => 'asset',
-    ];
-});
-
-$factory->state(App\Models\Category::class, 'asset-conference-category', function ($faker) {
-    return [
-        'name' => 'Conference Phones',
-        'category_type' => 'asset',
-    ];
-});
-
-$factory->state(App\Models\Category::class, 'asset-voip-category', function ($faker) {
-    return [
-        'name' => 'VOIP Phones',
-        'category_type' => 'asset',
-    ];
-});
+     // usage: Category::factory()->accessoryKeyboardCategory();
+     public function accessoryKeyboardCategory()
+     {
+         return $this->state([
+             'name' => 'Keyboards',
+             'category_type' => 'accessory',
+         ]);
+     }
 
 
-$factory->state(App\Models\Category::class, 'accessory-keyboard-category', function ($faker) {
-    return [
-        'name' => 'Keyboards',
-        'category_type' => 'accessory',
-    ];
-});
+     // usage: Category::factory()->accessoryMouseCategory();
+     public function accessoryMouseCategory()
+     {
+         return $this->state([
+             'name' => 'Mouse',
+             'category_type' => 'accessory',
+         ]);
+     }
 
-$factory->state(App\Models\Category::class, 'accessory-mouse-category', function ($faker) {
-    return [
-        'name' => 'Mouse',
-        'category_type' => 'accessory',
-    ];
-});
+     // usage: Category::factory()->componentHddCategory();
+     public function componentHddCategory()
+     {
+         return $this->state([
+             'name' => 'HDD/SSD',
+             'category_type' => 'component',
+         ]);
+     }
 
+     // usage: Category::factory()->componentRamCategory();
+     public function componentRamCategory()
+     {
+         return $this->state([
+             'name' => 'RAM',
+             'category_type' => 'component',
+         ]);
+     }
 
-$factory->state(App\Models\Category::class, 'component-hdd-category', function ($faker) {
-    return [
-        'name' => 'HDD/SSD',
-        'category_type' => 'component',
-    ];
-});
+     // usage: Category::factory()->consumablePaperCategory();
+     public function consumablePaperCategory()
+     {
+         return $this->state([
+             'name' => 'Printer Paper',
+             'category_type' => 'consumable',
+         ]);
+     }
 
-$factory->state(App\Models\Category::class, 'component-ram-category', function ($faker) {
-    return [
-        'name' => 'RAM',
-        'category_type' => 'component',
-    ];
-});
+     // usage: Category::factory()->consumableInkCategory();
+     public function consumableInkCategory()
+     {
+         return $this->state([
+             'name' => 'Printer Ink',
+             'category_type' => 'consumable',
+         ]);
+     }
 
-$factory->state(App\Models\Category::class, 'consumable-paper-category', function ($faker) {
-    return [
-        'name' => 'Printer Paper',
-        'category_type' => 'consumable',
-    ];
-});
+     // usage: Category::factory()->licenseGraphicsCategory();
+     public function licenseGraphicsCategory()
+     {
+         return $this->state([
+             'name' => 'Graphics Software',
+             'category_type' => 'license',
+         ]);
+     }
 
-$factory->state(App\Models\Category::class, 'consumable-ink-category', function ($faker) {
-    return [
-        'name' => 'Printer Ink',
-        'category_type' => 'consumable',
-    ];
-});
+     // usage: Category::factory()->licenseGraphicsCategory();
+     public function licenseOfficeCategory()
+     {
+         return $this->state([
+             'name' => 'Office Software',
+             'category_type' => 'license',
+         ]);
+     }
 
+    public function forAccessories()
+    {
+        return $this->state([
+            'category_type' => 'accessory',
+        ]);
+    }
 
-$factory->state(App\Models\Category::class, 'license-graphics-category', function ($faker) {
-    return [
-        'name' => 'Graphics Software',
-        'category_type' => 'license',
-    ];
-});
+    public function forAssets()
+    {
+        return $this->state([
+            'category_type' => 'asset',
+        ]);
+    }
 
+    public function forLicenses()
+    {
+        return $this->state([
+            'category_type' => 'license',
+        ]);
+    }
 
-$factory->state(App\Models\Category::class, 'license-office-category', function ($faker) {
-    return [
-        'name' => 'Office Software',
-        'category_type' => 'license',
-    ];
-});
+    public function forComponents()
+    {
+        return $this->state([
+            'category_type' => 'component',
+        ]);
+    }
+
+    public function forConsumables()
+    {
+        return $this->state([
+            'category_type' => 'consumable',
+        ]);
+    }
+}

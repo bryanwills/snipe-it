@@ -4,7 +4,6 @@ namespace App\Presenters;
 
 /**
  * Class CompanyPresenter
- * @package App\Presenters
  */
 class CompanyPresenter extends Presenter
 {
@@ -16,94 +15,132 @@ class CompanyPresenter extends Presenter
     {
         $layout = [
             [
-                "field" => "id",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('general.id'),
-                "visible" => false
-            ],[
-                "field" => "name",
-                "searchable" => true,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('admin/companies/table.name'),
-                "visible" => true,
-                "formatter" => 'companiesLinkFormatter',
-            ],[
-                "field" => "image",
-                "searchable" => false,
-                "sortable" => true,
-                "switchable" => true,
-                "title" => trans('general.image'),
-                "visible" => true,
-                "formatter" => 'imageFormatter',
-            ],[
-                "field" => "users_count",
-                "searchable" => false,
-                "sortable" => true,
-                "title" => '<span class="hidden-xs"><i class="fa fa-users"></i></span><span class="hidden-md hidden-lg">'.trans('general.users').'</span></th>',
-                "visible" => true,
- 
-            ],[
-                "field" => "assets_count",
-                "searchable" => false,
-                "sortable" => true,
-                "title" => '<span class="hidden-xs"><i class="fa fa-barcode" aria-hidden="true"></i></span><span class="hidden-md hidden-lg">'.trans('general.assets').'</span>',
-                "visible" => true,
+                'field' => 'id',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.id'),
+                'visible' => false,
+            ], [
+                'field' => 'name',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => false,
+                'title' => trans('admin/companies/table.name'),
+                'visible' => true,
+                'formatter' => 'companiesLinkFormatter',
+            ], [
+                'field' => 'phone',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/users/table.phone'),
+                'visible' => false,
+                'formatter'    => 'phoneFormatter',
+            ], [
+                'field' => 'fax',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/suppliers/table.fax'),
+                'visible' => false,
+                'formatter'    => 'phoneFormatter',
+            ], [
+                'field' => 'email',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/suppliers/table.email'),
+                'visible' => true,
+				'formatter' => 'emailFormatter',
+            ], [
+                'field' => 'image',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.image'),
+                'visible' => true,
+                'formatter' => 'imageFormatter',
+            ], [
+                'field' => 'users_count',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.users'),
+                'visible' => true,
+                'class' => 'css-users',
 
+            ], [
+                'field' => 'assets_count',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.assets'),
+                'visible' => true,
+                'class' => 'css-barcode',
+
+            ], [
+                'field' => 'licenses_count',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.licenses'),
+                'visible' => true,
+                'class' => 'css-license',
+            ], [
+                'field' => 'accessories_count',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.accessories'),
+                'visible' => true,
+                'class' => 'css-accessory',
+            ], [
+                'field' => 'consumables_count',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.consumables'),
+                'visible' => true,
+                'class' => 'css-consumable',
+            ], [
+                'field' => 'components_count',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.components'),
+                'visible' => true,
+                'class' => 'css-component',
             ],[
-                "field" => "licenses_count",
-                "searchable" => false,
-                "sortable" => true,
-                "visible" => true,
-                "title" => ' <span class="hidden-xs"><i class="fa fa-floppy-o"></i></span><span class="hidden-md hidden-lg">'.trans('general.licenses').'</span>',
-            ],[
-                "field" => "accessories_count",
-                "searchable" => false,
-                "sortable" => true,
-                "visible" => true,
-                "title" => ' <span class="hidden-xs"><i class="fa fa-keyboard-o"></i></span><span class="hidden-md hidden-lg">'.trans('general.accessories').'</span>',
-            ],[
-                "field" => "consumables_count",
-                "searchable" => false,
-                "sortable" => true,
-                "visible" => true,
-                "title" => ' <span class="hidden-xs"><i class="fa fa-tint"></i></span><span class="hidden-md hidden-lg">'.trans('general.consumables').'</span>',
-            ],[
-                "field" => "components_count",
-                "searchable" => false,
-                "sortable" => true,
-                "visible" => true,
-                "title" => ' <span class="hidden-xs"><i class="fa fa-hdd-o"></i></span><span class="hidden-md hidden-lg">'.trans('general.components').'</span>',
-            ],[
-                "field" => "updated_at",
-                "searchable" => false,
-                "sortable" => true,
-                "visible" => false,
-                "title" => trans('general.updated_at'),
-                "formatter" => 'createdAtFormatter',
-            ],[
-                "field" => "created_at",
-                "searchable" => false,
-                "sortable" => true,
-                "visible" => false,
-                "title" => trans('general.created_at'),
-                "formatter" => 'createdAtFormatter',
-            ],[
-                "field" => "actions",
-                "searchable" => false,
-                "sortable" => false,
-                "switchable" => false,
-                "title" => trans('table.actions'),
-                "visible" => true,
-                "formatter" => "companiesActionsFormatter",
-            ]
+                'field' => 'created_by',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.created_by'),
+                'visible' => false,
+                'formatter' => 'usersLinkObjFormatter',
+            ], [
+                'field' => 'created_at',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.created_at'),
+                'visible' => false,
+                'formatter' => 'dateDisplayFormatter',
+            ], [
+                'field' => 'updated_at',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.updated_at'),
+                'visible' => false,
+                'formatter' => 'dateDisplayFormatter',
+            ], [
+                'field' => 'actions',
+                'searchable' => false,
+                'sortable' => false,
+                'switchable' => false,
+                'title' => trans('table.actions'),
+                'visible' => true,
+                'formatter' => 'companiesActionsFormatter',
+            ],
         ];
 
         return json_encode($layout);
     }
-
 
     /**
      * Link to this companies name

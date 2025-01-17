@@ -5,6 +5,7 @@ return array(
     'field' => array(
         'invalid'   => '欄位不存在。',
         'already_added'   => '已新增欄位。',
+        'none_selected'   => 'No field selected',
 
         'create' => array(
             'error'   => '新增欄位失敗，請重試。',
@@ -46,6 +47,12 @@ return array(
             'success' => '刪除欄位集成功。',
             'in_use'   => '欄位集還在使用中',
         )
+
+    ),
+
+    'fieldset_default_value' => array(
+
+        'error' => '驗證預設字段集數值錯誤',
 
     ),
 

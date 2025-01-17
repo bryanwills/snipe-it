@@ -1,25 +1,32 @@
 <?php
 
-return array(
+return [
 
-    'asset_tag'   	=> 'Etiqueta de Activo',
+    'asset_tag'   	=> 'Placa del activo',
     'asset_model'       => 'Modelo',
-    'book_value'  	=> 'Valor',
-    'change' 		=> 'Registrado / Asignado',
-    'checkout_date' => 'Fecha de Asignación',
-    'checkoutto' 	=> 'Asignado',
+    'assigned_to'   => 'Asignado a',
+    'book_value'  	=> 'Valor actual',
+    'change' 		=> 'Operación',
+    'checkout_date' => 'Fecha de asignación',
+    'checkoutto' 	=> 'Asignado a',
+    'components_cost' => 'Coste total de componentes',
+    'current_value' => 'Valor actual',
     'diff' 			=> 'Diferencia',
     'dl_csv' 		=> 'Descargar CSV',
-    'eol' 			=> 'Fin de Vida',
-    'id'      		=> 'Identificación',
-    'location' 		=> 'Localización',
+    'eol' 			=> 'Fin de soporte (EOL)',
+    'id'      		=> 'ID',
+    'last_checkin_date' => 'Última fecha de ingreso',
+    'location' 		=> 'Ubicación',
     'purchase_cost'	=> 'Costo',
     'purchase_date'	=> 'Comprado',
-    'serial'   		=> 'Serial',
+    'serial'   		=> 'Número de serie',
     'status'   		=> 'Estado',
     'title'      	=> 'Activo ',
-    'image'		=> 'Imagen de dispositivo',
-    'days_without_acceptance' => 'Días sin Aceptación',
-    'monthly_depreciation' => 'Depreciación mensual'
-
-);
+    'image'		    => 'Imagen de dispositivo',
+    'days_without_acceptance' => 'Días sin aceptación',
+    'monthly_depreciation' => 'Depreciación mensual',
+    'requesting_user' => 'Usuario solicitante',
+    'requested_date' => 'Fecha solicitada',
+    'changed'       => 'Cambios',
+    'icon' => 'Icono',
+];

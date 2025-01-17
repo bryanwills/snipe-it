@@ -10,7 +10,6 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
-
     /**
      * Define the application's command schedule.
      *
@@ -25,6 +24,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('snipeit:backup')->weekly();
         $schedule->command('backup:clean')->daily();
         $schedule->command('snipeit:upcoming-audits')->daily();
+        $schedule->command('auth:clear-resets')->everyFifteenMinutes();
+        $schedule->command('saml:clear_expired_nonces')->weekly();
     }
 
     /**

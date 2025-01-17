@@ -3,11 +3,14 @@
 namespace App\Http\Requests;
 
 use App\Models\SnipeModel;
-use Intervention\Image\Facades\Image;
 use enshrined\svgSanitize\Sanitizer;
+use Intervention\Image\Facades\Image;
 use App\Http\Traits\ConvertsBase64ToFiles;
 use Illuminate\Http\UploadedFile;
-use Storage;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Exception\NotReadableException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class ImageUploadRequest extends Request
 {
@@ -32,8 +35,9 @@ class ImageUploadRequest extends Request
     {
        
             return [
-                'image' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp',
-                'avatar' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp',
+                'image' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,avif',
+                'avatar' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,avif',
+                'favicon' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,image/x-icon,image/vnd.microsoft.icon,ico',
             ];
     }
 
@@ -60,136 +64,101 @@ class ImageUploadRequest extends Request
     /**
      * Handle and store any images attached to request
      * @param SnipeModel $item Item the image is associated with
-     * @param String $path  location for uploaded images, defaults to uploads/plural of item type.
+     * @param string $path  location for uploaded images, defaults to uploads/plural of item type.
      * @return SnipeModel        Target asset is being checked out to.
      */
-    public function handleImages($item, $w = 600, $form_fieldname = null, $path = null, $db_fieldname = 'image')
+    public function handleImages($item, $w = 600, $form_fieldname = 'image', $path = null, $db_fieldname = 'image')
     {
 
         $type = strtolower(class_basename(get_class($item)));
 
         if (is_null($path)) {
+
             $path = str_plural($type);
 
             if ($type == 'assetmodel') {
-                $path =  'models';
+                $path = 'models';
             }
 
             if ($type == 'user') {
-                $path =  'avatars';
+                $path = 'avatars';
             }
         }
 
-        if (is_null($form_fieldname)) {
-            $form_fieldname = 'image';
-        }
-
-        // This is dumb, but we need it for overriding field names for exceptions like avatars and logo uploads
-        if (is_null($db_fieldname)) {
-            $use_db_field = $form_fieldname;
-        } else {
-            $use_db_field = $db_fieldname;
-        }
-
-
-        \Log::info('Image path is: '.$path);
-        \Log::debug('Type is: '.$type);
-        \Log::debug('Form fieldname is: '.$form_fieldname);
-        \Log::debug('DB fieldname is: '.$use_db_field);
-        \Log::debug('Trying to upload to '. $path);
-        
-        // ConvertBase64ToFiles just changes object type, 
-        // as it cannot currently insert files to $this->files
         if ($this->offsetGet($form_fieldname) instanceof UploadedFile) {
-           $image=$this->offsetGet($form_fieldname);
-        } else {
-            if ($this->hasFile($form_fieldname)) {
-                $image = $this->file($form_fieldname);
-            }
+           $image = $this->offsetGet($form_fieldname);
+        } elseif ($this->hasFile($form_fieldname)) {
+            $image = $this->file($form_fieldname);
         }
 
         if (isset($image)) {
-            \Log::debug($image);
 
             if (!config('app.lock_passwords')) {
 
-                $ext = $image->getClientOriginalExtension();
-                $file_name = $type.'-'.$form_fieldname.'-'.str_random(10).'.'.$ext;
+                $ext = $image->guessExtension();
+                $file_name = $type.'-'.$form_fieldname.'-'.$item->id.'-'.str_random(10).'.'.$ext;
+                
+                if (($image->getMimeType() == 'image/vnd.microsoft.icon') || ($image->getMimeType() == 'image/x-icon') || ($image->getMimeType() == 'image/avif') || ($image->getMimeType() == 'image/webp')) {
+                    // If the file is an icon, webp or avif, we need to just move it since gd doesn't support resizing
+                    // icons or avif, and webp support and needs to be compiled into gd for resizing to be available
+                    Storage::disk('public')->put($path.'/'.$file_name, file_get_contents($image));
 
-                \Log::info('File name will be: '.$file_name);
-                \Log::debug('File extension is: '. $ext);
+                } elseif($image->getMimeType() == 'image/svg+xml') {
+                    // If the file is an SVG, we need to clean it and NOT encode it
+                    $sanitizer = new Sanitizer();
+                    $dirtySVG = file_get_contents($image->getRealPath());
+                    $cleanSVG = $sanitizer->sanitize($dirtySVG);
 
-                if (($image->getClientOriginalExtension()!=='webp') && ($image->getClientOriginalExtension()!=='svg')) {
-                    \Log::debug('Not an SVG or webp - resize');
-                    \Log::debug('Trying to upload to: '.$path.'/'.$file_name);
-                    $upload = Image::make($image->getRealPath())->resize(null, $w, function ($constraint) {
-                        $constraint->aspectRatio();
-                        $constraint->upsize();
-                     });
+                    try {
+                        Storage::disk('public')->put($path . '/' . $file_name, $cleanSVG);
+                    } catch (\Exception $e) {
+                        Log::debug($e);
+                    }
+                } else {
+
+                    try {
+                        $upload = Image::make($image->getRealPath())->setFileInfoFromPath($image->getRealPath())->resize(null, $w, function ($constraint) {
+                            $constraint->aspectRatio();
+                            $constraint->upsize();
+                        })->orientate();
+
+                    } catch(NotReadableException $e) {
+                        Log::debug($e);
+                        $validator = Validator::make([], []);
+                        $validator->errors()->add($form_fieldname, trans('general.unaccepted_image_type', ['mimetype' => $image->getClientMimeType()]));
+
+                        throw new \Illuminate\Validation\ValidationException($validator);
+                    }
 
                     // This requires a string instead of an object, so we use ($string)
-                    Storage::disk('public')->put($path.'/'.$file_name, (string)$upload->encode());
+                    Storage::disk('public')->put($path.'/'.$file_name, (string) $upload->encode());
 
-                } else {
-                    // If the file is a webp, we need to just move it since webp support
-                    // needs to be compiled into gd for resizing to be available
-                    if ($image->getClientOriginalExtension()=='webp') {
-                        \Log::debug('This is a webp, just move it');
-                        Storage::disk('public')->put($path.'/'.$file_name, file_get_contents($image));
-                    // If the file is an SVG, we need to clean it and NOT encode it
-                    } else {
-
-                        \Log::debug('This is an SVG');
-                        $sanitizer = new Sanitizer();
-                        $dirtySVG = file_get_contents($image->getRealPath());
-                        $cleanSVG = $sanitizer->sanitize($dirtySVG);
-
-                        try {
-                            \Log::debug('Trying to upload to: '.$path.'/'.$file_name);
-                            Storage::disk('public')->put($path.'/'.$file_name, $cleanSVG);
-                        } catch (\Exception $e) {
-                            \Log::debug('Upload no workie :( ');
-                            \Log::debug($e);
-                        }
-                    }
                 }
-
 
                  // Remove Current image if exists
-                if (Storage::disk('public')->exists($path.'/'.$item->{$use_db_field})) {
-
-                    \Log::debug('A file already exists that we are replacing - we should delete the old one.');
-                    try {
-                         Storage::disk('public')->delete($path.'/'.$item->{$use_db_field});
-                         \Log::debug('Old file '.$path.'/'.$file_name.' has been deleted.');
-                    } catch (\Exception $e) {
-                        \Log::debug('Could not delete old file. '.$path.'/'.$file_name.' does not exist?');
-
-                    }
-                }
-
-                $item->{$use_db_field} = $file_name;
-
+                $item = $this->deleteExistingImage($item, $path, $db_fieldname);
+                $item->{$db_fieldname} = $file_name;
             }
+
 
         // If the user isn't uploading anything new but wants to delete their old image, do so
-        } else {
-            \Log::debug('No file passed for '.$form_fieldname);
-            if ($this->input('image_delete')=='1') {
-
-                \Log::debug('Deleting image');
-                try {
-
-                        Storage::disk('public')->delete($path . '/' . $item->{$use_db_field});
-                        $item->{$use_db_field} = null;
-
-                } catch (\Exception $e) {
-                    \Log::debug($e);
-                }
-            }
-
+        } elseif ($this->input('image_delete') == '1') {
+            $item = $this->deleteExistingImage($item, $path, $db_fieldname);
         }
 
+        return $item;
+    }
+
+    public function deleteExistingImage($item, $path = null, $db_fieldname = 'image') {
+
+        if ($item->{$db_fieldname}!='') {
+            try {
+                Storage::disk('public')->delete($path.'/'.$item->{$db_fieldname});
+                $item->{$db_fieldname} = null;
+            } catch (\Exception $e) {
+                Log::debug($e);
+            }
+        }
 
         return $item;
     }

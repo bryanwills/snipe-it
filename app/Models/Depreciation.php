@@ -1,27 +1,31 @@
 <?php
+
 namespace App\Models;
 
 use App\Models\Traits\Searchable;
 use App\Presenters\Presentable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Watson\Validating\ValidatingTrait;
 
 class Depreciation extends SnipeModel
 {
-    protected $presenter = 'App\Presenters\DepreciationPresenter';
+    use HasFactory;
+
+    protected $presenter = \App\Presenters\DepreciationPresenter::class;
     use Presentable;
     // Declare the rules for the form validation
-    protected $rules = array(
+    protected $rules = [
         'name' => 'required|min:3|max:255|unique:depreciations,name',
-        'months' => 'required|max:3600|integer',
-    );
+        'months' => 'required|max:3600|integer|gt:0',
+    ];
 
     /**
-    * Whether the model should inject it's identifier to the unique
-    * validation rules before attempting validation. If this property
-    * is not set in the model it will default to true.
-    *
-    * @var boolean
-    */
+     * Whether the model should inject it's identifier to the unique
+     * validation rules before attempting validation. If this property
+     * is not set in the model it will default to true.
+     *
+     * @var bool
+     */
     protected $injectUniqueIdentifier = true;
     use ValidatingTrait;
 
@@ -30,20 +34,20 @@ class Depreciation extends SnipeModel
      *
      * @var array
      */
-    protected $fillable = ['name','months'];
+    protected $fillable = ['name', 'months'];
 
     use Searchable;
-    
+
     /**
      * The attributes that should be included when searching the model.
-     * 
+     *
      * @var array
      */
     protected $searchableAttributes = ['name', 'months'];
 
     /**
      * The relations and their attributes that should be included when searching the model.
-     * 
+     *
      * @var array
      */
     protected $searchableRelations = [];
@@ -57,9 +61,8 @@ class Depreciation extends SnipeModel
      */
     public function models()
     {
-        return $this->hasMany('\App\Models\AssetModel', 'depreciation_id');
+        return $this->hasMany(\App\Models\AssetModel::class, 'depreciation_id');
     }
-
 
     /**
      * Establishes the depreciation -> licenses relationship
@@ -70,6 +73,42 @@ class Depreciation extends SnipeModel
      */
     public function licenses()
     {
-        return $this->hasMany('\App\Models\License', 'depreciation_id');
-    }     
+        return $this->hasMany(\App\Models\License::class, 'depreciation_id');
+    }
+
+    /**
+     * Establishes the depreciation -> assets relationship
+     *
+     * @author A. Gianotto <snipe@snipe.net>
+     * @since [v5.0]
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public function assets()
+    {
+        return $this->hasManyThrough(\App\Models\Asset::class, \App\Models\AssetModel::class, 'depreciation_id', 'model_id');
+    }
+
+    /**
+     * Get the user that created the depreciation
+     *
+     * @author A. Gianotto <snipe@snipe.net>
+     * @since [v7.0.13]
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public function adminuser()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
+    }
+
+
+    /**
+     * -----------------------------------------------
+     * BEGIN QUERY SCOPES
+     * -----------------------------------------------
+     **/
+
+    public function scopeOrderByCreatedBy($query, $order)
+    {
+        return $query->leftJoin('users as admin_sort', 'depreciations.created_by', '=', 'admin_sort.id')->select('depreciations.*')->orderBy('admin_sort.first_name', $order)->orderBy('admin_sort.last_name', $order);
+    }
 }

@@ -43,8 +43,9 @@ class CurrentInventory extends Notification
                 'assets'  => $this->user->assets,
                 'accessories'  => $this->user->accessories,
                 'licenses'  => $this->user->licenses,
+                'consumables'  => $this->user->consumables,
             ])
-            ->subject('Inventory Report');
+            ->subject(trans('mail.inventory_report'));
 
         return $message;
     }
