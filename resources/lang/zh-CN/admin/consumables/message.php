@@ -2,6 +2,7 @@
 
 return array(
 
+    'invalid_category_type' => '该类别必须是一个耗材类别。',
     'does_not_exist' => '耗材不存在。',
 
     'create' => array(
@@ -23,7 +24,8 @@ return array(
      'checkout' => array(
         'error'   		=> '耗材领取失败，请重试',
         'success' 		=> '耗材领取成功',
-        'user_does_not_exist' => '无效用户，请重试。'
+        'user_does_not_exist' => '无效用户，请重试。',
+         'unavailable'      => '没有足够的耗材可被借出。请检查剩余数量。 ',
     ),
 
     'checkin' => array(

@@ -6,10 +6,9 @@ use App\Models\AssetModel;
 use App\Models\CustomField;
 use App\Models\CustomFieldset;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Validator;
-use Redirect;
+use Illuminate\Http\RedirectResponse;
+use \Illuminate\Contracts\View\View;
 
 /**
  * This controller handles all actions related to Custom Asset Fields for
@@ -23,7 +22,7 @@ use Redirect;
 class CustomFieldsetsController extends Controller
 {
 
-    public function index() 
+    public function index() : RedirectResponse
     {
         return redirect()->route("fields.index")
         ->with("error", trans('admin/custom_fields/message.fieldset.does_not_exist'));
@@ -34,11 +33,9 @@ class CustomFieldsetsController extends Controller
      *
      * @author [Brady Wetherington] [<uberbrady@gmail.com>]
      * @param int $id
-     * @return \Illuminate\Support\Facades\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      * @since [v1.8]
      */
-    public function show($id)
+    public function show($id) : View | RedirectResponse
     {
         $cfset = CustomFieldset::with('fields')
             ->where('id', '=', $id)->orderBy('id', 'ASC')->first();
@@ -70,10 +67,8 @@ class CustomFieldsetsController extends Controller
      *
      * @author [Brady Wetherington] [<uberbrady@gmail.com>]
      * @since [v1.8]
-     * @return \Illuminate\Support\Facades\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function create()
+    public function create() : View
     {
         $this->authorize('create', CustomField::class);
 
@@ -86,23 +81,34 @@ class CustomFieldsetsController extends Controller
      * @author [Brady Wetherington] [<uberbrady@gmail.com>]
      * @since [v1.8]
      * @param Request $request
-     * @return Redirect
+     * @return \Illuminate\Http\RedirectResponse
      * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function store(Request $request)
+    public function store(Request $request) : RedirectResponse
     {
         $this->authorize('create', CustomField::class);
 
-        $cfset = new CustomFieldset([
-                'name' => e($request->get('name')),
-                'user_id' => Auth::user()->id,
+        $fieldset = new CustomFieldset([
+                'name' => $request->get('name'),
+                'created_by' => auth()->id(),
         ]);
 
-        $validator = Validator::make($request->all(), $cfset->rules);
-        if ($validator->passes()) {
-            $cfset->save();
+        $validator = Validator::make($request->all(), $fieldset->rules);
 
-            return redirect()->route('fieldsets.show', [$cfset->id])
+        if ($validator->passes()) {
+            $fieldset->save();
+
+            // Sync fieldset with auto_add_to_fieldsets
+            $fields = CustomField::select('id')->where('auto_add_to_fieldsets', '=', '1')->get();
+            if ($fields->count() > 0) {
+                foreach ($fields as $field) {
+                    $field_ids[] = $field->id;
+                }
+
+                $fieldset->fields()->sync($field_ids);
+            }
+
+            return redirect()->route('fieldsets.show', [$fieldset->id])
                 ->with('success', trans('admin/custom_fields/message.fieldset.create.success'));
         }
 
@@ -115,10 +121,8 @@ class CustomFieldsetsController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @param  int  $id
      * @since [v6.0.14]
-     * @return Redirect
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function edit($id)
+    public function edit($id) : View | RedirectResponse
     {
         $this->authorize('create', CustomField::class);
 
@@ -136,10 +140,8 @@ class CustomFieldsetsController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @param  int  $id
      * @since [v6.0.14]
-     * @return Redirect
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id) : RedirectResponse
     {
         $this->authorize('create', CustomField::class);
 
@@ -164,10 +166,8 @@ class CustomFieldsetsController extends Controller
      * @author [Brady Wetherington] [<uberbrady@gmail.com>]
      * @param  int $id
      * @since [v1.8]
-     * @return View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function destroy($id)
+    public function destroy($id) : RedirectResponse
     {
         $fieldset = CustomFieldset::find($id);
 
@@ -192,9 +192,8 @@ class CustomFieldsetsController extends Controller
      *
      * @author [Brady Wetherington] [<uberbrady@gmail.com>]
      * @since [v1.8]
-     * @return View
      */
-    public function associate(Request $request, $id)
+    public function associate(Request $request, $id) : RedirectResponse
     {
         $set = CustomFieldset::find($id);
 
@@ -212,7 +211,7 @@ class CustomFieldsetsController extends Controller
             return redirect()->route('fieldsets.show', [$id])->with('success', trans('admin/custom_fields/message.field.create.assoc_success'));
         }
 
-        return redirect()->route('fieldsets.show', [$id])->with('error', 'No field selected.');
+        return redirect()->route('fieldsets.show', [$id])->with('error', trans('admin/custom_fields/message.field.none_selected'));
     }
 
     /**
@@ -221,7 +220,7 @@ class CustomFieldsetsController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v5.0]
      */
-    public function makeFieldRequired($fieldset_id, $field_id)
+    public function makeFieldRequired($fieldset_id, $field_id) : RedirectResponse
     {
         $this->authorize('update', CustomField::class);
         $field = CustomField::findOrFail($field_id);
@@ -239,7 +238,7 @@ class CustomFieldsetsController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v5.0]
      */
-    public function makeFieldOptional($fieldset_id, $field_id)
+    public function makeFieldOptional($fieldset_id, $field_id) : RedirectResponse
     {
         $this->authorize('update', CustomField::class);
         $field = CustomField::findOrFail($field_id);

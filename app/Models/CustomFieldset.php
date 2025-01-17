@@ -2,9 +2,13 @@
 
 namespace App\Models;
 
+use App\Rules\AlphaEncrypted;
+use App\Rules\NumericEncrypted;
 use Gate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Watson\Validating\ValidatingTrait;
 
 class CustomFieldset extends Model
@@ -92,6 +96,32 @@ class CustomFieldset extends Model
 
             array_push($rule, $field->attributes['format']);
             $rules[$field->db_column_name()] = $rule;
+
+
+            // these are to replace the standard 'numeric' and 'alpha' rules if the custom field is also encrypted.
+            // the values need to be decrypted first, because encrypted strings are alphanumeric
+            if ($field->format === 'NUMERIC' && $field->field_encrypted) {
+                $numericKey = array_search('numeric', $rules[$field->db_column_name()]);
+                $rules[$field->db_column_name()][$numericKey] = new NumericEncrypted;
+            }
+
+            if ($field->format === 'ALPHA' && $field->field_encrypted) {
+                $alphaKey = array_search('alpha', $rules[$field->db_column_name()]);
+                $rules[$field->db_column_name()][$alphaKey] = new AlphaEncrypted;
+            }
+
+            // add not_array to rules for all fields but checkboxes
+            if ($field->element != 'checkbox') {
+                $rules[$field->db_column_name()][] = 'not_array';
+            }
+
+            if ($field->element == 'checkbox') {
+                $rules[$field->db_column_name()][] = 'checkboxes';
+            }
+
+            if ($field->element == 'radio') {
+                $rules[$field->db_column_name()][] = 'radio_buttons';
+            }
         }
 
         return $rules;

@@ -8,6 +8,7 @@ use App\Models\Location;
 use App\Models\Manufacturer;
 use App\Models\Supplier;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AccessoryFactory extends Factory
@@ -32,8 +33,8 @@ class AccessoryFactory extends Factory
                 $this->faker->randomElement(['Bluetooth', 'Wired']),
                 $this->faker->randomElement(['Keyboard', 'Wired'])
             ),
-            'user_id' => User::factory()->superuser(),
-            'category_id' => Category::factory(),
+            'created_by' => User::factory()->superuser(),
+            'category_id' => Category::factory()->forAccessories(),
             'model_number' => $this->faker->numberBetween(1000000, 50000000),
             'location_id' => Location::factory(),
             'qty' => 1,
@@ -112,6 +113,61 @@ class AccessoryFactory extends Factory
                 'qty' => 13,
                 'min_amt' => 2,
             ];
+        });
+    }
+
+    public function withoutItemsRemaining()
+    {
+        return $this->state(function () {
+            return [
+                'qty' => 1,
+            ];
+        })->afterCreating(function ($accessory) {
+            $user = User::factory()->create();
+
+            $accessory->checkouts()->create([
+                'accessory_id' => $accessory->id,
+                'created_at' => Carbon::now(),
+                'created_by' => $user->id,
+                'assigned_to' => $user->id,
+                'assigned_type' => User::class,
+                'note' => '',
+            ]);
+        });
+    }
+
+    public function requiringAcceptance()
+    {
+        return $this->afterCreating(function ($accessory) {
+            $accessory->category->update(['require_acceptance' => 1]);
+        });
+    }
+
+    public function checkedOutToUser(User $user = null)
+    {
+        return $this->afterCreating(function (Accessory $accessory) use ($user) {
+            $accessory->checkouts()->create([
+                'accessory_id' => $accessory->id,
+                'created_at' => Carbon::now(),
+                'created_by' => 1,
+                'assigned_to' => $user->id ?? User::factory()->create()->id,
+                'assigned_type' => User::class,
+            ]);
+        });
+    }
+
+    public function checkedOutToUsers(array $users)
+    {
+        return $this->afterCreating(function (Accessory $accessory) use ($users) {
+            foreach ($users as $user) {
+                $accessory->checkouts()->create([
+                    'accessory_id' => $accessory->id,
+                    'created_at' => Carbon::now(),
+                    'created_by' => 1,
+                    'assigned_to' => $user->id,
+                    'assigned_type' => User::class,
+                ]);
+            }
         });
     }
 }

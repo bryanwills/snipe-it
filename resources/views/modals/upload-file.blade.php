@@ -4,7 +4,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h2 class="modal-title" id="uploadFileModalLabel">{{ trans('general.file_upload') }}</h4>
+                <h4 class="modal-title" id="uploadFileModalLabel">{{ trans('general.file_upload') }}</h4>
             </div>
             {{ Form::open([
             'method' => 'POST',
@@ -15,15 +15,15 @@
             <div class="modal-body">
 
                 <div class="row">
-                    <div class="col-md-3">
+                    <div class="col-md-12">
 
-                        <label class="btn btn-default">
-                            {{ trans('button.select_file')  }}
+                        <label class="btn btn-default btn-block">
+                            {{ trans('button.select_files')  }}
                             <input type="file" name="file[]" multiple="true" class="js-uploadFile" id="uploadFile" data-maxsize="{{ Helper::file_upload_max_size() }}" accept="image/*,.csv,.zip,.rar,.doc,.docx,.xls,.xlsx,.xml,.lic,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/plain,.pdf,application/rtf,application/json" style="display:none" required>
                         </label>
 
                     </div>
-                    <div class="col-md-9">
+                    <div class="col-md-12">
                         <span id="uploadFile-info"></span>
                     </div>
                     <div class="col-md-12">

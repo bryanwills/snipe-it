@@ -6,9 +6,12 @@ use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\License;
+use App\Models\LicenseSeat;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * This controller handles all actions related to Licenses for
@@ -86,7 +89,7 @@ class LicensesController extends Controller
         $license->name              = $request->input('name');
         $license->notes             = $request->input('notes');
         $license->order_number      = $request->input('order_number');
-        $license->purchase_cost     = Helper::ParseCurrency($request->input('purchase_cost'));
+        $license->purchase_cost     = $request->input('purchase_cost');
         $license->purchase_date     = $request->input('purchase_date');
         $license->purchase_order    = $request->input('purchase_order');
         $license->purchase_order    = $request->input('purchase_order');
@@ -96,10 +99,13 @@ class LicensesController extends Controller
         $license->supplier_id       = $request->input('supplier_id');
         $license->category_id       = $request->input('category_id');
         $license->termination_date  = $request->input('termination_date');
-        $license->user_id           = Auth::id();
+        $license->created_by           = auth()->id();
+        $license->min_amt           = $request->input('min_amt');
+
+        session()->put(['redirect_option' => $request->get('redirect_option')]);
 
         if ($license->save()) {
-            return redirect()->route('licenses.index')->with('success', trans('admin/licenses/message.create.success'));
+            return redirect()->to(Helper::getRedirectOption($request, $license->id, 'Licenses'))->with('success', trans('admin/licenses/message.create.success'));
         }
 
         return redirect()->back()->withInput()->withErrors($license->getErrors());
@@ -164,7 +170,7 @@ class LicensesController extends Controller
         $license->name              = $request->input('name');
         $license->notes             = $request->input('notes');
         $license->order_number      = $request->input('order_number');
-        $license->purchase_cost     = Helper::ParseCurrency($request->input('purchase_cost'));
+        $license->purchase_cost     = $request->input('purchase_cost');
         $license->purchase_date     = $request->input('purchase_date');
         $license->purchase_order    = $request->input('purchase_order');
         $license->reassignable      = $request->input('reassignable', 0);
@@ -174,9 +180,12 @@ class LicensesController extends Controller
         $license->manufacturer_id   =  $request->input('manufacturer_id');
         $license->supplier_id       = $request->input('supplier_id');
         $license->category_id       = $request->input('category_id');
+        $license->min_amt           = $request->input('min_amt');
+
+        session()->put(['redirect_option' => $request->get('redirect_option')]);
 
         if ($license->save()) {
-            return redirect()->route('licenses.show', ['license' => $licenseId])->with('success', trans('admin/licenses/message.update.success'));
+            return redirect()->to(Helper::getRedirectOption($request, $license->id, 'Licenses'))->with('success', trans('admin/licenses/message.update.success'));
         }
         // If we can't adjust the number of seats, the error is flashed to the session by the event handler in License.php
         return redirect()->back()->withInput()->withErrors($license->getErrors());
@@ -205,7 +214,7 @@ class LicensesController extends Controller
         if ($license->assigned_seats_count == 0) {
             // Delete the license and the associated license seats
             DB::table('license_seats')
-                ->where('id', $license->id)
+                ->where('license_id', $license->id)
                 ->update(['assigned_to' => null, 'asset_id' => null]);
 
             $licenseSeats = $license->licenseseats();
@@ -233,16 +242,34 @@ class LicensesController extends Controller
     {
         $license = License::with('assignedusers')->find($licenseId);
 
-        if ($license) {
-            $this->authorize('view', $license);
-
-            return view('licenses/view', compact('license'));
+        if (!$license) {
+            return redirect()->route('licenses.index')
+            ->with('error', trans('admin/licenses/message.does_not_exist'));
         }
 
-        return redirect()->route('licenses.index')
-            ->with('error', trans('admin/licenses/message.does_not_exist'));
+        $users_count = User::where('autoassign_licenses', '1')->count();
+        $total_seats_count = $license->totalSeatsByLicenseID();
+        $available_seats_count = $license->availCount()->count();
+        $checkedout_seats_count = ($total_seats_count - $available_seats_count);
+
+        $this->authorize('view', $license);
+        return view('licenses.view', compact('license'))
+            ->with('users_count', $users_count)
+            ->with('total_seats_count', $total_seats_count)
+            ->with('available_seats_count', $available_seats_count)
+            ->with('checkedout_seats_count', $checkedout_seats_count);
+
     }
 
+
+    /**
+     * Returns a view with prepopulated data for clone
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     * @param int $licenseId
+     * @return \Illuminate\Http\RedirectResponse
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
     public function getClone($licenseId = null)
     {
         if (is_null($license_to_clone = License::find($licenseId))) {
@@ -266,5 +293,107 @@ class LicensesController extends Controller
         ->with('depreciation_list', Helper::depreciationList())
         ->with('item', $license)
         ->with('maintained_list', $maintained_list);
+    }
+
+    /**
+     * Exports Licenses to CSV
+     *
+     * @author [G. Martinez]
+     * @since [v6.3]
+     * @return StreamedResponse
+     * @throws \Illuminate\Auth\Access\AuthorizationException
+     */
+    public function getExportLicensesCsv()
+    {
+        $this->authorize('view', License::class);
+        \Debugbar::disable();
+
+        $response = new StreamedResponse(function () {
+            // Open output stream
+            $handle = fopen('php://output', 'w');
+            $licenses= License::with('company',
+                          'manufacturer',
+                          'category',
+                          'supplier',
+                          'adminuser',
+                          'assignedusers')
+                          ->orderBy('created_at', 'DESC');
+            Company::scopeCompanyables($licenses)
+                ->chunk(500, function ($licenses) use ($handle) {
+                    $headers = [
+                        // strtolower to prevent Excel from trying to open it as a SYLK file
+                        strtolower(trans('general.id')),
+                        trans('general.company'),
+                        trans('general.name'),
+                        trans('general.serial_number'),
+                        trans('general.purchase_date'),
+                        trans('general.purchase_cost'),
+                        trans('general.order_number'),
+                        trans('general.licenses_available'),
+                        trans('admin/licenses/table.seats'),
+                        trans('general.created_by'),
+                        trans('general.depreciation'),
+                        trans('general.updated_at'),
+                        trans('admin/licenses/table.deleted_at'),
+                        trans('general.email'),
+                        trans('admin/hardware/form.fully_depreciated'),
+                        trans('general.supplier'),
+                        trans('admin/licenses/form.expiration'),
+                        trans('admin/licenses/form.purchase_order'),
+                        trans('admin/licenses/form.termination_date'),
+                        trans('admin/licenses/form.maintained'),
+                        trans('general.manufacturer'),
+                        trans('general.category'),
+                        trans('general.min_amt'),
+                        trans('admin/licenses/form.reassignable'),
+                        trans('general.notes'),
+                        trans('general.created_at'),
+                    ];
+
+                    fputcsv($handle, $headers);
+
+                    foreach ($licenses as $license) {
+                        // Add a new row with data
+                        $values = [
+                            $license->id,
+                            $license->company ? $license->company->name: '',
+                            $license->name,
+                            $license->serial,
+                            $license->purchase_date,
+                            $license->purchase_cost,
+                            $license->order_number,
+                            $license->free_seat_count,
+                            $license->seats,
+                            ($license->adminuser ? $license->adminuser->present()->fullName() : trans('admin/reports/general.deleted_user')),
+                            $license->depreciation ? $license->depreciation->name: '',
+                            $license->updated_at,
+                            $license->deleted_at,
+                            $license->email,
+                            ( $license->depreciate == '1') ? trans('general.yes') : trans('general.no'),
+                            ($license->supplier) ? $license->supplier->name: '',
+                            $license->expiration_date,
+                            $license->purchase_order,
+                            $license->termination_date,
+                            ( $license->maintained == '1') ? trans('general.yes') : trans('general.no'),
+                            $license->manufacturer ? $license->manufacturer->name: '',
+                            $license->category ? $license->category->name: '',
+                            $license->min_amt,
+                            ( $license->reassignable == '1') ? trans('general.yes') : trans('general.no'),
+                            $license->notes,
+                            $license->created_at,
+                        ];
+
+                        fputcsv($handle, $values);
+                    }
+                });
+
+            // Close the output stream
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="licenses-'.date('Y-m-d-his').'.csv"',
+        ]);
+
+        return $response;
     }
 }

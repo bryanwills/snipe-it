@@ -47,6 +47,7 @@ class AssetModelsTransformer
             ] : null,
             'image' => ($assetmodel->image != '') ? Storage::disk('public')->url('models/'.e($assetmodel->image)) : null,
             'model_number' => e($assetmodel->model_number),
+            'min_amt'   => ($assetmodel->min_amt) ? (int) $assetmodel->min_amt : null,
             'depreciation' => ($assetmodel->depreciation) ? [
                 'id' => (int) $assetmodel->depreciation->id,
                 'name'=> e($assetmodel->depreciation->name),
@@ -63,7 +64,11 @@ class AssetModelsTransformer
             'default_fieldset_values' => $default_field_values,
             'eol' => ($assetmodel->eol > 0) ? $assetmodel->eol.' months' : 'None',
             'requestable' => ($assetmodel->requestable == '1') ? true : false,
-            'notes' => e($assetmodel->notes),
+            'notes' => Helper::parseEscapedMarkedownInline($assetmodel->notes),
+            'created_by' => ($assetmodel->adminuser) ? [
+                'id' => (int) $assetmodel->adminuser->id,
+                'name'=> e($assetmodel->adminuser->present()->fullName()),
+            ] : null,
             'created_at' => Helper::getFormattedDateObject($assetmodel->created_at, 'datetime'),
             'updated_at' => Helper::getFormattedDateObject($assetmodel->updated_at, 'datetime'),
             'deleted_at' => Helper::getFormattedDateObject($assetmodel->deleted_at, 'datetime'),
@@ -72,7 +77,7 @@ class AssetModelsTransformer
 
         $permissions_array['available_actions'] = [
             'update' => (Gate::allows('update', AssetModel::class) && ($assetmodel->deleted_at == '')),
-            'delete' => (Gate::allows('delete', AssetModel::class) && ($assetmodel->assets_count == 0)),
+            'delete' => $assetmodel->isDeletable(),
             'clone' => (Gate::allows('create', AssetModel::class) && ($assetmodel->deleted_at == '')),
             'restore' => (Gate::allows('create', AssetModel::class) && ($assetmodel->deleted_at != '')),
         ];

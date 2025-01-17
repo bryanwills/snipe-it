@@ -9,12 +9,15 @@
 ## {{ $assets->count() }} {{ trans('general.assets') }}
 
 <table width="100%">
-    <tr><th align="left">{{ trans('mail.name') }} </th><th align="left">{{ trans('mail.asset_tag') }}</th><th align="left">{{ trans('admin/hardware/table.serial') }}</th> <th></th> </tr>
+    <tr><th align="left">{{ trans('mail.name') }} </th><th align="left">{{ trans('mail.asset_tag') }}</th><th align="left">{{ trans('admin/hardware/table.serial') }}</th><th align="left">{{ trans('general.category') }}</th> <th></th> </tr>
+
+
 @foreach($assets as $asset)
 <tr>
     <td>{{ $asset->present()->name }}</td>
     <td> {{ $asset->asset_tag }} </td>
     <td> {{ $asset->serial }} </td>
+    <td> {{ $asset->model->category->name }}</td>
     @if (($snipeSettings->show_images_in_email =='1') && $asset->getImageUrl())
     <td>
         <img src="{{ asset($asset->getImageUrl()) }}" alt="Asset" style="max-width: 64px;">
@@ -51,6 +54,19 @@
 @foreach($licenses as $license)
 <tr>
     <td>{{ $license->name }}</td>
+</tr>
+@endforeach
+</table>
+@endif
+
+@if ($consumables->count() > 0)
+## {{ $consumables->count() }} {{ trans('general.consumables') }}
+
+<table width="100%">
+<tr><th align="left">{{ trans('mail.name') }} </th> <th></th> </tr>
+@foreach($consumables as $consumable)
+<tr>
+<td>{{ $consumable->name }}</td>
 </tr>
 @endforeach
 </table>

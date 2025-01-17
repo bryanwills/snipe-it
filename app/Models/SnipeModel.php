@@ -21,9 +21,14 @@ class SnipeModel extends Model
      */
     public function setPurchaseCostAttribute($value)
     {
-        $value = Helper::ParseFloat($value);
+        if (is_float($value)) {
+            //value is *already* a floating-point number. Just assign it directly
+            $this->attributes['purchase_cost'] = $value;
+            return;
+        }
+        $value = Helper::ParseCurrency($value);
 
-        if ($value == '0.0') {
+        if ($value == 0) {
             $value = null;
         }
         $this->attributes['purchase_cost'] = $value;

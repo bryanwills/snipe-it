@@ -2,6 +2,8 @@
 
 namespace App\Helpers;
 use App\Models\Accessory;
+use App\Models\Asset;
+use App\Models\AssetModel;
 use App\Models\Component;
 use App\Models\Consumable;
 use App\Models\CustomField;
@@ -9,13 +11,75 @@ use App\Models\CustomFieldset;
 use App\Models\Depreciation;
 use App\Models\Setting;
 use App\Models\Statuslabel;
-use Crypt;
+use App\Models\License;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Contracts\Encryption\DecryptException;
-use Image;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Intervention\Image\ImageManagerStatic as Image;
+use Illuminate\Support\Facades\Session;
 
 class Helper
 {
+
+
+    /**
+     * This is only used for reversing the migration that updates the locale to the 5-6 letter codes from two
+     * letter codes. The normal dropdowns use the autoglossonyms in the language files located
+     * in resources/en-US/localizations.php.
+     */
+    public static $language_map =  [
+        'af' => 'af-ZA', // Afrikaans
+        'am' => 'am-ET', // Amharic
+        'ar' => 'ar-SA', // Arabic
+        'bg' => 'bg-BG', // Bulgarian
+        'ca' => 'ca-ES', // Catalan
+        'cs' => 'cs-CZ', // Czech
+        'cy' => 'cy-GB', // Welsh
+        'da' => 'da-DK', // Danish
+        'de-i' => 'de-if', // German informal
+        'de' => 'de-DE', // German
+        'el' => 'el-GR', // Greek
+        'en' => 'en-US', // English
+        'et' => 'et-EE', // Estonian
+        'fa' => 'fa-IR', // Persian
+        'fi' => 'fi-FI', // Finnish
+        'fil' => 'fil-PH', // Filipino
+        'fr' => 'fr-FR', // French
+        'he' => 'he-IL', // Hebrew
+        'hr' => 'hr-HR', // Croatian
+        'hu' => 'hu-HU', // Hungarian
+        'id' => 'id-ID', // Indonesian
+        'is' => 'is-IS', // Icelandic
+        'it' => 'it-IT', // Italian
+        'iu' => 'iu-NU', // Inuktitut
+        'ja' => 'ja-JP', // Japanese
+        'ko' => 'ko-KR', // Korean
+        'lt' => 'lt-LT', // Lithuanian
+        'lv' => 'lv-LV', // Latvian
+        'mi' => 'mi-NZ', // Maori
+        'mk' => 'mk-MK', // Macedonian
+        'mn' => 'mn-MN', // Mongolian
+        'ms' => 'ms-MY', // Malay
+        'nl' => 'nl-NL', // Dutch
+        'no' => 'nb-NO', // Norwegian Bokmål
+        'pl' => 'pl-PL', // Polish
+        'pt' => 'pt-PT', // Portuguese
+        'ro' => 'ro-RO', // Romanian
+        'ru' => 'ru-RU', // Russian
+        'sk' => 'sk-SK', // Slovak
+        'sl' => 'sl-SI', // Slovenian
+        'so' => 'so-SO', // Somali
+        'ta' => 'ta-IN', // Tamil
+        'th' => 'th-TH', // Thai
+        'tl' => 'tl-PH', // Tagalog
+        'tr' => 'tr-TR', // Turkish
+        'uk' => 'uk-UA', // Ukrainian
+        'vi' => 'vi-VN', // Vietnamese
+        'zu' => 'zu-ZA', // Zulu
+    ];
+
     /**
      * Simple helper to invoke the markdown parser
      *
@@ -30,6 +94,16 @@ class Helper
 
         if ($str) {
             return $Parsedown->text($str);
+        }
+    }
+
+    public static function parseEscapedMarkedownInline($str = null)
+    {
+        $Parsedown = new \Parsedown();
+        $Parsedown->setSafeMode(true);
+
+        if ($str) {
+            return $Parsedown->line($str);
         }
     }
 
@@ -61,10 +135,14 @@ class Helper
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v3.3]
-     * @return array
+     * @return string
      */
-    public static function defaultChartColors($index = 0)
+    public static function defaultChartColors(int $index = 0)
     {
+        if ($index < 0) {
+            $index = 0;
+        }
+
         $colors = [
             '#008941',
             '#FF4A46',
@@ -337,7 +415,19 @@ class Helper
         $total_colors = count($colors);
 
         if ($index >= $total_colors) {
-            $index = $index - $total_colors;
+
+            Log::info('Status label count is '.$index.' and exceeds the allowed count of 266.');
+            //patch fix for array key overflow (color count starts at 1, array starts at 0)
+            $index = $index - $total_colors - 1;
+
+            //constraints to keep result in 0-265 range. This should never be needed, but if something happens
+            //to create this many status labels and it DOES happen, this will keep it from failing at least.
+            if($index < 0) {
+                $index = 0;
+            }
+            elseif($index >($total_colors - 1)) {
+                $index = $total_colors - 1;
+            }
         }
 
         return $colors[$index];
@@ -543,8 +633,8 @@ class Helper
             'license' => trans('general.license'),
         ];
 
-        if($selection != null){
-            return $category_types[$selection];
+        if ($selection != null){
+            return $category_types[strtolower($selection)];
         }
         else
         return $category_types;
@@ -619,6 +709,28 @@ class Helper
 
         return $randomString;
     }
+    /**
+     * A method to be used to handle deprecations notifications, currently handling MS Teams. more can be added when needed.
+     *
+     *
+     * @author [Godfrey Martinez]
+     * @since [v7.0.14]
+     * @return array
+     */
+    public static function deprecationCheck()  : array {
+        // The check and message that the user is still using the deprecated version
+        $deprecations = [
+            'ms_teams_deprecated' => array(
+            'check' => !Str::contains(Setting::getSettings()->webhook_endpoint, 'workflows'),
+            'message' => 'The Microsoft Teams webhook URL being used will be deprecated Jan 31st, 2025. <a class="btn btn-primary" href="' . route('settings.slack.index') . '">Change webhook endpoint</a>'),
+        ];
+
+        // if item of concern is being used and its being used with the deprecated values return the notification array.
+        if(Setting::getSettings()->webhook_selected === 'microsoft' && $deprecations['ms_teams_deprecated']['check']) {
+            return $deprecations;
+        }
+            return [];
+    }
 
     /**
      * This nasty little method gets the low inventory info for the
@@ -630,17 +742,19 @@ class Helper
      */
     public static function checkLowInventory()
     {
+        $alert_threshold = \App\Models\Setting::getSettings()->alert_threshold;
         $consumables = Consumable::withCount('consumableAssignments as consumable_assignments_count')->whereNotNull('min_amt')->get();
-        $accessories = Accessory::withCount('users as users_count')->whereNotNull('min_amt')->get();
+        $accessories = Accessory::withCount('checkouts as checkouts_count')->whereNotNull('min_amt')->get();
         $components = Component::whereNotNull('min_amt')->get();
+        $asset_models = AssetModel::where('min_amt', '>', 0)->get();
+        $licenses = License::where('min_amt', '>', 0)->get();
 
-        $avail_consumables = 0;
         $items_array = [];
         $all_count = 0;
 
         foreach ($consumables as $consumable) {
             $avail = $consumable->numRemaining();
-            if ($avail < ($consumable->min_amt) + \App\Models\Setting::getSettings()->alert_threshold) {
+            if ($avail < ($consumable->min_amt) + $alert_threshold) {
                 if ($consumable->qty > 0) {
                     $percent = number_format((($avail / $consumable->qty) * 100), 0);
                 } else {
@@ -658,8 +772,8 @@ class Helper
         }
 
         foreach ($accessories as $accessory) {
-            $avail = $accessory->qty - $accessory->users_count;
-            if ($avail < ($accessory->min_amt) + \App\Models\Setting::getSettings()->alert_threshold) {
+            $avail = $accessory->qty - $accessory->checkouts_count;
+            if ($avail < ($accessory->min_amt) + $alert_threshold) {
                 if ($accessory->qty > 0) {
                     $percent = number_format((($avail / $accessory->qty) * 100), 0);
                 } else {
@@ -678,7 +792,7 @@ class Helper
 
         foreach ($components as $component) {
             $avail = $component->numRemaining();
-            if ($avail < ($component->min_amt) + \App\Models\Setting::getSettings()->alert_threshold) {
+            if ($avail < ($component->min_amt) + $alert_threshold) {
                 if ($component->qty > 0) {
                     $percent = number_format((($avail / $component->qty) * 100), 0);
                 } else {
@@ -693,6 +807,48 @@ class Helper
                 $items_array[$all_count]['min_amt'] = $component->min_amt;
                 $all_count++;
             }
+        }
+
+        foreach ($asset_models as $asset_model){
+
+            $asset = new Asset();
+            $total_owned = $asset->where('model_id', '=', $asset_model->id)->count();
+            $avail = $asset->where('model_id', '=', $asset_model->id)->whereNull('assigned_to')->count();
+
+            if ($avail < ($asset_model->min_amt) + $alert_threshold) {
+                if ($avail > 0) {
+                    $percent = number_format((($avail / $total_owned) * 100), 0);
+                } else {
+                    $percent = 100;
+                }
+                $items_array[$all_count]['id'] = $asset_model->id;
+                $items_array[$all_count]['name'] = $asset_model->name;
+                $items_array[$all_count]['type'] = 'models';
+                $items_array[$all_count]['percent'] = $percent;
+                $items_array[$all_count]['remaining'] = $avail;
+                $items_array[$all_count]['min_amt'] = $asset_model->min_amt;
+                $all_count++;
+            }
+        }
+
+        foreach ($licenses as $license){
+            $avail = $license->remaincount();
+            if ($avail < ($license->min_amt) + $alert_threshold) {
+                if ($avail > 0) {
+                    $percent = number_format((($avail / $license->min_amt) * 100), 0);
+                } else {
+                    $percent = 100;
+                }
+
+                $items_array[$all_count]['id'] = $license->id;
+                $items_array[$all_count]['name'] = $license->name;
+                $items_array[$all_count]['type'] = 'licenses';
+                $items_array[$all_count]['percent'] = $percent;
+                $items_array[$all_count]['remaining'] = $avail;
+                $items_array[$all_count]['min_amt'] = $license->min_amt;
+                $all_count++;
+            }
+
         }
 
         return $items_array;
@@ -712,7 +868,7 @@ class Helper
         $filetype = @finfo_file($finfo, $file);
         finfo_close($finfo);
 
-        if (($filetype == 'image/jpeg') || ($filetype == 'image/jpg') || ($filetype == 'image/png') || ($filetype == 'image/bmp') || ($filetype == 'image/gif')) {
+        if (($filetype == 'image/jpeg') || ($filetype == 'image/jpg') || ($filetype == 'image/png') || ($filetype == 'image/bmp') || ($filetype == 'image/gif') || ($filetype == 'image/avif')) {
             return $filetype;
         }
 
@@ -745,12 +901,15 @@ class Helper
                 $permission_name = $permission[$x]['permission'];
 
                 if ($permission[$x]['display'] === true) {
-                    if ($selected_arr) {
+
+                    if (is_array($selected_arr)) {
+
                         if (array_key_exists($permission_name, $selected_arr)) {
                             $permissions_arr[$permission_name] = $selected_arr[$permission_name];
                         } else {
                             $permissions_arr[$permission_name] = '0';
                         }
+
                     } else {
                         $permissions_arr[$permission_name] = '0';
                     }
@@ -778,13 +937,22 @@ class Helper
         $rules = $class::rules();
         foreach ($rules as $rule_name => $rule) {
             if ($rule_name == $field) {
-                if (strpos($rule, 'required') === false) {
-                    return false;
+                if (is_array($rule)) {
+                    if (in_array('required', $rule)) {
+                       return true;
+                    } else {
+                        return false;
+                    }
                 } else {
-                    return true;
-                }
+                    if (strpos($rule, 'required') === false) {
+                            return false;
+                        } else {
+                            return true;
+                        }
+                    }
             }
         }
+        return false;
     }
 
     /**
@@ -882,7 +1050,7 @@ class Helper
 
 
         try {
-            $tmp_date = new \Carbon($date);
+            $tmp_date = new Carbon($date);
 
             if ($type == 'datetime') {
                 $dt['datetime'] = $tmp_date->format('Y-m-d H:i:s');
@@ -899,7 +1067,7 @@ class Helper
             return $dt['formatted'];
 
         } catch (\Exception $e) {
-            \Log::warning($e);
+            Log::warning($e);
             return $date.' (Invalid '.$type.' value.)';
         }
 
@@ -976,6 +1144,9 @@ class Helper
             'jpeg'   => 'far fa-image',
             'gif'   => 'far fa-image',
             'png'   => 'far fa-image',
+            'webp'   => 'far fa-image',
+            'avif'   => 'far fa-image',
+            'svg' => 'fas fa-vector-square',
             // word
             'doc'   => 'far fa-file-word',
             'docx'   => 'far fa-file-word',
@@ -988,7 +1159,7 @@ class Helper
             //Text
             'txt'   => 'far fa-file-alt',
             'rtf'   => 'far fa-file-alt',
-            'xml'   => 'far fa-file-alt',
+            'xml'   => 'fas fa-code',
             // Misc
             'pdf'   => 'far fa-file-pdf',
             'lic'   => 'far fa-save',
@@ -1001,39 +1172,7 @@ class Helper
         return 'far fa-file';
     }
 
-    public static function show_file_inline($filename)
-    {
-        $extension = substr(strrchr($filename, '.'), 1);
 
-        if ($extension) {
-            switch ($extension) {
-                case 'jpg':
-                case 'jpeg':
-                case 'gif':
-                case 'png':
-                    return true;
-                    break;
-                default:
-                    return false;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Generate a random encrypted password.
-     *
-     * @author Wes Hulette <jwhulette@gmail.com>
-     *
-     * @since 5.0.0
-     *
-     * @return string
-     */
-    public static function generateEncyrptedPassword(): string
-    {
-        return bcrypt(self::generateUnencryptedPassword());
-    }
 
     /**
      * Get a random unencrypted password.
@@ -1208,20 +1347,186 @@ class Helper
     public static function isDemoMode() {
         if (config('app.lock_passwords') === true) {
             return true;
-            \Log::debug('app locked!');
+            Log::debug('app locked!');
         }
-
+        
         return false;
+    }
+
+  
+    /**
+     * Conversion between units of measurement
+     *
+     * @author Grant Le Roux <grant.leroux+snipe-it@gmail.com>
+     * @since 5.0
+     * @param float  $value    Measurement value to convert
+     * @param string $srcUnit  Source unit of measurement
+     * @param string $dstUnit  Destination unit of measurement
+     * @param int    $round    Round the result to decimals (Default false - No rounding)
+     * @return float
+     */
+    public static function convertUnit($value, $srcUnit, $dstUnit, $round=false) {
+        $srcFactor = static::getUnitConversionFactor($srcUnit);
+        $dstFactor = static::getUnitConversionFactor($dstUnit);
+        $output = $value * $srcFactor / $dstFactor;
+        return ($round !== false) ? round($output, $round) : $output;
+    }
+  
+    /**
+     * Get conversion factor from unit of measurement to mm
+     *
+     * @author Grant Le Roux <grant.leroux+snipe-it@gmail.com>
+     * @since 5.0
+     * @param string $unit  Unit of measurement
+     * @return float
+     */
+    public static function getUnitConversionFactor($unit) {
+        switch (strtolower($unit)) {
+            case 'mm':
+                return 1.0;
+            case 'cm':
+                return 10.0;
+            case 'm':
+                return 1000.0;
+            case 'in':
+                return 25.4;
+            case 'ft':
+                return 12 * static::getUnitConversionFactor('in');
+            case 'yd':
+                return 3 * static::getUnitConversionFactor('ft');
+            case 'pt':
+                return (1 / 72) * static::getUnitConversionFactor('in');
+            default:
+                throw new \InvalidArgumentException('Unit: \'' . $unit . '\' is not supported');
+
+                return false;
+        }
     }
 
 
     /*
-     * I know it's gauche  to return a shitty HTML string, but this is just a helper and since it will be the same every single time,
+     * I know it's gauche to return a shitty HTML string, but this is just a helper and since it will be the same every single time,
      * it seemed pretty safe to do here. Don't you judge me.
      */
     public static function showDemoModeFieldWarning() {
         if (Helper::isDemoMode()) {
             return "<p class=\"text-warning\"><i class=\"fas fa-lock\"></i>" . trans('general.feature_disabled') . "</p>";
         }
+    }
+
+
+    /**
+     * Ah, legacy code.
+     *
+     * This corrects the original mistakes from 2013 where we used the wrong locale codes. Hopefully we
+     * can get rid of this in a future version, but this should at least give us the belt and suspenders we need
+     * to be sure this change is not too disruptive.
+     *
+     * In this array, we ONLY include the older languages where we weren't using the correct locale codes.
+     *
+     * @see public static $language_map in this file
+     * @author A. Gianotto <snipe@snipe.net>
+     * @since 6.3.0
+     *
+     * @param $language_code
+     * @return string []
+     */
+    public static function mapLegacyLocale($language_code = null)
+    {
+
+        if (strlen($language_code) > 4) {
+            return $language_code;
+        }
+
+        foreach (self::$language_map as $legacy => $new) {
+            if ($language_code == $legacy) {
+                return $new;
+            }
+        }
+
+        // Return US english if we don't have a match
+        return 'en-US';
+    }
+
+    public static function mapBackToLegacyLocale($new_locale = null)
+    {
+
+        if (strlen($new_locale) <= 4) {
+            return $new_locale; //"new locale" apparently wasn't quite so new
+        }
+
+        // This does a *reverse* search against our new language map array - given the value, find the *key* for it
+        $legacy_locale = array_search($new_locale, self::$language_map);
+
+        if ($legacy_locale !== false) {
+            return $legacy_locale;
+        }
+        return $new_locale; // better that you have some weird locale that doesn't fit into our mappings anywhere than 'void'
+    }
+
+    public static function determineLanguageDirection() {
+        return in_array(app()->getLocale(),
+            [
+                'ar-SA',
+                'fa-IR',
+                'he-IL'
+            ]) ? 'rtl' : 'ltr';
+    }
+
+
+    static public function getRedirectOption($request, $id, $table, $item_id = null)
+    {
+
+        $redirect_option = Session::get('redirect_option');
+        $checkout_to_type = Session::get('checkout_to_type');
+
+        // return to index
+        if ($redirect_option == 'index') {
+            switch ($table) {
+                case "Assets":
+                    return route('hardware.index');
+                case "Users":
+                    return route('users.index');
+                case "Licenses":
+                    return route('licenses.index');
+                case "Accessories":
+                    return route('accessories.index');
+                case "Components":
+                    return route('components.index');
+                case "Consumables":
+                    return route('consumables.index');
+            }
+        }
+
+        // return to thing being assigned
+        if ($redirect_option == 'item') {
+            switch ($table) {
+                case "Assets":
+                    return route('hardware.show', $id ?? $item_id);
+                case "Users":
+                    return route('users.show', $id ?? $item_id);
+                case "Licenses":
+                    return route('licenses.show', $id ?? $item_id);
+                case "Accessories":
+                    return route('accessories.show', $id ?? $item_id);
+                case "Components":
+                    return route('components.show', $id ?? $item_id);
+                case "Consumables":
+                    return route('consumables.show', $id ?? $item_id);
+            }
+        }
+
+        // return to assignment target
+        if ($redirect_option == 'target') {
+            switch ($checkout_to_type) {
+                case 'user':
+                    return route('users.show', ['user' => $request->assigned_user]);
+                case 'location':
+                    return route('locations.show', ['location' => $request->assigned_location]);
+                case 'asset':
+                    return route('hardware.show', ['hardware' => $request->assigned_asset]);
+            }
+        }
+        return redirect()->back()->with('error', trans('admin/hardware/message.checkout.error'));
     }
 }

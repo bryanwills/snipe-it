@@ -6,13 +6,15 @@ use App\Models\Traits\Acceptable;
 use App\Notifications\CheckinLicenseNotification;
 use App\Notifications\CheckoutLicenseNotification;
 use App\Presenters\Presentable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class LicenseSeat extends SnipeModel implements ICompanyableChild
 {
     use CompanyableChildTrait;
-    use SoftDeletes;
+    use HasFactory;
     use Loggable;
+    use SoftDeletes;
 
     protected $presenter = \App\Presenters\LicenseSeatPresenter::class;
     use Presentable;
@@ -46,7 +48,10 @@ class LicenseSeat extends SnipeModel implements ICompanyableChild
      */
     public function requireAcceptance()
     {
-        return $this->license->category->require_acceptance;
+        if ($this->license && $this->license->category) {
+            return $this->license->category->require_acceptance;
+        }
+        return false;
     }
 
     public function getEula()
@@ -121,6 +126,7 @@ class LicenseSeat extends SnipeModel implements ICompanyableChild
     {
         return $query->leftJoin('users as license_seat_users', 'license_seats.assigned_to', '=', 'license_seat_users.id')
             ->leftJoin('departments as license_user_dept', 'license_user_dept.id', '=', 'license_seat_users.department_id')
+            ->whereNotNull('license_seats.assigned_to')
             ->orderBy('license_user_dept.name', $order);
     }
 }

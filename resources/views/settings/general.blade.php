@@ -14,15 +14,11 @@
 {{-- Page content --}}
 @section('content')
 
-    <style>
-        .checkbox label {
-            padding-right: 40px;
-        }
-    </style>
 
 
 
-    {{ Form::open(['method' => 'POST', 'files' => false, 'autocomplete' => 'off', 'class' => 'form-horizontal', 'role' => 'form' ]) }}
+
+    <form method="POST" autocomplete="off" class="form-horizontal" role="form" id="create-form">
     <!-- CSRF Token -->
     {{csrf_field()}}
 
@@ -33,7 +29,7 @@
             <div class="panel box box-default">
                 <div class="box-header with-border">
                     <h2 class="box-title">
-                        <i class="fas fa-wrench" aria-hidden="true"></i>
+                        <x-icon type="general-settings"/>
                         {{ trans('admin/settings/general.general_settings') }}
                     </h2>
                 </div>
@@ -45,11 +41,13 @@
                     <!-- Full Multiple Companies Support -->
                     <div class="form-group {{ $errors->has('full_multiple_companies_support') ? 'error' : '' }}">
                         <div class="col-md-3">
-                            {{ Form::label('full_multiple_companies_support', trans('admin/settings/general.full_multiple_companies_support_text')) }}
+                            <strong>{{ trans('admin/settings/general.full_multiple_companies_support_text') }}</strong>
                         </div>
                         <div class="col-md-9">
-                            {{ Form::checkbox('full_multiple_companies_support', '1', old('full_multiple_companies_support', $setting->full_multiple_companies_support),array('class' => 'minimal', 'aria-label'=>'full_multiple_companies_support')) }}
-                            {{ trans('admin/settings/general.full_multiple_companies_support_text') }}
+                            <label class="form-control">
+                                {{ Form::checkbox('full_multiple_companies_support', '1', old('full_multiple_companies_support', $setting->full_multiple_companies_support),array('aria-label'=>'full_multiple_companies_support')) }}
+                                {{ trans('admin/settings/general.full_multiple_companies_support_text') }}
+                            </label>
                             {!! $errors->first('full_multiple_companies_support', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
                             <p class="help-block">
                                 {{ trans('admin/settings/general.full_multiple_companies_support_help_text') }}
@@ -62,12 +60,13 @@
                     <!-- Require signature for acceptance -->
                     <div class="form-group {{ $errors->has('require_accept_signature') ? 'error' : '' }}">
                         <div class="col-md-3">
-                            {{ Form::label('require_accept_signature',
-                                           trans('admin/settings/general.require_accept_signature')) }}
+                           <strong> {{ trans('admin/settings/general.require_accept_signature') }}</strong>
                         </div>
                         <div class="col-md-9">
-                            {{ Form::checkbox('require_accept_signature', '1', Request::old('require_accept_signature', $setting->require_accept_signature),array('class' => 'minimal')) }}
-                            {{ trans('general.yes') }}
+                            <label class="form-control">
+                                {{ Form::checkbox('require_accept_signature', '1', old('require_accept_signature', $setting->require_accept_signature)) }}
+                                {{ trans('general.yes') }}
+                            </label>
                             {!! $errors->first('require_accept_signature', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
                             <p class="help-block">{{ trans('admin/settings/general.require_accept_signature_help_text') }}</p>
                         </div>
@@ -81,7 +80,7 @@
                             {{ Form::label('email_domain', trans('general.email_domain')) }}
                         </div>
                         <div class="col-md-9">
-                            {{ Form::text('email_domain', Request::old('email_domain', $setting->email_domain), array('class' => 'form-control','placeholder' => 'example.com')) }}
+                            {{ Form::text('email_domain', old('email_domain', $setting->email_domain), array('class' => 'form-control','placeholder' => 'example.com')) }}
                             <span class="help-block">{{ trans('general.email_domain_help')  }}</span>
                             {!! $errors->first('email_domain', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
                         </div>
@@ -114,31 +113,68 @@
                         </div>
                     </div>
 
-                       <!-- Load images in emails -->
-                       <div class="form-group {{ $errors->has('show_images_in_email') ? 'error' : '' }}">
+                       <!-- user profile edit checkbox -->
+                       <div class="form-group">
                            <div class="col-md-3">
-                               {{ Form::label('show_images_in_email', trans('admin/settings/general.show_images_in_email')) }}
+                               <label>
+                                   {{ trans('admin/settings/general.profile_edit') }}
+                               </label>
                            </div>
-                           <div class="col-md-9">
-                               {{ Form::checkbox('show_images_in_email', '1', Request::old('show_images_in_email', $setting->show_images_in_email),array('class' => 'minimal')) }}
-                               {{ trans('general.yes') }}
-                               {!! $errors->first('show_images_in_email', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                           <div class="col-md-8">
+                               <label class="form-control">
+                                   <input type="checkbox" value="1" name="profile_edit" {{ (old('profile_edit', $setting->profile_edit)) == '1' ? ' checked="checked"' : '' }} aria-label="profile_edit">
+                                   {{ trans('admin/settings/general.profile_edit_help') }}
+                               </label>
 
                            </div>
                        </div>
 
+                       <!-- Load images in emails -->
+                       <div class="form-group {{ $errors->has('show_images_in_email') ? 'error' : '' }}">
+                           <div class="col-md-3">
+                               <strong>{{ trans('admin/settings/general.show_images_in_email') }}</strong>
+                           </div>
+                           <div class="col-md-9">
+                               <label class="form-control">
+                                   {{ Form::checkbox('show_images_in_email', '1', old('show_images_in_email', $setting->show_images_in_email)) }}
+                                   {{ trans('general.yes') }}
+                                   {!! $errors->first('show_images_in_email', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                               </label>
+
+                           </div>
+                       </div>
+
+
                        <!-- unique serial -->
                        <div class="form-group">
                            <div class="col-md-3">
-                               {{ Form::label('unique_serial', trans('admin/settings/general.unique_serial')) }}
+                               <strong>{{ trans('admin/settings/general.unique_serial') }}</strong>
                            </div>
                            <div class="col-md-9">
-                               {{ Form::checkbox('unique_serial', '1', Request::old('unique_serial', $setting->unique_serial),array('class' => 'minimal')) }}
-                               {{ trans('general.yes') }}
-                               {!! $errors->first('unique_serial', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                               <label class="form-control">
+                                   {{ Form::checkbox('unique_serial', '1', old('unique_serial', $setting->unique_serial),array('class' => 'minimal')) }}
+                                   {{ trans('general.yes') }}
+                                   {!! $errors->first('unique_serial', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                               </label>
+
                                <p class="help-block">
                                {{ trans('admin/settings/general.unique_serial_help_text') }}
                                </p>
+                           </div>
+                       </div>
+
+                       <!-- Shortcuts enable -->
+                       <div class="form-group {{ $errors->has('shortcuts_enabled') ? 'error' : '' }}">
+                           <div class="col-md-3">
+                               <strong> {{ trans('admin/settings/general.shortcuts_enabled') }}</strong>
+                           </div>
+                           <div class="col-md-9">
+                               <label class="form-control">
+                                   <input type="checkbox" name="shortcuts_enabled" value="1" {{ old('shortcuts_enabled', $setting->shortcuts_enabled) ? 'checked' : '' }}>
+                                   {{ trans('general.yes') }}
+                               </label>
+                               {!! $errors->first('shortcuts_enabled', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                               <p class="help-block">{!!trans('admin/settings/general.shortcuts_help_text') !!}</p>
                            </div>
                        </div>
 
@@ -160,7 +196,7 @@
                            {{ Form::label('thumbnail_max_h', trans('admin/settings/general.thumbnail_max_h')) }}
                        </div>
                        <div class="col-md-9">
-                           {{ Form::text('thumbnail_max_h', Request::old('thumbnail_max_h', $setting->thumbnail_max_h), array('class' => 'form-control','placeholder' => '50', 'maxlength'=>'3', 'style'=>'width: 60px;')) }}
+                           {{ Form::text('thumbnail_max_h', old('thumbnail_max_h', $setting->thumbnail_max_h), array('class' => 'form-control','placeholder' => '50', 'maxlength'=>'3', 'style'=>'width: 60px;')) }}
                            <p class="help-block">{{ trans('admin/settings/general.thumbnail_max_h_help') }}</p>
                            {!! $errors->first('thumbnail_max_h', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
                        </div>
@@ -178,6 +214,23 @@
                            <p class="help-block">{!! trans('admin/settings/general.eula_markdown') !!}</p>
                        </div>
                    </div>
+
+                   <!-- Require Notes on checkin/checkout checkbox -->
+                   <div class="form-group">
+                       <div class="col-md-3">
+                           <label>
+                               {{ trans('admin/settings/general.require_checkinout_notes') }}
+                           </label>
+                       </div>
+                       <div class="col-md-8">
+                           <label class="form-control">
+                               <input type="checkbox" value="1" name="require_checkinout_notes" {{ (old('require_checkinout_notes', $setting->require_checkinout_notes)) == '1' ? ' checked="checked"' : '' }} aria-label="require_checkinout_notes">
+                               {{ trans('general.yes') }}
+                           </label>
+                               <p class="help-block">{{ trans('admin/settings/general.require_checkinout_notes_help_text') }}</p>
+                       </div>
+                   </div>
+                   <!-- /.form-group -->
 
 
                     <!-- login text -->
@@ -253,11 +306,13 @@
                                               trans('admin/settings/general.show_archived_in_list')) }}
                            </div>
                            <div class="col-md-9">
-                               {{ Form::checkbox('show_archived_in_list', '1', Request::old('show_archived_in_list', $setting->show_archived_in_list),array('class' => 'minimal')) }}
-                               {{ trans('admin/settings/general.show_archived_in_list_text') }}
-                               {!! $errors->first('show_archived_in_list', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
 
-                           </div>
+                                   <label class="form-control">
+                                       {{ Form::checkbox('show_archived_in_list', '1', old('show_archived_in_list', $setting->show_archived_in_list),array('aria-label'=>'show_archived_in_list')) }}
+                                       {{ trans('admin/settings/general.show_archived_in_list_text') }}
+                                   </label>
+                                   {!! $errors->first('show_archived_in_list', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                          </div>
                        </div>
 
                        <!-- Show assets assigned to user's assets -->
@@ -267,8 +322,10 @@
                                               trans('admin/settings/general.show_assigned_assets')) }}
                            </div>
                            <div class="col-md-9">
-                               {{ Form::checkbox('show_assigned_assets', '1', Request::old('show_assigned_assets', $setting->show_assigned_assets),array('class' => 'minimal')) }}
+                               <label class="form-control">
+                               {{ Form::checkbox('show_assigned_assets', '1', old('show_assigned_assets', $setting->show_assigned_assets),array('class' => 'minimal')) }}
                                {{ trans('general.yes') }}
+                               </label>
                                <p class="help-block">{{ trans('admin/settings/general.show_assigned_assets_help') }}</p>
                                {!! $errors->first('show_assigned_assets', '<span class="alert-msg">:message</span>') !!}
                            </div>
@@ -277,14 +334,20 @@
                        <!-- Model List prefs -->
                        <div class="form-group {{ $errors->has('show_in_model_list') ? 'error' : '' }}">
                            <div class="col-md-3">
-                               {{ Form::label('show_in_model_list',
-                                              trans('admin/settings/general.show_in_model_list')) }}
+                               <strong>{{ trans('admin/settings/general.show_in_model_list') }}</strong>
                            </div>
                            <div class="col-md-9">
-                               {{ Form::checkbox('show_in_model_list[]', 'image', old('show_in_model_list', $snipeSettings->modellistCheckedValue('image')),array('class' => 'minimal', 'aria-label'=>'show_in_model_list' )) }} {{ trans('general.image') }} <br>
-                               {{ Form::checkbox('show_in_model_list[]', 'category', old('show_in_model_list', $snipeSettings->modellistCheckedValue('category')),array('class' => 'minimal', 'aria-label'=>'show_in_model_list' )) }} {{ trans('general.category') }} <br>
-                               {{ Form::checkbox('show_in_model_list[]', 'manufacturer', old('show_in_model_list', $snipeSettings->modellistCheckedValue('manufacturer')),array('class' => 'minimal', 'aria-label'=>'show_in_model_list' )) }}  {{ trans('general.manufacturer') }} <br>
-                               {{ Form::checkbox('show_in_model_list[]', 'model_number', old('show_in_model_list', $snipeSettings->modellistCheckedValue('model_number')),array('class' => 'minimal', 'aria-label'=>'show_in_model_list' )) }} {{ trans('general.model_no') }}<br>
+                               <label class="form-control">
+                               {{ Form::checkbox('show_in_model_list[]', 'image', old('show_in_model_list', $snipeSettings->modellistCheckedValue('image')),array('class' => 'minimal', 'aria-label'=>'show_in_model_list' )) }} {{ trans('general.image') }}
+                               </label>
+                               <label class="form-control">
+                               {{ Form::checkbox('show_in_model_list[]', 'category', old('show_in_model_list', $snipeSettings->modellistCheckedValue('category')),array('class' => 'minimal', 'aria-label'=>'show_in_model_list' )) }} {{ trans('general.category') }}
+                               </label>
+                               <label class="form-control">
+                               {{ Form::checkbox('show_in_model_list[]', 'manufacturer', old('show_in_model_list', $snipeSettings->modellistCheckedValue('manufacturer')),array('class' => 'minimal', 'aria-label'=>'show_in_model_list' )) }}  {{ trans('general.manufacturer') }} </label>
+                               <label class="form-control">
+                               {{ Form::checkbox('show_in_model_list[]', 'model_number', old('show_in_model_list', $snipeSettings->modellistCheckedValue('model_number')),array('class' => 'minimal', 'aria-label'=>'show_in_model_list' )) }} {{ trans('general.model_no') }}
+                               </label>
                            </div>
                        </div>
 
@@ -298,7 +361,7 @@
                            <div class="col-md-9">
                                {{ Form::select('dash_chart_type', array(
                                    'name' => 'Status Label Name',
-                                   'type' => 'Status Label Type'), Request::old('dash_chart_type', $setting->dash_chart_type), ['class' =>'select2', 'style' => 'width: 80%']) }}
+                                   'type' => 'Status Label Type'), old('dash_chart_type', $setting->dash_chart_type), ['class' =>'select2', 'style' => 'width: 80%']) }}
                            </div>
                        </div>
 
@@ -313,7 +376,7 @@
                                     'default' => 'Linear (default)', 
                                     'half_1' => 'Half-year convention, always applied', 
                                     'half_2' => 'Half-year convention, applied with condition', 
-                                ), Request::old('username_format', $setting->depreciation_method), ['class' =>'select2', 'style' => 'width: 80%']) }}
+                                ), old('username_format', $setting->depreciation_method), ['class' =>'select2', 'style' => 'width: 80%']) }}
                            </div>
                        </div>
                        <!-- /.form-group -->
@@ -325,9 +388,9 @@
                            </div>
                            <div class="col-md-9">
                                @if (config('app.lock_passwords'))
-                                   {{ Form::text('privacy_policy_link', Request::old('privacy_policy_link', $setting->privacy_policy_link), array('class' => 'form-control disabled', 'disabled' => 'disabled')) }}
+                                   {{ Form::text('privacy_policy_link', old('privacy_policy_link', $setting->privacy_policy_link), array('class' => 'form-control disabled', 'disabled' => 'disabled')) }}
                                @else
-                                   {{ Form::text('privacy_policy_link', Request::old('privacy_policy_link', $setting->privacy_policy_link), array('class' => 'form-control')) }}
+                                   {{ Form::text('privacy_policy_link', old('privacy_policy_link', $setting->privacy_policy_link), array('class' => 'form-control')) }}
 
                                @endif
 
@@ -349,7 +412,7 @@
                     <a class="btn btn-link text-left" href="{{ route('settings.index') }}">{{ trans('button.cancel') }}</a>
                 </div>
                 <div class="text-right col-md-6">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-check icon-white" aria-hidden="true"></i> {{ trans('general.save') }}</button>
+                    <button type="submit" class="btn btn-primary"><x-icon type="checkmark" /> {{ trans('general.save') }}</button>
                 </div>
 
             </div>
@@ -357,7 +420,7 @@
 
         </div> <!-- /box -->
     </div> <!-- /.col-md-8-->
-    </div> <!-- /.row-->
+
 
     {{ Form::close() }}
 

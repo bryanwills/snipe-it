@@ -30,13 +30,15 @@ class Component extends SnipeModel
      * Category validation rules
      */
     public $rules = [
-        'name'           => 'required|min:3|max:255',
+        'name'           => 'required|min:3|max:191',
         'qty'            => 'required|integer|min:1',
         'category_id'    => 'required|integer|exists:categories,id',
-        'company_id'     => 'integer|nullable',
+        'supplier_id'    => 'nullable|integer|exists:suppliers,id',
+        'company_id'     => 'integer|nullable|exists:companies,id',
         'min_amt'        => 'integer|min:0|nullable',
         'purchase_date'   => 'date_format:Y-m-d|nullable',
-        'purchase_cost'  => 'numeric|nullable|gte:0',
+        'purchase_cost'  => 'numeric|nullable|gte:0|max:9999999999999',
+        'manufacturer_id'   => 'integer|exists:manufacturers,id|nullable',
     ];
 
     /**
@@ -57,7 +59,10 @@ class Component extends SnipeModel
     protected $fillable = [
         'category_id',
         'company_id',
+        'supplier_id',
         'location_id',
+        'manufacturer_id',
+        'model_number',
         'name',
         'purchase_cost',
         'purchase_date',
@@ -75,7 +80,15 @@ class Component extends SnipeModel
      *
      * @var array
      */
-    protected $searchableAttributes = ['name', 'order_number', 'serial', 'purchase_cost', 'purchase_date', 'notes'];
+    protected $searchableAttributes = [
+        'name',
+        'order_number',
+        'serial',
+        'purchase_cost',
+        'purchase_date',
+        'notes',
+        'model_number',
+    ];
 
     /**
      * The relations and their attributes that should be included when searching the model.
@@ -86,6 +99,8 @@ class Component extends SnipeModel
         'category'     => ['name'],
         'company'      => ['name'],
         'location'     => ['name'],
+        'supplier'     => ['name'],
+        'manufacturer' => ['name'],
     ];
 
 
@@ -127,7 +142,7 @@ class Component extends SnipeModel
      */
     public function assets()
     {
-        return $this->belongsToMany(\App\Models\Asset::class, 'components_assets')->withPivot('id', 'assigned_qty', 'created_at', 'user_id', 'note');
+        return $this->belongsToMany(\App\Models\Asset::class, 'components_assets')->withPivot('id', 'assigned_qty', 'created_at', 'created_by', 'note');
     }
 
     /**
@@ -139,9 +154,9 @@ class Component extends SnipeModel
      * @since [v3.0]
      * @return \Illuminate\Database\Eloquent\Relations\Relation
      */
-    public function admin()
+    public function adminuser()
     {
-        return $this->belongsTo(\App\Models\User::class, 'user_id');
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     /**
@@ -169,6 +184,31 @@ class Component extends SnipeModel
     }
 
     /**
+     * Establishes the item -> supplier relationship
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     * @since [v6.1.1]
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public function supplier()
+    {
+        return $this->belongsTo(\App\Models\Supplier::class, 'supplier_id');
+    }
+
+
+    /**
+     * Establishes the item -> manufacturer relationship
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     * @since [v3.0]
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public function manufacturer()
+    {
+        return $this->belongsTo(\App\Models\Manufacturer::class, 'manufacturer_id');
+    }
+
+    /**
      * Establishes the component -> action logs relationship
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
@@ -190,7 +230,11 @@ class Component extends SnipeModel
     public function numCheckedOut()
     {
         $checkedout = 0;
-        foreach ($this->assets as $checkout) {
+
+        // In case there are elements checked out to assets that belong to a different company
+        // than this asset and full multiple company support is on we'll remove the global scope,
+        // so they are included in the count.
+        foreach ($this->assets()->withoutGlobalScope(new CompanyableScope)->get() as $checkout) {
             $checkedout += $checkout->pivot->assigned_qty;
         }
 
@@ -208,6 +252,37 @@ class Component extends SnipeModel
     {
         return $this->qty - $this->numCheckedOut();
     }
+
+
+    /**
+     * -----------------------------------------------
+     * BEGIN MUTATORS
+     * -----------------------------------------------
+     **/
+
+    /**
+     * This sets a value for qty if no value is given. The database does not allow this
+     * field to be null, and in the other areas of the code, we set a default, but the importer
+     * does not.
+     *
+     * This simply checks that there is a value for quantity, and if there isn't, set it to 0.
+     *
+     * @author A. Gianotto <snipe@snipe.net>
+     * @since v6.3.4
+     * @param $value
+     * @return void
+     */
+    public function setQtyAttribute($value)
+    {
+        $this->attributes['qty'] = (!$value) ? 0 : intval($value);
+    }
+
+    /**
+     * -----------------------------------------------
+     * BEGIN QUERY SCOPES
+     * -----------------------------------------------
+     **/
+
 
     /**
      * Query builder scope to order on company
@@ -246,5 +321,36 @@ class Component extends SnipeModel
     public function scopeOrderCompany($query, $order)
     {
         return $query->leftJoin('companies', 'components.company_id', '=', 'companies.id')->orderBy('companies.name', $order);
+    }
+
+    /**
+     * Query builder scope to order on supplier
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query  Query builder instance
+     * @param  text                              $order       Order
+     *
+     * @return \Illuminate\Database\Query\Builder          Modified query builder
+     */
+    public function scopeOrderSupplier($query, $order)
+    {
+        return $query->leftJoin('suppliers', 'components.supplier_id', '=', 'suppliers.id')->orderBy('suppliers.name', $order);
+    }
+
+    /**
+     * Query builder scope to order on manufacturer
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query  Query builder instance
+     * @param  text                              $order       Order
+     *
+     * @return \Illuminate\Database\Query\Builder          Modified query builder
+     */
+    public function scopeOrderManufacturer($query, $order)
+    {
+        return $query->leftJoin('manufacturers', 'components.manufacturer_id', '=', 'manufacturers.id')->orderBy('manufacturers.name', $order);
+    }
+
+    public function scopeOrderByCreatedBy($query, $order)
+    {
+        return $query->leftJoin('users as admin_sort', 'components.created_by', '=', 'admin_sort.id')->select('components.*')->orderBy('admin_sort.first_name', $order)->orderBy('admin_sort.last_name', $order);
     }
 }

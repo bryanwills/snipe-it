@@ -9,26 +9,26 @@ use App\Http\Transformers\ImportsTransformer;
 use App\Models\Asset;
 use App\Models\Company;
 use App\Models\Import;
-use Artisan;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Database\Eloquent\JsonEncodingException;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 use League\Csv\Reader;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\JsonResponse;
 
 class ImportController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index() : JsonResponse | array
     {
         $this->authorize('import');
-        $imports = Import::latest()->get();
-
+        $imports = Import::with('adminuser')->latest()->get();
         return (new ImportsTransformer)->transformImports($imports);
     }
 
@@ -36,9 +36,8 @@ class ImportController extends Controller
      * Process and store a CSV upload file.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function store()
+    public function store() : JsonResponse
     {
         $this->authorize('import');
         if (! config('app.lock_passwords')) {
@@ -133,7 +132,7 @@ class ImportController extends Controller
                 }
 
                 $import->filesize = filesize($path.'/'.$file_name);
-                
+                $import->created_by = auth()->id();
                 $import->save();
                 $results[] = $import;
             }
@@ -151,18 +150,17 @@ class ImportController extends Controller
      * Processes the specified Import.
      *
      * @param  int  $import_id
-     * @return \Illuminate\Http\Response
      */
-    public function process(ItemImportRequest $request, $import_id)
+    public function process(ItemImportRequest $request, $import_id) : JsonResponse
     {
         $this->authorize('import');
 
         // Run a backup immediately before processing
         if ($request->get('run-backup')) {
-            \Log::debug('Backup manually requested via importer');
-            Artisan::call('backup:run');
+            Log::debug('Backup manually requested via importer');
+            Artisan::call('snipeit:backup', ['--filename' => 'pre-import-backup-'.date('Y-m-d-H:i:s')]);
         } else {
-            \Log::debug('NO BACKUP requested via importer');
+            Log::debug('NO BACKUP requested via importer');
         }
 
         $import = Import::find($import_id);
@@ -177,6 +175,9 @@ class ImportController extends Controller
         switch ($request->get('import-type')) {
             case 'asset':
                 $redirectTo = 'hardware.index';
+                break;
+            case 'assetModel':
+                $redirectTo = 'models.index';
                 break;
             case 'accessory':
                 $redirectTo = 'accessories.index';
@@ -193,6 +194,9 @@ class ImportController extends Controller
             case 'user':
                 $redirectTo = 'users.index';
                 break;
+            case 'location':
+                $redirectTo = 'locations.index';
+                break;
         }
 
         if ($errors) { //Failure
@@ -208,9 +212,8 @@ class ImportController extends Controller
      * Remove the specified resource from storage.
      *
      * @param  int  $import_id
-     * @return \Illuminate\Http\Response
      */
-    public function destroy($import_id)
+    public function destroy($import_id) : JsonResponse
     {
         $this->authorize('create', Asset::class);
 
@@ -227,6 +230,8 @@ class ImportController extends Controller
 
                 return response()->json(Helper::formatStandardApiResponse('warning', null, trans('admin/hardware/message.import.file_not_deleted_warning')));
             }
+
         }
+        return response()->json(Helper::formatStandardApiResponse('warning', null, trans('admin/hardware/message.import.file_not_deleted_warning')));
     }
 }

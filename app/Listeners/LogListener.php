@@ -17,10 +17,12 @@ use App\Events\ItemAccepted;
 use App\Events\ItemDeclined;
 use App\Events\LicenseCheckedIn;
 use App\Events\LicenseCheckedOut;
+use App\Events\NoteAdded;
 use App\Models\Actionlog;
 use App\Models\User;
 use App\Models\LicenseSeat;
 use App\Events\UserMerged;
+use Illuminate\Support\Facades\Log;
 
 class LogListener
 {
@@ -33,7 +35,7 @@ class LogListener
      */
     public function onCheckoutableCheckedIn(CheckoutableCheckedIn $event)
     {
-        $event->checkoutable->logCheckin($event->checkedOutTo, $event->note, $event->action_date);
+        $event->checkoutable->logCheckin($event->checkedOutTo, $event->note, $event->action_date, $event->originalValues);
     }
 
     /**
@@ -46,7 +48,7 @@ class LogListener
      */
     public function onCheckoutableCheckedOut(CheckoutableCheckedOut $event)
     {
-        $event->checkoutable->logCheckout($event->note, $event->checkedOutTo, $event->checkoutable->last_checkout);
+        $event->checkoutable->logCheckout($event->note, $event->checkedOutTo, $event->checkoutable->last_checkout, $event->originalValues);
     }
 
     /**
@@ -56,12 +58,13 @@ class LogListener
     public function onCheckoutAccepted(CheckoutAccepted $event)
     {
 
-        \Log::debug('event passed to the onCheckoutAccepted listener:');
+        Log::debug('event passed to the onCheckoutAccepted listener:');
         $logaction = new Actionlog();
         $logaction->item()->associate($event->acceptance->checkoutable);
         $logaction->target()->associate($event->acceptance->assignedTo);
         $logaction->accept_signature = $event->acceptance->signature_filename;
         $logaction->filename = $event->acceptance->stored_eula_file;
+        $logaction->note = $event->acceptance->note;
         $logaction->action_type = 'accepted';
 
         // TODO: log the actual license seat that was checked out
@@ -69,7 +72,6 @@ class LogListener
             $logaction->item()->associate($event->acceptance->checkoutable->license);
         }
 
-        \Log::debug('New onCheckoutAccepted Listener fired. logaction: '.print_r($logaction, true));
         $logaction->save();
     }
 
@@ -79,6 +81,7 @@ class LogListener
         $logaction->item()->associate($event->acceptance->checkoutable);
         $logaction->target()->associate($event->acceptance->assignedTo);
         $logaction->accept_signature = $event->acceptance->signature_filename;
+        $logaction->note = $event->acceptance->note;
         $logaction->action_type = 'declined';
 
         // TODO: log the actual license seat that was checked out
@@ -101,7 +104,7 @@ class LogListener
         ];
 
         // Add a record to the users being merged FROM
-        \Log::debug('Users merged: '.$event->merged_from->id .' ('.$event->merged_from->username.') merged into '. $event->merged_to->id. ' ('.$event->merged_to->username.')');
+        Log::debug('Users merged: '.$event->merged_from->id .' ('.$event->merged_from->username.') merged into '. $event->merged_to->id. ' ('.$event->merged_to->username.')');
         $logaction = new Actionlog();
         $logaction->item_id = $event->merged_from->id;
         $logaction->item_type = User::class;
@@ -109,7 +112,7 @@ class LogListener
         $logaction->target_type = User::class;
         $logaction->action_type = 'merged';
         $logaction->note = trans('general.merged_log_this_user_from', $to_from_array);
-        $logaction->user_id = $event->admin->id;
+        $logaction->created_by = $event->admin->id ?? null;
         $logaction->save();
 
         // Add a record to the users being merged TO
@@ -120,11 +123,28 @@ class LogListener
         $logaction->item_type = User::class;
         $logaction->action_type = 'merged';
         $logaction->note = trans('general.merged_log_this_user_into', $to_from_array);
-        $logaction->user_id = $event->admin->id;
+        $logaction->created_by = $event->admin->id ?? null;
         $logaction->save();
 
 
     }
+
+
+    /**
+     * Note is added to action log
+     *
+     */
+    public function onNoteAdded(NoteAdded $event)
+    {
+        $logaction = new Actionlog();
+        $logaction->item_id = $event->itemNoteAddedOn->id;
+        $logaction->item_type = get_class($event->itemNoteAddedOn);
+        $logaction->note = $event->note; //this is the received alphanumeric text from the box
+        $logaction->created_by = $event->noteAddedBy->id;
+        $logaction->action_type = 'note_added';
+        $logaction->save();
+    }
+
 
     /**
      * Register the listeners for the subscriber.
@@ -139,6 +159,7 @@ class LogListener
             'CheckoutAccepted',
             'CheckoutDeclined',
             'UserMerged',
+            'NoteAdded',
         ];
 
         foreach ($list as $event) {

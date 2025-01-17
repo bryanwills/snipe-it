@@ -7,9 +7,8 @@ use EasySlugger\Utf8Slugger;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
-use Schema;
+use Illuminate\Support\Facades\Schema;
 use Watson\Validating\ValidatingTrait;
-
 class CustomField extends Model
 {
     use HasFactory;
@@ -52,6 +51,14 @@ class CustomField extends Model
         'name' => 'required|unique:custom_fields',
         'element' => 'required|in:text,listbox,textarea,checkbox,radio',
         'field_encrypted' => 'nullable|boolean',
+        'auto_add_to_fieldsets' => 'boolean',
+        'show_in_listview' => 'boolean',
+        'show_in_requestable_list' => 'boolean',
+        'show_in_email' => 'boolean',
+    ];
+
+    protected $casts = [
+        'show_in_requestable_list'  => 'boolean',
     ];
 
     /**
@@ -69,6 +76,10 @@ class CustomField extends Model
         'show_in_email',
         'is_unique',
         'display_in_user_view',
+        'auto_add_to_fieldsets',
+        'show_in_listview',
+        'show_in_email',
+        'show_in_requestable_list',
     ];
 
     /**
@@ -177,6 +188,11 @@ class CustomField extends Model
     {
         return $this->belongsToMany(\App\Models\CustomFieldset::class);
     }
+   
+    public function assetModels()
+    {
+       return $this->fieldset()->with('models')->get()->pluck('models')->flatten()->unique('id'); 
+    }
 
     /**
      * Establishes the customfield -> admin user relationship
@@ -233,8 +249,6 @@ class CustomField extends Model
 
     /**
      * Gets the DB column name.
-     *
-     * @todo figure out if this is still needed? I don't know WTF it's for.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v3.0]
@@ -303,9 +317,9 @@ class CustomField extends Model
             $arr_parts = explode('|', $arr[$x]);
             if ($arr_parts[0] != '') {
                 if (array_key_exists('1', $arr_parts)) {
-                    $result[$arr_parts[0]] = $arr_parts[1];
+                    $result[$arr_parts[0]] = trim($arr_parts[1]);
                 } else {
-                    $result[$arr_parts[0]] = $arr_parts[0];
+                    $result[$arr_parts[0]] = trim($arr_parts[0]);
                 }
             }
         }

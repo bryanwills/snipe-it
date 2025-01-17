@@ -6,8 +6,11 @@ use App\Models\Traits\Searchable;
 use App\Presenters\Presentable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Watson\Validating\ValidatingTrait;
+use \App\Presenters\AssetModelPresenter;
+use App\Http\Traits\TwoColumnUniqueUndeletedTrait;
 
 /**
  * Model for Asset Models. Asset Models contain higher level
@@ -19,39 +22,35 @@ class AssetModel extends SnipeModel
 {
     use HasFactory;
     use SoftDeletes;
-    protected $presenter = \App\Presenters\AssetModelPresenter::class;
     use Loggable, Requestable, Presentable;
-
-    protected $table = 'models';
-    protected $hidden = ['user_id', 'deleted_at'];
-
-    // Declare the rules for the model validation
-    protected $rules = [
-        'name'              => 'required|min:1|max:255',
-        'model_number'      => 'max:255|nullable',
-        'category_id'       => 'required|integer|exists:categories,id',
-        'manufacturer_id'   => 'integer|exists:manufacturers,id|nullable',
-        'eol'               => 'integer:min:0|max:240|nullable',
-    ];
+    use TwoColumnUniqueUndeletedTrait;
 
     /**
-     * Whether the model should inject it's identifier to the unique
+     * Whether the model should inject its identifier to the unique
      * validation rules before attempting validation. If this property
      * is not set in the model it will default to true.
      *
      * @var bool
      */
+
     protected $injectUniqueIdentifier = true;
     use ValidatingTrait;
+    protected $table = 'models';
+    protected $presenter = AssetModelPresenter::class;
 
-    public function setEolAttribute($value)
-    {
-        if ($value == '') {
-            $value = 0;
-        }
+    // Declare the rules for the model validation
 
-        $this->attributes['eol'] = $value;
-    }
+
+    protected $rules = [
+        'name'              => 'string|required|min:1|max:255|two_column_unique_undeleted:model_number',
+        'model_number'      => 'string|max:255|nullable|two_column_unique_undeleted:name',
+        'min_amt'           => 'integer|min:0|nullable',
+        'category_id'       => 'required|integer|exists:categories,id',
+        'manufacturer_id'   => 'integer|exists:manufacturers,id|nullable',
+        'eol'               => 'integer:min:0|max:240|nullable',
+    ];
+
+
 
     /**
      * The attributes that are mass assignable.
@@ -65,10 +64,11 @@ class AssetModel extends SnipeModel
         'fieldset_id',
         'image',
         'manufacturer_id',
+        'min_amt',
         'model_number',
         'name',
         'notes',
-        'user_id',
+        'requestable',
     ];
 
     use Searchable;
@@ -78,7 +78,12 @@ class AssetModel extends SnipeModel
      *
      * @var array
      */
-    protected $searchableAttributes = ['name', 'model_number', 'notes', 'eol'];
+    protected $searchableAttributes = [
+        'name',
+        'model_number',
+        'notes',
+        'eol'
+    ];
 
     /**
      * The relations and their attributes that should be included when searching the model.
@@ -90,6 +95,9 @@ class AssetModel extends SnipeModel
         'category'     => ['name'],
         'manufacturer' => ['name'],
     ];
+
+
+
 
     /**
      * Establishes the model -> assets relationship
@@ -150,6 +158,11 @@ class AssetModel extends SnipeModel
     {
         return $this->belongsTo(\App\Models\CustomFieldset::class, 'fieldset_id');
     }
+   
+    public function customFields()
+    {
+       return $this->fieldset()->first()->fields(); 
+    }
 
     /**
      * Establishes the model -> custom field default values relationship
@@ -181,6 +194,21 @@ class AssetModel extends SnipeModel
         return false;
     }
 
+
+    /**
+     * Checks if the model is deletable
+     *
+     * @author A. Gianotto <snipe@snipe.net>
+     * @since [v6.3.4]
+     * @return bool
+     */
+    public function isDeletable()
+    {
+        return Gate::allows('delete', $this)
+            && ($this->assets_count == 0)
+            && ($this->deleted_at == '');
+    }
+
     /**
      * Get uploads for this model
      *
@@ -195,6 +223,18 @@ class AssetModel extends SnipeModel
             ->where('action_type', '=', 'uploaded')
             ->whereNotNull('filename')
             ->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get user who created the item
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     * @since [v1.0]
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public function adminuser()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
 
@@ -284,4 +324,19 @@ class AssetModel extends SnipeModel
     {
         return $query->leftJoin('categories', 'models.category_id', '=', 'categories.id')->orderBy('categories.name', $order);
     }
+
+    public function scopeOrderFieldset($query, $order)
+    {
+        return $query->leftJoin('custom_fieldsets', 'models.fieldset_id', '=', 'custom_fieldsets.id')->orderBy('custom_fieldsets.name', $order);
+    }
+
+    /**
+     * Query builder scope to order on created_by name
+     *
+     */
+    public function scopeOrderByCreatedByName($query, $order)
+    {
+        return $query->leftJoin('users as admin_sort', 'models.created_by', '=', 'admin_sort.id')->select('models.*')->orderBy('admin_sort.first_name', $order)->orderBy('admin_sort.last_name', $order);
+    }
+
 }

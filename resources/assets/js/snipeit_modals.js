@@ -28,7 +28,7 @@ $(function () {
 
   var baseUrl = $('meta[name="baseUrl"]').attr('content');
   //handle modal-add-interstitial calls
-  var model, select, refreshSelector;
+  var model, select, refreshSelector, hasnopayload;
 
   if($('#createModal').length == 0) {
     $('body').append('<div class="modal fade" id="createModal"></div><!-- /.modal -->');
@@ -39,12 +39,19 @@ $(function () {
       model = link.data("dependency");
       select = link.data("select");
       refreshSelector = link.data("refresh");
-      
+
+      hasnopayload = link.data("hasnopayload");
+
       $('#createModal').load(link.attr('href'),function () {
+
+          // this sets the focus to be the name field
+          $('#modal-name').focus();
+          
         //do we need to re-select2 this, after load? Probably.
         $('#createModal').find('select.select2').select2();
         // Initialize the ajaxy select2 with images.
         // This is a copy/paste of the code from snipeit.js, would be great to only have this in one place.
+
         $('.js-data-ajax').each( function (i,item) {
             var link = $(item);
             var endpoint = link.data("endpoint");
@@ -116,11 +123,13 @@ $(function () {
                 $('#modal_error_msg').html(error_message).show();
                 return false;
             }
-            var id = result.payload.id;
-            var name = result.payload.name || (result.payload.first_name + " " + result.payload.last_name);
-            if(!id || !name) {
-                console.error("Could not find resulting name or ID from modal-create. Name: "+name+", id: "+id);
-                return false;
+            if(!hasnopayload) {
+                var id = result.payload.id;
+                var name = result.payload.name || (result.payload.first_name + " " + result.payload.last_name);
+                if (!id || !name) {
+                    console.error("Could not find resulting name or ID from modal-create. Name: " + name + ", id: " + id);
+                    return false;
+                }
             }
             $('#createModal').modal('hide');
             $('#createModal').html("");

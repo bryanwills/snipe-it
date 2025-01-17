@@ -42,6 +42,19 @@ class AssetMaintenancesPresenter extends Presenter
                 'title' => trans('admin/hardware/table.asset_tag'),
                 'formatter' => 'assetTagLinkFormatter',
             ], [
+                'field' => 'serial',
+                'searchable' => true,
+                'sortable' => true,
+                'title' => trans('admin/hardware/table.serial'),
+                'formatter' => 'assetSerialLinkFormatter',
+            ], [
+                'field' => 'status_label',
+                'searchable' => true,
+                'sortable' => true,
+                'title' => trans('admin/hardware/table.status'),
+                'visible' => true,
+                'formatter' => 'statuslabelsLinkObjFormatter',
+            ], [
                 'field' => 'model',
                 'searchable' => true,
                 'sortable' => true,
@@ -72,6 +85,7 @@ class AssetMaintenancesPresenter extends Presenter
                 'field' => 'title',
                 'searchable' => true,
                 'sortable' => true,
+                'switchable' => false,
                 'title' => trans('admin/asset_maintenances/form.title'),
             ], [
                 'field' => 'start_date',
@@ -95,6 +109,7 @@ class AssetMaintenancesPresenter extends Presenter
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/asset_maintenances/table.is_warranty'),
+                'formatter' => 'trueFalseFormatter'
             ], [
                 'field' => 'cost',
                 'searchable' => true,
@@ -102,12 +117,29 @@ class AssetMaintenancesPresenter extends Presenter
                 'title' => trans('admin/asset_maintenances/form.cost'),
                 'class' => 'text-right',
             ], [
-                'field' => 'user_id',
-                'searchable' => true,
+                'field' => 'created_by',
+                'searchable' => false,
                 'sortable' => true,
-                'title' => trans('general.admin'),
+                'title' => trans('general.created_by'),
+                'visible' => false,
                 'formatter' => 'usersLinkObjFormatter',
             ], [
+                'field' => 'created_at',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.created_at'),
+                'visible' => false,
+                'formatter' => 'dateDisplayFormatter',
+            ], [
+                'field' => 'updated_at',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.updated_at'),
+                'visible' => false,
+                'formatter' => 'dateDisplayFormatter',
+            ],[
                 'field' => 'actions',
                 'searchable' => false,
                 'sortable' => false,

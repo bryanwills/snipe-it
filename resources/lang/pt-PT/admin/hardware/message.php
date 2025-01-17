@@ -2,31 +2,43 @@
 
 return [
 
-    'undeployable' 		=> '<strong>Aviso: </strong> Este artigo foi assinalado como "não implementável".
-                        Se este estado mudou, por favor atualize o estado do artigo.',
-    'does_not_exist' 	=> 'Artigo não existente.',
+    'undeployable' 		 => '<strong>Aviso: </strong> Este artigo foi assinalado como "não implementável". Se este estado mudou, por favor atualize o estado do artigo.',
+    'does_not_exist' 	 => 'Artigo não existente.',
+    'does_not_exist_var' => 'Ativo com a tag :asset_tag não encontrado.',
+    'no_tag' 	         => 'No asset tag provided.',
     'does_not_exist_or_not_requestable' => 'Esse artigo não existe ou não é solicitável.',
-    'assoc_users'	 	=> 'Este artigo está correntemente alocado a um utilizador e não pode ser removido. Por favor devolva o artigo e de seguida tente remover novamente. ',
+    'assoc_users'	 	 => 'Este artigo está correntemente alocado a um utilizador e não pode ser removido. Por favor devolva o artigo e de seguida tente remover novamente. ',
+    'warning_audit_date_mismatch' 	=> 'This asset\'s next audit date (:next_audit_date) is before the last audit date (:last_audit_date). Please update the next audit date.',
+    'labels_generated'   => 'Labels were successfully generated.',
+    'error_generating_labels' => 'Error while generating labels.',
+    'no_assets_selected' => 'No assets selected.',
 
     'create' => [
         'error'   		=> 'Não foi possível criar o Artigo. Por favor, tente novamente. :(',
         'success' 		=> 'Artigo criado com sucesso. :)',
+        'success_linked' => 'O ativo com a tag :tag foi criado com sucesso. <strong><a href=":link" style="color: white;">clique aqui para ver</a></strong>.',
+        'multi_success_linked' => 'Asset with tag :links was created successfully.|:count assets were created succesfully. :links.',
+        'partial_failure' => 'An asset was unable to be created. Reason: :failures|:count assets were unable to be created. Reasons: :failures',
     ],
 
     'update' => [
         'error'   			=> 'Artigo não foi atualizado. Por favor, tente novamente',
         'success' 			=> 'Artigo atualizado com sucesso.',
+        'encrypted_warning' => 'Os ativos atualizados com sucesso, mas campos personalizados criptografados não se devem às permissões',
         'nothing_updated'	=>  'Nenhum atributo foi selecionado, portanto nada foi atualizado.',
         'no_assets_selected'  =>  'Nenhum ativo foi selecionado, por isso nada foi atualizado.',
+        'assets_do_not_exist_or_are_invalid' => 'Os arquivos selecionados não podem ser atualizados.',
     ],
 
     'restore' => [
         'error'   		=> 'O Artigo não foi restaurado, por favor tente novamente',
         'success' 		=> 'Artigo restaurado com sucesso.',
+        'bulk_success' 		=> 'Artigo restaurado com sucesso.',
+        'nothing_updated'   => 'Nenhum artigo foi selecionado, assim nada restaurado.', 
     ],
 
     'audit' => [
-        'error'   		=> 'A auditoria de ativos não teve êxito. Por favor, tente novamente.',
+        'error'   		=> 'Asset audit unsuccessful: :error ',
         'success' 		=> 'Auditoria de ativos logada com sucesso.',
     ],
 
@@ -44,13 +56,16 @@ return [
     ],
 
     'import' => [
+        'import_button'         => 'Process Import',
         'error'                 => 'Alguns itens não foram importados corretamente.',
         'errorDetail'           => 'Os seguintes itens não foram importados devido a erros.',
         'success'               => 'O seu ficheiro foi importado',
         'file_delete_success'   => 'Ficheiro eliminado com sucesso',
         'file_delete_error'      => 'Não foi possível eliminar o ficheiro',
-        'header_row_has_malformed_characters' => 'One or more attributes in the header row contain malformed UTF-8 characters',
-        'content_row_has_malformed_characters' => 'One or more attributes in the first row of content contain malformed UTF-8 characters',
+        'file_missing' => 'Ficheiro selecionado está a faltar',
+        'file_already_deleted' => 'The file selected was already deleted',
+        'header_row_has_malformed_characters' => 'Um ou mais atributos na linha do cabeçalho contém caracteres UTF-8 mal formados',
+        'content_row_has_malformed_characters' => 'Um ou mais atributos na primeira linha de conteúdo contém caracteres UTF-8 mal formados',
     ],
 
 
@@ -67,6 +82,11 @@ return [
         'user_does_not_exist' => 'O utilizador é inválido. Por favor, tente novamente.',
         'not_available' => 'Esse recurso não está disponível para checkout!',
         'no_assets_selected' => 'Deve escolher pelo menos um artigo da lista',
+    ],
+
+    'multi-checkout' => [
+        'error'   => 'Asset was not checked out, please try again|Assets were not checked out, please try again',
+        'success' => 'Asset checked out successfully.|Assets checked out successfully.',
     ],
 
     'checkin' => [
