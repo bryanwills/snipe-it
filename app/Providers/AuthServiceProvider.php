@@ -87,27 +87,34 @@ class AuthServiceProvider extends ServiceProvider
         ]);
 
         $this->registerPolicies();
-        Passport::routes();
-        Passport::tokensExpireIn(Carbon::now()->addYears(config('passport.expiration_years')));
-        Passport::refreshTokensExpireIn(Carbon::now()->addYears(config('passport.expiration_years')));
-        Passport::personalAccessTokensExpireIn(Carbon::now()->addYears(config('passport.expiration_years')));
-        Passport::withCookieSerialization();
+        Passport::tokensExpireIn(Carbon::now()->addYears((int)config('passport.expiration_years')));
+        Passport::refreshTokensExpireIn(Carbon::now()->addYears((int)config('passport.expiration_years')));
+        Passport::personalAccessTokensExpireIn(Carbon::now()->addYears((int)config('passport.expiration_years')));
 
-        // --------------------------------
-        // BEFORE ANYTHING ELSE
-        // --------------------------------
-        // If this condition is true, ANYTHING else below will be assumed
-        // to be true. This can cause weird blade behavior.
+        Passport::cookie(config('passport.cookie_name'));
+
+
+        /**
+         * BEFORE ANYTHING ELSE
+         *
+         * If this condition is true, ANYTHING else below will be assumed to be true.
+         * This is where we set the superadmin permission to allow superadmins to be able to do everything within the system.
+         *
+         */
         Gate::before(function ($user) {
             if ($user->isSuperUser()) {
                 return true;
             }
         });
 
-        // --------------------------------
-        // GENERAL GATES
-        // These control general sections of the admin
-        // --------------------------------
+
+        /**
+         * GENERAL GATES
+         *
+         * These control general sections of the admin. These definitions are used in our blades via @can('blah) and also
+         * use in our controllers to determine if a user has access to a certain area.
+         */
+
         Gate::define('admin', function ($user) {
             if ($user->hasAccess('admin')) {
                 return true;
@@ -146,12 +153,26 @@ class AuthServiceProvider extends ServiceProvider
             }
         });
 
+        Gate::define('assets.view.encrypted_custom_fields', function ($user) {
+            if($user->hasAccess('assets.view.encrypted_custom_fields')){
+                return true;
+            }
+        });
 
         // -----------------------------------------
         // Reports
         // -----------------------------------------
         Gate::define('reports.view', function ($user) {
             if ($user->hasAccess('reports.view')) {
+                return true;
+            }
+        });
+
+        // -----------------------------------------
+        // Activity
+        // -----------------------------------------
+        Gate::define('activity.view', function ($user) {
+            if (($user->hasAccess('reports.view')) || ($user->hasAccess('admin'))) {
                 return true;
             }
         });
@@ -218,7 +239,15 @@ class AuthServiceProvider extends ServiceProvider
                 || $user->can('update', Accessory::class)
                 || $user->can('create', Accessory::class)   
                 || $user->can('update', User::class)
-                || $user->can('create', User::class);  
+                || $user->can('create', User::class)
+                || ($user->hasAccess('reports.view'));
         });
+
+
+        // This determines whether the user can edit their profile based on the setting in Admin > General
+        Gate::define('self.profile', function ($user) {
+            return $user->canEditProfile();
+        });
+
     }
 }

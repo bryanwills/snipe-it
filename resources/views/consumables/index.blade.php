@@ -8,7 +8,7 @@
 
 @section('header_right')
   @can('create', \App\Models\Consumable::class)
-  <a href="{{ route('consumables.create') }}" accesskey="n" class="btn btn-primary pull-right"> {{ trans('general.create') }}</a>
+  <a href="{{ route('consumables.create') }}" {{$snipeSettings->shortcuts_enabled == 1 ? "accesskey=n" : ''}} class="btn btn-primary pull-right"> {{ trans('general.create') }}</a>
   @endcan
 @stop
 
@@ -23,15 +23,10 @@
         <table
                 data-columns="{{ \App\Presenters\ConsumablePresenter::dataTableLayout() }}"
                 data-cookie-id-table="consumablesTable"
-                data-pagination="true"
                 data-id-table="consumablesTable"
-                data-search="true"
                 data-side-pagination="server"
-                data-show-columns="true"
-                data-show-export="true"
-                data-show-fullscreen="true"
+                data-footer-style="footerStyle"
                 data-show-footer="true"
-                data-show-refresh="true"
                 data-sort-order="asc"
                 data-sort-name="name"
                 data-toolbar="#toolbar"

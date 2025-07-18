@@ -33,14 +33,15 @@ class LicensePresenter extends Presenter
                 'field' => 'name',
                 'searchable' => true,
                 'sortable' => true,
-                'title' => trans('admin/licenses/table.title'),
+                'switchable' => false,
+                'title' => trans('general.name'),
                 'formatter' => 'licensesLinkFormatter',
             ], [
                 'field' => 'product_key',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/licenses/form.license_key'),
-                'formatter' => 'licensesLinkFormatter',
+                'formatter' => 'licenseKeyFormatter',
             ], [
                 'field' => 'expiration_date',
                 'searchable' => true,
@@ -79,16 +80,27 @@ class LicensePresenter extends Presenter
                 'sortable' => true,
                 'title' => trans('general.manufacturer'),
                 'formatter' => 'manufacturersLinkObjFormatter',
+            ],  [
+                'field' => 'min_amt',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('mail.min_QTY'),
+                'formatter' => 'minAmtFormatter',
+                'class' => 'text-right text-padding-number-cell',
             ], [
                 'field' => 'seats',
                 'searchable' => false,
                 'sortable' => true,
                 'title' => trans('admin/accessories/general.total'),
+                'class' => 'text-right text-padding-number-cell',
+                'footerFormatter' => 'qtySumFormatter',
             ], [
                 'field' => 'free_seats_count',
                 'searchable' => false,
                 'sortable' => true,
                 'title' => trans('admin/accessories/general.remaining'),
+                'class' => 'text-right text-padding-number-cell',
+                'footerFormatter' => 'qtySumFormatter',
             ], [
                 'field' => 'purchase_date',
                 'searchable' => true,
@@ -151,6 +163,28 @@ class LicensePresenter extends Presenter
                 'visible' => false,
                 'title' => trans('general.order_number'),
             ], [
+                'field' => 'created_by',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.created_by'),
+                'visible' => false,
+                'formatter' => 'usersLinkObjFormatter',
+            ], [
+                'field' => 'created_at',
+                'searchable' => false,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('general.created_at'),
+                'formatter' => 'dateDisplayFormatter',
+            ], [
+                'field' => 'updated_at',
+                'searchable' => false,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('general.updated_at'),
+                'formatter' => 'dateDisplayFormatter',
+            ],
+            [
                 'field' => 'notes',
                 'searchable' => true,
                 'sortable' => true,
@@ -164,10 +198,11 @@ class LicensePresenter extends Presenter
             'field' => 'checkincheckout',
             'searchable' => false,
             'sortable' => false,
-            'switchable' => true,
+            'switchable' => false,
             'title' => trans('general.checkin').'/'.trans('general.checkout'),
             'visible' => true,
             'formatter' => 'licensesInOutFormatter',
+            'printIgnore' => true,
         ];
 
         $layout[] = [
@@ -177,6 +212,7 @@ class LicensePresenter extends Presenter
             'switchable' => false,
             'title' => trans('table.actions'),
             'formatter' => 'licensesActionsFormatter',
+            'printIgnore' => true,
         ];
 
         return json_encode($layout);
@@ -196,16 +232,7 @@ class LicensePresenter extends Presenter
                 'switchable' => true,
                 'title' => trans('general.id'),
                 'visible' => false,
-           ],
-           [
-                'field' => 'name',
-                'searchable' => false,
-                'sortable' => false,
-                'sorter'   => 'numericOnly',
-                'switchable' => true,
-                'title' => trans('admin/licenses/general.seat'),
-                'visible' => true,
-            ], [
+           ],[
                 'field' => 'assigned_user',
                 'searchable' => false,
                 'sortable' => false,
@@ -214,6 +241,14 @@ class LicensePresenter extends Presenter
                 'visible' => true,
                 'formatter' => 'usersLinkObjFormatter',
             ], [
+                'field' => 'assigned_user.email',
+                'searchable' => false,
+                'sortable' => false,
+                'switchable' => true,
+                'title' => trans('admin/users/table.email'),
+                'visible' => true,
+                'formatter' => 'emailFormatter',
+            ], [
                 'field' => 'department',
                 'searchable' => false,
                 'sortable' => true,
@@ -221,8 +256,7 @@ class LicensePresenter extends Presenter
                 'title' => trans('general.department'),
                 'visible' => false,
                 'formatter' => 'departmentNameLinkFormatter',
-            ],
-            [
+            ], [
                 'field' => 'assigned_asset',
                 'searchable' => false,
                 'sortable' => false,
@@ -240,10 +274,26 @@ class LicensePresenter extends Presenter
                 'formatter' => 'locationsLinkObjFormatter',
             ],
             [
+                'field' => 'updated_at',
+                'searchable' => false,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('general.updated_at'),
+                'formatter' => 'dateDisplayFormatter',
+            ],
+            [
+                'field' => 'notes',
+                'searchable' => false,
+                'sortable' => false,
+                'visible' => false,
+                'title' => trans('general.notes'),
+                'formatter' => 'notesFormatter'
+            ],
+            [
                 'field' => 'checkincheckout',
                 'searchable' => false,
                 'sortable' => false,
-                'switchable' => true,
+                'switchable' => false,
                 'title' => trans('general.checkin').'/'.trans('general.checkout'),
                 'visible' => true,
                 'formatter' => 'licenseSeatInOutFormatter',

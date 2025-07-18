@@ -3,8 +3,7 @@
 {{-- Page title --}}
 @section('title')
 
- {{ $category->name }}
- {{ ucwords($category_type_route) }}
+{{ $category->name }}
 
 @parent
 @stop
@@ -37,7 +36,19 @@
             <div class="nav-tabs-custom">
                 <ul class="nav nav-tabs">
                     <li class="active">
-                        <a href="#items" data-toggle="tab" title="{{ trans('general.items') }}"> {{ ucwords($category_type_route) }}
+                        <a href="#items" data-toggle="tab" title="{{ trans('general.items') }}">
+                            @if ($category->category_type=='asset')
+                                {{ trans('general.assets') }}
+                            @elseif ($category->category_type=='accessory')
+                                {{ trans('general.accessories') }}
+                            @elseif ($category->category_type=='license')
+                                {{ trans('general.licenses') }}
+                            @elseif ($category->category_type=='consumable')
+                                {{ trans('general.consumables') }}
+                            @elseif ($category->category_type=='component')
+                                {{ trans('general.components') }}
+                            @endif
+
                             @if ($category->category_type=='asset')
                             <badge class="badge badge-secondary"> {{ $category->showableAssets()->count() }}</badge>
                             @endif
@@ -45,7 +56,8 @@
                     </li>
                     @if ($category->category_type=='asset')
                     <li>
-                        <a href="#models" data-toggle="tab" title="{{ trans('general.asset_models') }}">{{ trans('general.asset_models') }}
+                        <a href="#models" data-toggle="tab" title="{{ trans('general.asset_models') }}">
+                            {{ trans('general.asset_models') }}
                             <badge class="badge badge-secondary"> {{ $category->models->count()}}</badge>
                         </a>
                     </li>
@@ -71,7 +83,6 @@
                                             data-toolbar="#assetsBulkEditToolbar"
                                             data-bulk-button-id="#bulkAssetEditButton"
                                             data-bulk-form-id="#assetsBulkForm"
-                                            data-click-to-select="true"
                                             data-export-options='{
                     "fileName": "export-{{ str_slug($category->name) }}-assets-{{ date('Y-m-d') }}",
                     "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
@@ -114,13 +125,8 @@
                       }'
                                             @endif
 
-                                            data-pagination="true"
-                                            data-search="true"
                                             data-show-footer="true"
                                             data-side-pagination="server"
-                                            data-show-columns="true"
-                                            data-show-export="true"
-                                            data-show-refresh="true"
                                             data-sort-order="asc"
                                             class="table table-striped snipe-table"
                                             data-url="{{ route('api.'.$category_type_route.'.index',['category_id'=> $category->id]) }}">
@@ -146,17 +152,12 @@
                                     <table
                                             data-columns="{{ \App\Presenters\AssetModelPresenter::dataTableLayout() }}"
                                             data-cookie-id-table="asssetModelsTable"
-                                            data-pagination="true"
                                             data-id-table="asssetModelsTable"
-                                            data-search="true"
                                             data-show-footer="true"
                                             data-side-pagination="server"
-                                            data-show-columns="true"
                                             data-toolbar="#modelsBulkEditToolbar"
                                             data-bulk-button-id="#bulkModelsEditButton"
                                             data-bulk-form-id="#modelsBulkForm"
-                                            data-show-export="true"
-                                            data-show-refresh="true"
                                             data-sort-order="asc"
                                             id="asssetModelsTable"
                                             class="table table-striped snipe-table"

@@ -37,21 +37,16 @@
       <div class="box-body">
 
         @include('partials.models-bulk-actions')
-              <div class="table-responsive">
                 <table
                         data-columns="{{ \App\Presenters\AssetModelPresenter::dataTableLayout() }}"
                         data-cookie-id-table="asssetModelsTable"
-                        data-pagination="true"
                         data-id-table="asssetModelsTable"
-                        data-search="true"
                         data-show-footer="true"
                         data-side-pagination="server"
-                        data-show-columns="true"
+                        data-footer-style="footerStyle"
                         data-toolbar="#modelsBulkEditToolbar"
                         data-bulk-button-id="#bulkModelsEditButton"
                         data-bulk-form-id="#modelsBulkForm"
-                        data-show-export="true"
-                        data-show-refresh="true"
                         data-sort-order="asc"
                         id="asssetModelsTable"
                         class="table table-striped snipe-table"
@@ -61,11 +56,8 @@
               "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
               }'>
               </table>
-
-          </div>
         </div>
         </div>
-        {{ Form::close() }}
       </div><!-- /.box-body -->
     </div><!-- /.box -->
   </div>
