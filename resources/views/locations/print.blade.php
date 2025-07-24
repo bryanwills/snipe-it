@@ -14,7 +14,7 @@
         }
 
         @page {
-            size: A4;
+            size: auto;
         }
         table.inventory th, table.inventory td {
             border: solid #000;
@@ -35,14 +35,14 @@
     @if ($snipeSettings->brand == '3')
 
         <h3>
-        @if ($snipeSettings->logo!='')
-            <img class="print-logo" src="{{ url('/') }}/uploads/{{ $snipeSettings->logo }}">
+        @if ($snipeSettings->acceptance_pdf_logo!='')
+            <img class="print-logo" src="{{ config('app.url') }}/uploads/{{ $snipeSettings->acceptance_pdf_logo }}">
         @endif
         {{ $snipeSettings->site_name }}
         </h3>
     @elseif ($snipeSettings->brand == '2')
-        @if ($snipeSettings->logo!='')
-            <img class="print-logo" src="{{ url('/') }}/uploads/{{ $snipeSettings->logo }}">
+        @if ($snipeSettings->acceptance_pdf_logo!='')
+            <img class="print-logo" src="{{ config('app.url') }}/uploads/{{ $snipeSettings->acceptance_pdf_logo }}">
         @endif
     @else
       <h3>{{ $snipeSettings->site_name }}</h3>
@@ -53,7 +53,11 @@
     @if ($parent)
         {{ $parent->present()->fullName() }}
     @endif
-
+<br>
+@if ($company)
+    <b>{{ trans('admin/companies/table.name') }}:</b> {{ $company->present()->Name() }}</b>
+<br>
+@endif
 @if ($manager)
     <b>{{ trans('general.manager') }}</b> {{ $manager->present()->fullName() }}<br>
 @endif
@@ -126,7 +130,7 @@
     	
     	@foreach ($assets as $asset)
             @php
-                if($snipeSettings->show_archived_in_list != 1 && $asset->assetstatus->archived == 1){
+                if($snipeSettings->show_archived_in_list != 1 && $asset->assetstatus?->archived == 1){
                     continue;
                 }
             @endphp

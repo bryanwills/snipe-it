@@ -24,14 +24,16 @@
           <table
               data-columns="{{ \App\Presenters\AssetMaintenancesPresenter::dataTableLayout() }}"
               data-cookie-id-table="maintenancesTable"
-              data-pagination="true"
-              data-search="true"
+
+
+
+
               data-side-pagination="server"
-              data-show-columns="true"
-              data-show-fullscreen="true"
+
+
               data-show-footer="true"
-              data-show-export="true"
-              data-show-refresh="true"
+
+
               id="maintenancesTable"
               class="table table-striped snipe-table"
               data-url="{{route('api.maintenances.index') }}"
@@ -54,11 +56,11 @@
     function maintenanceActions(value, row) {
         var actions = '<nobr>';
         if ((row) && (row.available_actions.update === true)) {
-            actions += '<a href="{{ url('/') }}/hardware/maintenances/' + row.id + '/edit" class="btn btn-sm btn-warning" data-tooltip="true" title="Update"><i class="fas fa-pencil-alt"></i></a>&nbsp;';
+            actions += '<a href="{{ config('app.url') }}/hardware/maintenances/' + row.id + '/edit" class="btn btn-sm btn-warning" data-tooltip="true" title="Update"><i class="fas fa-pencil-alt"></i></a>&nbsp;';
         }
         actions += '</nobr>'
         if ((row) && (row.available_actions.delete === true)) {
-            actions += '<a href="{{ url('/') }}/hardware/maintenances/' + row.id + '" '
+            actions += '<a href="{{ config('app.url') }}/hardware/maintenances/' + row.id + '" '
                 + ' class="btn btn-danger btn-sm delete-asset"  data-tooltip="true"  '
                 + ' data-toggle="modal" '
                 + ' data-content="{{ trans('general.sure_to_delete') }} ' + row.name + '?" '

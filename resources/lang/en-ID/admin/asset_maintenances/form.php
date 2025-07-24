@@ -1,6 +1,7 @@
 <?php
 
     return [
+        'select_type'            => 'Select Maintenance Type',
         'asset_maintenance_type' => 'Jenis Pemeliharaan Aset',
         'title'                  => 'Judul',
         'start_date'             => 'Tanggal Mulai',
@@ -10,5 +11,5 @@
         'asset_maintenance_time' => 'Waktu Maintenance aset (dalam hari)',
         'notes'                  => 'Catatan',
         'update'                 => 'Update Maintenance Aset',
-        'create'                 => 'Erstellen'
+        'create'                 => 'Buat Maintenance Aset'
     ];

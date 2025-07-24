@@ -19,18 +19,11 @@
   <div class="col-md-9">
     <div class="box box-default">
       <div class="box-body">
-        <div class="table-responsive">
-
           <table
                   data-columns="{{ \App\Presenters\DepreciationPresenter::dataTableLayout() }}"
                   data-cookie-id-table="depreciationsTable"
-                  data-pagination="true"
                   data-id-table="depreciationsTable"
-                  data-search="true"
                   data-side-pagination="server"
-                  data-show-columns="true"
-                  data-show-export="true"
-                  data-show-refresh="true"
                   data-sort-order="asc"
                   id="depreciationsTable"
                   class="table table-striped snipe-table"
@@ -39,9 +32,7 @@
                     "fileName": "export-depreciations-{{ date('Y-m-d') }}",
                     "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
                     }'>
-
           </table>
-        </div>
       </div>
     </div>
   </div> <!-- /.col-md-9-->
@@ -49,7 +40,7 @@
 
   <!-- side address column -->
   <div class="col-md-3">
-    <h2>{{ trans('admin/depreciations/general.about_asset_depreciations') }}</h4>
+    <h2>{{ trans('admin/depreciations/general.about_asset_depreciations') }}</h2>
     <p>{{ trans('admin/depreciations/general.about_depreciations') }} </p>
   </div>
 

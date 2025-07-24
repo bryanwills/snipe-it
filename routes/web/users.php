@@ -33,20 +33,20 @@ Route::group(['prefix' => 'users', 'middleware' => ['auth']], function () {
     )->name('users.export');
 
     Route::get(
-        '{userId}/clone',
+        '{user}/clone',
         [
             Users\UsersController::class, 
             'getClone'
         ]
-    )->name('users.clone.show');
+    )->name('users.clone.show')->withTrashed();
 
     Route::post(
-        '{userId}/clone',
+        '{user}/clone',
         [
             Users\UsersController::class, 
             'postCreate'
         ]
-    )->name('users.clone.store');
+    )->name('users.clone.store')->withTrashed();
 
     Route::post(
         '{userId}/restore',
@@ -65,12 +65,12 @@ Route::group(['prefix' => 'users', 'middleware' => ['auth']], function () {
     )->name('unsuspend/user');
 
     Route::post(
-        '{userId}/upload',
+        '{user}/upload',
         [
             Users\UserFilesController::class, 
             'store'
         ]
-    )->name('upload/user');
+    )->name('upload/user')->withTrashed();
 
     Route::delete(
         '{userId}/deletefile/{fileId}',
@@ -81,12 +81,12 @@ Route::group(['prefix' => 'users', 'middleware' => ['auth']], function () {
     )->name('userfile.destroy');
 
     Route::get(
-        '{userId}/showfile/{fileId}',
+        '{user}/showfile/{fileId}',
         [
             Users\UserFilesController::class, 
             'show'
         ]
-    )->name('show/userfile');
+    )->name('show/userfile')->withTrashed();
 
     Route::post(
         '{userId}/password',
@@ -145,10 +145,8 @@ Route::group(['prefix' => 'users', 'middleware' => ['auth']], function () {
         ]
     )->name('users/bulkeditsave');
 
-
 });
 
 Route::resource('users', Users\UsersController::class, [
-    'middleware' => ['auth'],
-    'parameters' => ['user' => 'user_id'],
-]);
+    'middleware' => ['auth']
+])->withTrashed();

@@ -18,30 +18,25 @@
   <div class="col-md-12">
     <div class="box box-default">
       <div class="box-body">
-        <div class="table-responsive">
+          @include('partials.locations-bulk-actions')
 
           <table
                   data-columns="{{ \App\Presenters\LocationPresenter::dataTableLayout() }}"
                   data-cookie-id-table="locationTable"
-                  data-pagination="true"
                   data-id-table="locationTable"
-                  data-search="true"
-                  data-show-footer="true"
+                  data-toolbar="#locationsBulkEditToolbar"
+                  data-bulk-button-id="#bulkLocationsEditButton"
+                  data-bulk-form-id="#locationsBulkForm"
                   data-side-pagination="server"
-                  data-show-columns="true"
-                  data-show-fullscreen="true"
-                  data-show-export="true"
-                  data-show-refresh="true"
                   data-sort-order="asc"
                   id="locationTable"
                   class="table table-striped snipe-table"
-                  data-url="{{ route('api.locations.index') }}"
+                  data-url="{{ route('api.locations.index', array('company_id'=>e(Request::get('company_id')))) }}"
                   data-export-options='{
               "fileName": "export-locations-{{ date('Y-m-d') }}",
               "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
               }'>
           </table>
-        </div>
       </div>
     </div>
   </div>

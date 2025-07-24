@@ -1,8 +1,7 @@
 @extends('layouts/default')
 
 @section('title0')
-  {{ trans('admin/hardware/general.requestable') }}
-  {{ trans('general.assets') }}
+  {{ trans('general.requestable_items') }}
 @stop
 
 {{-- Page title --}}
@@ -16,35 +15,47 @@
 <div class="row">
     <div class="col-md-12">
 
+
+        @if (($assets->count() < 1) && ($models->count() < 1))
+
+            <div class="col-md-12">
+                <div class="alert alert-info fade in">
+                    <i class="fas fa-info-circle faa-pulse animated"></i>
+                    <strong>{{ trans('general.notification_info') }}: </strong>
+                    {{ trans('general.no_requestable') }}
+                </div>
+            </div>
+
+        @else
         <div class="nav-tabs-custom">
             <ul class="nav nav-tabs">
+                @if ($assets->count() > 0)
                 <li class="active">
                     <a href="#assets" data-toggle="tab" title="{{ trans('general.assets') }}">{{ trans('general.assets') }}
                         <badge class="badge badge-secondary"> {{ $assets->count()}}</badge>
                     </a>               
                 </li>
+                @endif
+                @if ($models->count() > 0)
                 <li>
                     <a href="#models" data-toggle="tab" title="{{ trans('general.asset_models') }}">{{ trans('general.asset_models') }}
                         <badge class="badge badge-secondary"> {{ $models->count()}}</badge>
                     </a>                   
                 </li>
+                @endif
             </ul>
             <div class="tab-content">
+                @if ($assets->count() > 0)
                 <div class="tab-pane fade in active" id="assets">
                     <div class="row">
                         <div class="col-md-12">
                                 <div class="table-responsive">
                                     <table
-                                        data-click-to-select="true"
                                         data-cookie-id-table="requestableAssetsListingTable"
-                                        data-pagination="true"
                                         data-id-table="requestableAssetsListingTable"
-                                        data-search="true"
                                         data-side-pagination="server"
-                                        data-show-columns="true"
                                         data-show-export="false"
                                         data-show-footer="false"
-                                        data-show-refresh="true"
                                         data-sort-order="asc"
                                         data-sort-name="name"
                                         data-toolbar="#assetsBulkEditToolbar"
@@ -57,6 +68,7 @@
                                         <thead>
                                             <tr>
                                                 <th class="col-md-1" data-field="image" data-formatter="imageFormatter" data-sortable="true">{{ trans('general.image') }}</th>
+                                                <th class="col-md-2" data-field="asset_tag" data-sortable="true" >{{ trans('general.asset_tag') }}</th>                                                
                                                 <th class="col-md-2" data-field="model" data-sortable="true">{{ trans('admin/hardware/table.asset_model') }}</th>
                                                 <th class="col-md-2" data-field="model_number" data-sortable="true">{{ trans('admin/models/table.modelnumber') }}</th>
                                                 <th class="col-md-2" data-field="name" data-sortable="true">{{ trans('admin/hardware/form.name') }}</th>
@@ -64,27 +76,31 @@
                                                 <th class="col-md-2" data-field="location" data-sortable="true">{{ trans('admin/hardware/table.location') }}</th>
                                                 <th class="col-md-2" data-field="status" data-sortable="true">{{ trans('admin/hardware/table.status') }}</th>
                                                 <th class="col-md-2" data-field="expected_checkin" data-formatter="dateDisplayFormatter" data-sortable="true">{{ trans('admin/hardware/form.expected_checkin') }}</th>
+
+                                                @foreach(\App\Models\CustomField::get() as $field)
+                                                    @if (($field->field_encrypted=='0') && ($field->show_in_requestable_list=='1'))
+                                                        <th class="col-md-2" data-field="custom_fields.{{ $field->db_column }}" data-sortable="true">{{ $field->name }}</th>
+                                                    @endif
+                                                @endforeach
                                                 <th class="col-md-1" data-formatter="assetRequestActionsFormatter" data-field="actions" data-sortable="false">{{ trans('table.actions') }}</th>
                                             </tr>
                                         </thead>
                                     </table>
                                 </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
+                @endif
 
-                <div class="tab-pane fade" id="models">
+                @if ($models->count() > 0)
+                <div class="tab-pane fade in {{ ($assets->count() == 0) ? 'active' : '' }}" id="models">
                     <div class="row">
                         <div class="col-md-12">
-
-                            @if ($models->count() > 0)
-                            <h2>{{ trans('general.requestable_models') }}</h4>
                                 <table
                                         name="requested-assets"
                                         data-toolbar="#toolbar"
                                         class="table table-striped snipe-table"
                                         id="table"
-                                        data-advanced-search="true"
                                         data-id-table="advancedTable"
                                         data-cookie-id-table="requestableAssets">
                                 <thead>
@@ -104,8 +120,8 @@
                                                 <td>
 
                                                     @if ($requestableModel->image)
-                                                        <a href="{{ url('/') }}/uploads/models/{{ $requestableModel->image }}" data-toggle="lightbox" data-type="image">
-                                                            <img src="{{ url('/') }}/uploads/models/{{ $requestableModel->image }}" style="max-height: {{ $snipeSettings->thumbnail_max_h }}px; width: auto;" class="img-responsive">
+                                                        <a href="{{ config('app.url') }}/uploads/models/{{ $requestableModel->image }}" data-toggle="lightbox" data-type="image">
+                                                            <img src="{{ config('app.url') }}/uploads/models/{{ $requestableModel->image }}" style="max-height: {{ $snipeSettings->thumbnail_max_h }}px; width: auto;" class="img-responsive">
                                                         </a>
                                                     @endif
 
@@ -113,7 +129,7 @@
 
                                                 <td>
                                                     @can('view', \App\Models\AssetModel::class)
-                                                        <a href="{{ url('/') }}'/models/'.{{ $requestableModel->id }}) }}">{{ $requestableModel->name }}</a>
+                                                        <a href="{{ route('models.show', ['model' => $requestableModel->id]) }}">{{ $requestableModel->name }}</a>
                                                     @else
                                                         {{ $requestableModel->name }}
                                                     @endcan
@@ -126,9 +142,9 @@
                                                         {{ csrf_field() }}
                                                     <input type="text" style="width: 70px; margin-right: 10px;" class="form-control pull-left" name="request-quantity" value="" placeholder="{{ trans('general.qty') }}">
                                                     @if ($requestableModel->isRequestedBy(Auth::user()))
-                                                        {{ Form::submit(trans('button.cancel'), ['class' => 'btn btn-danger btn-sm'])}}
+                                                        <input class="btn btn-danger btn-sm" type="submit" value="{{ trans('button.cancel') }}">
                                                     @else
-                                                        {{ Form::submit(trans('button.request'), ['class' => 'btn btn-primary btn-sm'])}}
+                                                        <input class="btn btn-primary btn-sm" type="submit" value="{{ trans('button.request') }}">
                                                     @endif
                                                     </form>
                                                 </td>
@@ -138,18 +154,15 @@
                                 </tbody>
                             </table>
 
-                            @else
-                                <div class="alert alert-info alert-block">
-                                    <i class="fas fa-info-circle"></i>
-                                    {{ trans('general.no_results') }}
-                                </div>
-                            @endif
                         </div>
                     </div>
                 </div>
+                @endif
 
             </div> <!-- .tab-content-->
         </div> <!-- .nav-tabs-custom -->
+
+        @endif
     </div> <!-- .col-md-12> -->
 </div> <!-- .row -->
 @stop

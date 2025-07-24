@@ -29,6 +29,26 @@ class SettingsServiceProvider extends ServiceProvider
             $view->with('snipeSettings', Setting::getSettings());
         });
 
+
+        // Make sure the limit is actually set, is an integer and does not exceed system limits
+        \App::singleton('api_limit_value', function () {
+            $limit = config('app.max_results');
+            $int_limit = intval(request('limit'));
+
+            if ((abs($int_limit) > 0) && ($int_limit <= config('app.max_results'))) {
+                $limit = abs($int_limit);
+            }
+
+            return $limit;
+        });
+
+        // Make sure the offset is actually set and is an integer
+        \App::singleton('api_offset_value', function () {
+            $offset = intval(request('offset'));
+            return $offset;
+        });
+
+
         /**
          * Set some common variables so that they're globally available.
          * The paths should always be public (versus private uploads)
@@ -43,6 +63,10 @@ class SettingsServiceProvider extends ServiceProvider
 
         \App::singleton('assets_upload_path', function () {
             return 'assets/';
+        });
+
+        \App::singleton('audits_upload_path', function () {
+            return 'audits/';
         });
 
         \App::singleton('accessories_upload_path', function () {
