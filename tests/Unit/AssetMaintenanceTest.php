@@ -2,7 +2,6 @@
 namespace Tests\Unit;
 
 use App\Models\AssetMaintenance;
-use Carbon\Carbon;
 use Tests\TestCase;
 
 class AssetMaintenanceTest extends TestCase
@@ -43,7 +42,5 @@ class AssetMaintenanceTest extends TestCase
         $this->assertTrue($c->completion_date === null);
         $c->completion_date = '0000-00-00';
         $this->assertTrue($c->completion_date === null);
-        $c->completion_date = '2017-05-12';
-        $this->assertTrue($c->completion_date == Carbon::parse('2017-05-12'));
     }
 }

@@ -8,10 +8,9 @@ use App\Http\Transformers\AssetMaintenancesTransformer;
 use App\Models\Asset;
 use App\Models\AssetMaintenance;
 use App\Models\Company;
-use Auth;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Input;
+use Illuminate\Http\JsonResponse;
 
 /**
  * This controller handles all actions related to Asset Maintenance for
@@ -22,7 +21,6 @@ use Illuminate\Support\Facades\Input;
 class AssetMaintenancesController extends Controller
 {
 
-
     /**
      *  Generates the JSON response for asset maintenances listing view.
      *
@@ -30,13 +28,13 @@ class AssetMaintenancesController extends Controller
      * @author  Vincent Sposato <vincent.sposato@gmail.com>
      * @version v1.0
      * @since [v1.8]
-     * @return string JSON
      */
-    public function index(Request $request)
+    public function index(Request $request) : JsonResponse | array
     {
         $this->authorize('view', Asset::class);
 
-        $maintenances = AssetMaintenance::select('asset_maintenances.*')->with('asset', 'asset.model', 'asset.location', 'supplier', 'asset.company', 'admin');
+        $maintenances = AssetMaintenance::select('asset_maintenances.*')
+            ->with('asset', 'asset.model', 'asset.location', 'asset.defaultLoc', 'supplier', 'asset.company',  'asset.assetstatus', 'adminuser');
 
         if ($request->filled('search')) {
             $maintenances = $maintenances->TextSearch($request->input('search'));
@@ -47,7 +45,11 @@ class AssetMaintenancesController extends Controller
         }
 
         if ($request->filled('supplier_id')) {
-            $maintenances->where('supplier_id', '=', $request->input('supplier_id'));
+            $maintenances->where('asset_maintenances.supplier_id', '=', $request->input('supplier_id'));
+        }
+
+        if ($request->filled('created_by')) {
+            $maintenances->where('asset_maintenances.created_by', '=', $request->input('created_by'));
         }
 
         if ($request->filled('asset_maintenance_type')) {
@@ -55,12 +57,9 @@ class AssetMaintenancesController extends Controller
         }
 
 
-        // Set the offset to the API call's offset, unless the offset is higher than the actual count of items in which
-        // case we override with the actual count, so we should return 0 items.
-        $offset = (($maintenances) && ($request->get('offset') > $maintenances->count())) ? $maintenances->count() : $request->get('offset', 0);
-
-        // Check to make sure the limit is not higher than the max allowed
-        ((config('app.max_results') >= $request->input('limit')) && ($request->filled('limit'))) ? $limit = $request->input('limit') : $limit = config('app.max_results');
+        // Make sure the offset and limit are actually integers and do not exceed system limits
+        $offset = ($request->input('offset') > $maintenances->count()) ? $maintenances->count() : abs($request->input('offset'));
+        $limit = app('api_limit_value');
 
         $allowed_columns = [
                                 'id',
@@ -73,15 +72,20 @@ class AssetMaintenancesController extends Controller
                                 'notes',
                                 'asset_tag',
                                 'asset_name',
-                                'user_id',
-                                'supplier'
+                                'serial',
+                                'created_by',
+                                'supplier',
+                                'location',
+                                'is_warranty',
+                                'status_label',
                             ];
+
         $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
         $sort = in_array($request->input('sort'), $allowed_columns) ? e($request->input('sort')) : 'created_at';
 
         switch ($sort) {
-            case 'user_id':
-                $maintenances = $maintenances->OrderAdmin($order);
+            case 'created_by':
+                $maintenances = $maintenances->OrderByCreatedBy($order);
                 break;
             case 'supplier':
                 $maintenances = $maintenances->OrderBySupplier($order);
@@ -91,6 +95,15 @@ class AssetMaintenancesController extends Controller
                 break;
             case 'asset_name':
                 $maintenances = $maintenances->OrderByAssetName($order);
+                break;
+            case 'serial':
+                $maintenances = $maintenances->OrderByAssetSerial($order);
+                break;
+            case 'location':
+                $maintenances = $maintenances->OrderLocationName($order);
+                break;
+            case 'status_label':
+                $maintenances = $maintenances->OrderStatusName($order);
                 break;
             default:
                 $maintenances = $maintenances->orderBy($sort, $order);
@@ -112,47 +125,22 @@ class AssetMaintenancesController extends Controller
      * @author  Vincent Sposato <vincent.sposato@gmail.com>
      * @version v1.0
      * @since [v1.8]
-     * @return string JSON
      */
-    public function store(Request $request)
+    public function store(Request $request) : JsonResponse | array
     {
         $this->authorize('update', Asset::class);
         // create a new model instance
-        $assetMaintenance = new AssetMaintenance();
-        $assetMaintenance->supplier_id = $request->input('supplier_id');
-        $assetMaintenance->is_warranty = $request->input('is_warranty');
-        $assetMaintenance->cost =  Helper::ParseCurrency($request->input('cost'));
-        $assetMaintenance->notes = e($request->input('notes'));
-        $asset = Asset::find(e($request->input('asset_id')));
-
-        if (! Company::isCurrentUserHasAccess($asset)) {
-            return response()->json(Helper::formatStandardApiResponse('error', null, 'You cannot add a maintenance for that asset'));
-        }
-
-        // Save the asset maintenance data
-        $assetMaintenance->asset_id = $request->input('asset_id');
-        $assetMaintenance->asset_maintenance_type = $request->input('asset_maintenance_type');
-        $assetMaintenance->title = $request->input('title');
-        $assetMaintenance->start_date = $request->input('start_date');
-        $assetMaintenance->completion_date = $request->input('completion_date');
-        $assetMaintenance->user_id = Auth::id();
-
-        if (($assetMaintenance->completion_date !== null)
-            && ($assetMaintenance->start_date !== '')
-            && ($assetMaintenance->start_date !== '0000-00-00')
-        ) {
-            $startDate = Carbon::parse($assetMaintenance->start_date);
-            $completionDate = Carbon::parse($assetMaintenance->completion_date);
-            $assetMaintenance->asset_maintenance_time = $completionDate->diffInDays($startDate);
-        }
+        $maintenance = new AssetMaintenance();
+        $maintenance->fill($request->all());
+        $maintenance->created_by = auth()->id();
 
         // Was the asset maintenance created?
-        if ($assetMaintenance->save()) {
-            return response()->json(Helper::formatStandardApiResponse('success', $assetMaintenance, trans('admin/asset_maintenances/message.create.success')));
+        if ($maintenance->save()) {
+            return response()->json(Helper::formatStandardApiResponse('success', $maintenance, trans('admin/asset_maintenances/message.create.success')));
 
         }
 
-        return response()->json(Helper::formatStandardApiResponse('error', null, $assetMaintenance->getErrors()));
+        return response()->json(Helper::formatStandardApiResponse('error', null, $maintenance->getErrors()));
 
     }
 
@@ -160,65 +148,38 @@ class AssetMaintenancesController extends Controller
      *  Validates and stores an update to an asset maintenance
      *
      * @author  A. Gianotto <snipe@snipe.net>
-     * @param int $assetMaintenanceId
+     * @param int $id
      * @param int $request
      * @version v1.0
      * @since [v4.0]
-     * @return string JSON
      */
-    public function update(Request $request, $assetMaintenanceId = null)
+    public function update(Request $request, $id) : JsonResponse | array
     {
         $this->authorize('update', Asset::class);
-        // Check if the asset maintenance exists
-        $assetMaintenance = AssetMaintenance::findOrFail($assetMaintenanceId);
 
-        if (! Company::isCurrentUserHasAccess($assetMaintenance->asset)) {
-            return response()->json(Helper::formatStandardApiResponse('error', null, 'You cannot edit a maintenance for that asset'));
-        }
+        if ($maintenance = AssetMaintenance::with('asset')->find($id)) {
 
-        $assetMaintenance->supplier_id = e($request->input('supplier_id'));
-        $assetMaintenance->is_warranty = e($request->input('is_warranty'));
-        $assetMaintenance->cost =  Helper::ParseCurrency($request->input('cost'));
-        $assetMaintenance->notes = e($request->input('notes'));
-
-        $asset = Asset::find(request('asset_id'));
-
-        if (! Company::isCurrentUserHasAccess($asset)) {
-            return response()->json(Helper::formatStandardApiResponse('error', null, 'You cannot edit a maintenance for that asset'));
-        }
-
-        // Save the asset maintenance data
-        $assetMaintenance->asset_id = $request->input('asset_id');
-        $assetMaintenance->asset_maintenance_type = $request->input('asset_maintenance_type');
-        $assetMaintenance->title = $request->input('title');
-        $assetMaintenance->start_date = $request->input('start_date');
-        $assetMaintenance->completion_date = $request->input('completion_date');
-
-        if (($assetMaintenance->completion_date == null)
-        ) {
-            if (($assetMaintenance->asset_maintenance_time !== 0)
-                || (! is_null($assetMaintenance->asset_maintenance_time))
-            ) {
-                $assetMaintenance->asset_maintenance_time = null;
+            // Can this user manage this asset?
+            if (! Company::isCurrentUserHasAccess($maintenance->asset)) {
+                return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.action_permission_denied', ['item_type' => trans('admin/asset_maintenances/general.maintenance'), 'id' => $id, 'action' => trans('general.edit')])));
             }
+
+            // The asset this miantenance is attached to is not valid or has been deleted
+            if (!$maintenance->asset) {
+                return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.item_not_found', ['item_type' => trans('general.asset'), 'id' => $id])));
+            }
+
+            $maintenance->fill($request->all());
+
+            if ($maintenance->save()) {
+                return response()->json(Helper::formatStandardApiResponse('success', $maintenance, trans('admin/asset_maintenances/message.edit.success')));
+            }
+
+            return response()->json(Helper::formatStandardApiResponse('error', null, $maintenance->getErrors()));
         }
 
-        if (($assetMaintenance->completion_date !== null)
-            && ($assetMaintenance->start_date !== '')
-            && ($assetMaintenance->start_date !== '0000-00-00')
-        ) {
-            $startDate = Carbon::parse($assetMaintenance->start_date);
-            $completionDate = Carbon::parse($assetMaintenance->completion_date);
-            $assetMaintenance->asset_maintenance_time = $completionDate->diffInDays($startDate);
-        }
+        return response()->json(Helper::formatStandardApiResponse('error', null, trans('general.item_not_found', ['item_type' => trans('admin/asset_maintenances/general.maintenance'), 'id' => $id])));
 
-        // Was the asset maintenance created?
-        if ($assetMaintenance->save()) {
-            return response()->json(Helper::formatStandardApiResponse('success', $assetMaintenance, trans('admin/asset_maintenances/message.edit.success')));
-
-        }
-
-        return response()->json(Helper::formatStandardApiResponse('error', null, $assetMaintenance->getErrors()));
     }
 
     /**
@@ -228,17 +189,13 @@ class AssetMaintenancesController extends Controller
      * @param int $assetMaintenanceId
      * @version v1.0
      * @since [v4.0]
-     * @return string JSON
      */
-    public function destroy($assetMaintenanceId)
+    public function destroy($assetMaintenanceId) : JsonResponse | array
     {
         $this->authorize('update', Asset::class);
         // Check if the asset maintenance exists
-        $assetMaintenance = AssetMaintenance::findOrFail($assetMaintenanceId);
 
-        if (! Company::isCurrentUserHasAccess($assetMaintenance->asset)) {
-            return response()->json(Helper::formatStandardApiResponse('error', null, 'You cannot delete a maintenance for that asset'));
-        }
+        $assetMaintenance = AssetMaintenance::findOrFail($assetMaintenanceId);
 
         $assetMaintenance->delete();
 
@@ -254,9 +211,8 @@ class AssetMaintenancesController extends Controller
      * @param int $assetMaintenanceId
      * @version v1.0
      * @since [v4.0]
-     * @return string JSON
      */
-    public function show($assetMaintenanceId)
+    public function show($assetMaintenanceId) : JsonResponse | array
     {
         $this->authorize('view', Asset::class);
         $assetMaintenance = AssetMaintenance::findOrFail($assetMaintenanceId);

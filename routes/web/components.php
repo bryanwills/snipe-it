@@ -31,7 +31,7 @@ Route::group(['prefix' => 'components', 'middleware' => ['auth']], function () {
     )->name('upload/component');
 
     Route::delete(
-        '{componentId}/deletefile/{fileId}',
+        '{componentId}/showfile/{fileId}/delete',
         [Components\ComponentsFilesController::class, 'destroy']
     )->name('delete/componentfile');
 

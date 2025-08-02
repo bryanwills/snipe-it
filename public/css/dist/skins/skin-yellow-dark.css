@@ -101,16 +101,12 @@
   border-bottom-right-radius: 2px;
   border-bottom-left-radius: 0;
 }
-.btn,
-.btn:hover {
-  color: #000;
-}
 .btn.btn-primary,
 .btn:hover.btn-primary,
 .btn .btn-primary:link,
 .btn:hover .btn-primary:link {
   background-color: var(--button-default);
-  border-color: var(--button-default);
+  border-color: #000000;
   color: #545454;
 }
 .btna.btn-primary:hover,
@@ -129,6 +125,13 @@
   background-color: var(--hover-link);
   color: #545454;
 }
+a.actions {
+  color: #fff !important;
+}
+a:visited.label-default,
+a:link.label-default {
+  color: #444;
+}
 /**
 The dropdown is white, so use a darker color
  */
@@ -146,6 +149,10 @@ a:visited {
 }
 .text-primary {
   color: #fff;
+}
+#sort tr.cansort {
+  background-color: var(--back-main);
+  color: var(--text-main);
 }
 :root {
   --background: #222;
@@ -173,20 +180,42 @@ a:visited {
 #ldapad_test_results.well.well-sm {
   color: var(--back-main);
 }
+.pagination > li > a {
+  color: var(--text-main);
+  background-color: var(--back-main);
+}
+.pagination > .active > a {
+  background-color: var(--button-default);
+  border-color: var(--light-link);
+  color: var(--nav-link);
+}
+.pagination > .active > a:hover {
+  background-color: var(--hover-link);
+}
+.tasks-menu > .dropdown-menu > li .menu {
+  background-color: var(--back-main);
+}
+.tasks-menu > .dropdown-menu > li .menu > li > a:hover .progress {
+  background-color: var(--background);
+}
+h2.task_menu {
+  color: var(--link);
+}
+.navbar-custom-menu > .navbar-nav > li > .dropdown-menu {
+  background-color: var(--back-main);
+  color: var(--link);
+}
 .main-header .navbar,
 .main-header .logo {
   background-color: var(--header);
   background: linear-gradient(to bottom, var(--header) 0%, var(--header) 100%);
   border-color: var(--header);
 }
-.label-default {
-  background-color: var(--back-sub);
-}
 a.btn.btn-default {
   color: var(--nav-link);
 }
 .bootstrap-table .fixed-table-container .table thead th .sortable {
-  color: var(--nav-link);
+  color: var(--text-main);
 }
 .bootstrap-table .fixed-table-toolbar .columns label {
   color: #000;
@@ -326,11 +355,6 @@ input[type=search] {
   background-color: var(--back-sub);
   color: var(--text-main);
 }
-.input-group,
-.input-group-addon {
-  background-color: var(--back-sub) !important;
-  color: var(--text-main);
-}
 #licensesTable > tbody > tr > td > nobr > a > i.fa {
   color: var(--text-main);
 }
@@ -398,13 +422,11 @@ input[type=search] {
 .skin-yellow-dark .main-header .navbar .dropdown-menu li a {
   color: var(--header);
 }
-div.th-inner {
-  color: var(--text-main);
+.skin-yellow-dark .main-header .navbar .dropdown-menu li a:hover {
+  background-color: #000000;
 }
-.fixed-table-body thead th .th-inner,
-.skin-yellow-dark,
-.skin-yellow {
-  background-color: var(--header) !important;
+tr th div.th-inner {
+  color: #FFFFFF;
 }
 .tab-content,
 .tab-pane {
@@ -428,6 +450,18 @@ div.th-inner {
 }
 .box-header.with-border {
   border-bottom: #000;
+}
+#customFieldsTable a[href*='/models'] {
+  background-color: var(--back-sub-alt);
+  color: var(--link);
+}
+#customFieldsTable a[href*='/models']:hover {
+  background-color: var(--text-sub);
+  color: var(--button-hover);
+}
+#customFieldsTable a[href*='/models']:visited {
+  background-color: var(--background);
+  color: var(--visited-link);
 }
 .row-striped {
   vertical-align: top;
@@ -461,4 +495,9 @@ div.th-inner {
 .search-highlight:hover {
   background-color: #e9d15b;
 }
+.table > tbody > tr.warning > td {
+  background-color: var(--back-sub);
+}
 
+
+/*# sourceMappingURL=skin-yellow-dark.css.map*/
