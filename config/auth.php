@@ -104,6 +104,16 @@ return [
             ]
 
         ],
+
+        'invites' => [
+            'provider' => 'users',
+            'table' => 'password_resets',
+            'expire' => env('INVITE_PASSWORD_LINK_EXPIRES', 2880),
+            'throttle' => [
+                'max_attempts' => env('LOGIN_MAX_ATTEMPTS', 5),
+                'lockout_duration' => env('LOGIN_LOCKOUT_DURATION', 60),
+            ]
+        ],
     ],
 
     /*
@@ -131,5 +141,17 @@ return [
     */
 
     'password_timeout' =>  env('PASSWORD_CONFIRM_TIMEOUT', 10800),
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Login form autocomplete
+    |--------------------------------------------------------------------------
+    |
+    | Determine whether to include autocomplete="off" on the login form. Some users may want to disable
+    | autocomplete for compliance with security requirements.
+    |
+    */
+    'login_autocomplete' => env('LOGIN_AUTOCOMPLETE', false),
 
 ];

@@ -6,14 +6,14 @@ return array(
     'account_not_found'      => '使用者或密碼錯誤',
     'account_not_activated'  => '使用者尚未啟用',
     'account_suspended'      => '使用者已被停用',
-    'account_banned'         => '使用者已被禁用',
-    'throttle'               => '登入失敗次數太多。請 :minutes 分鐘後再試。',
 
     'two_factor' => array(
         'already_enrolled'      => '您的設備已經註冊',
         'success'               => '您已成功登入',
         'code_required'         => '需要雙重驗證碼',
         'invalid_code'          => '兩階段驗證碼無效',
+        'enter_two_factor_code' => 'Please enter your two-factor authentication code.',
+        'please_enroll'         => 'Please enroll a device in two-factor authentication.',
     ),
 
     'signin' => array(

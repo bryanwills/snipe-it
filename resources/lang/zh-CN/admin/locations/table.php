@@ -1,20 +1,21 @@
 <?php
 
 return [
-    'about_locations_title'     => '管理地理位置',
-    'about_locations'           => '地理位置用来跟踪用户、资产和其他项目的位置信息。',
+    'about_locations_title'     => '关于位置',
+    'about_locations'           => '位置用来跟踪用户、资产和其他项目的信息',
     'assets_rtd'                => '资产', // This has NEVER meant Assets Retired. I don't know how it keeps getting reverted.
-    'assets_checkedout'         => '持有人',
+    'assets_checkedout'         => '已分配的资产',
     'id'                        => '编号',
     'city'                      => '城市',
     'state'                     => '省份',
     'country'                   => '国家',
-    'create'                    => '创建地理位置',
-    'update'                    => '更新地理位置',
+    'create'                    => '创建位置',
+    'update'                    => '更新位置',
     'print_assigned'            => '打印已分配资产',
     'print_all_assigned'        => '打印所有已分配资产',
-    'name'                      => '地理位置名称',
+    'name'                      => '位置名称',
     'address'                   => '地址',
+    'address2'                   => '地址行2',
     'zip'                       => '邮政编码',
     'locations'                 => '地理位置',
     'parent'                    => '上级节点',
@@ -33,8 +34,10 @@ return [
     'asset_checked_out'         => '已借出',
     'asset_expected_checkin'    => '预计归还日期',
     'date'                      => '日期:',
+    'phone'                     => '位置电话',
     'signed_by_asset_auditor'   => '签名(资产管理员):',
     'signed_by_finance_auditor' => '签名(财务人员):',
     'signed_by_location_manager' => '签名(当地经理):',
     'signed_by'                 => '签名:',
+    'clone'  					=> '克隆位置',
 ];

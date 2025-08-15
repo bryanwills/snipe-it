@@ -38,12 +38,13 @@ class DatabaseSeeder extends Seeder
         $this->call(DepreciationSeeder::class);
         $this->call(StatuslabelSeeder::class);
         $this->call(AccessorySeeder::class);
+        $this->call(CustomFieldSeeder::class);
         $this->call(AssetSeeder::class);
         $this->call(LicenseSeeder::class);
         $this->call(ComponentSeeder::class);
         $this->call(ConsumableSeeder::class);
         $this->call(ActionlogSeeder::class);
-        $this->call(CustomFieldSeeder::class);
+
 
         Artisan::call('snipeit:sync-asset-locations', ['--output' => 'all']);
         $output = Artisan::output();
@@ -52,7 +53,7 @@ class DatabaseSeeder extends Seeder
         Model::reguard();
 
         DB::table('imports')->truncate();
-        DB::table('asset_maintenances')->truncate();
+        DB::table('maintenances')->truncate();
         DB::table('requested_assets')->truncate();
     }
 }

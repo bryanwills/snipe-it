@@ -2,21 +2,29 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\CheckoutableCheckedOut;
 use App\Helpers\Helper;
+use App\Http\Controllers\CheckInOutRequest;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AccessoryCheckoutRequest;
+use App\Http\Requests\StoreAccessoryRequest;
 use App\Http\Transformers\AccessoriesTransformer;
 use App\Http\Transformers\SelectlistTransformer;
 use App\Models\Accessory;
 use App\Models\Company;
 use App\Models\User;
-use Auth;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Http\Requests\ImageUploadRequest;
+use App\Models\AccessoryCheckout;
 
 class AccessoriesController extends Controller
 {
+    use CheckInOutRequest;
+
     /**
      * Display a listing of the resource.
      *
@@ -44,20 +52,21 @@ class AccessoriesController extends Controller
                 'min_amt',
                 'company_id',
                 'notes',
-                'users_count',
+                'checkouts_count',
                 'qty',
             ];
 
 
-        $accessories = Accessory::select('accessories.*')->with('category', 'company', 'manufacturer', 'users', 'location', 'supplier')
-                                ->withCount('users as users_count');
+        $accessories = Accessory::select('accessories.*')
+            ->with('category', 'company', 'manufacturer', 'checkouts', 'location', 'supplier', 'adminuser')
+            ->withCount('checkouts as checkouts_count');
 
         if ($request->filled('search')) {
             $accessories = $accessories->TextSearch($request->input('search'));
         }
 
         if ($request->filled('company_id')) {
-            $accessories->where('company_id', '=', $request->input('company_id'));
+            $accessories->where('accessories.company_id', '=', $request->input('company_id'));
         }
 
         if ($request->filled('category_id')) {
@@ -80,12 +89,9 @@ class AccessoriesController extends Controller
             $accessories->where('notes','=',$request->input('notes'));
         }
 
-        // Set the offset to the API call's offset, unless the offset is higher than the actual count of items in which
-        // case we override with the actual count, so we should return 0 items.
-        $offset = (($accessories) && ($request->get('offset') > $accessories->count())) ? $accessories->count() : $request->get('offset', 0);
-
-        // Check to make sure the limit is not higher than the max allowed
-        ((config('app.max_results') >= $request->input('limit')) && ($request->filled('limit'))) ? $limit = $request->input('limit') : $limit = config('app.max_results');
+        // Make sure the offset and limit are actually integers and do not exceed system limits
+        $offset = ($request->input('offset') > $accessories->count()) ? $accessories->count() : abs($request->input('offset'));
+        $limit = app('api_limit_value');
 
         $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
         $sort_override =  $request->input('sort');
@@ -106,7 +112,10 @@ class AccessoriesController extends Controller
                 break;    
             case 'supplier':
                 $accessories = $accessories->OrderSupplier($order);
-                break;       
+                break;
+            case 'created_by':
+                $accessories = $accessories->OrderByCreatedByName($order);
+                break;
             default:
                 $accessories = $accessories->orderBy($column_sort, $order);
                 break;
@@ -122,14 +131,13 @@ class AccessoriesController extends Controller
     /**
      * Store a newly created resource in storage.
      *
+     * @param  \App\Http\Requests\ImageUploadRequest $request
+     * @return \Illuminate\Http\JsonResponse
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
-     * @param  \App\Http\Requests\ImageUploadRequest $request
-     * @return \Illuminate\Http\Response
      */
-    public function store(ImageUploadRequest $request)
+    public function store(StoreAccessoryRequest $request)
     {
-        $this->authorize('create', Accessory::class);
         $accessory = new Accessory;
         $accessory->fill($request->all());
         $accessory = $request->handleImages($accessory);
@@ -145,15 +153,15 @@ class AccessoriesController extends Controller
     /**
      * Display the specified resource.
      *
+     * @param  int  $id
+     * @return array
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
     public function show($id)
     {
         $this->authorize('view', Accessory::class);
-        $accessory = Accessory::findOrFail($id);
+        $accessory = Accessory::withCount('checkouts as checkouts_count')->findOrFail($id);
 
         return (new AccessoriesTransformer)->transformAccessory($accessory);
     }
@@ -162,10 +170,10 @@ class AccessoriesController extends Controller
     /**
      * Display the specified resource.
      *
+     * @param  int  $id
+     * @return array
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
     public function accessory_detail($id)
     {
@@ -177,47 +185,33 @@ class AccessoriesController extends Controller
 
 
     /**
-     * Display the specified resource.
+     * Get the list of checkouts for a specific accessory
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return  | array
      */
-    public function checkedout($id, Request $request)
+    public function checkedout(Request $request, $id)
     {
         $this->authorize('view', Accessory::class);
 
         $accessory = Accessory::with('lastCheckout')->findOrFail($id);
-        if (! Company::isCurrentUserHasAccess($accessory)) {
-            return ['total' => 0, 'rows' => []];
-        }
-
         $offset = request('offset', 0);
         $limit = request('limit', 50);
 
-        $accessory_users = $accessory->users;
-        $total = $accessory_users->count();
+        // Total count of all checkouts for this asset
+        $accessory_checkouts = $accessory->checkouts();
 
-        if ($total < $offset) {
-            $offset = 0;
-        }
-
-        $accessory_users = $accessory->users()->skip($offset)->take($limit)->get();
-
+        // Check for search text in the request
         if ($request->filled('search')) {
-            $accessory_users = $accessory->users()
-                                         ->where(function ($query) use ($request) {
-                                             $search_str = '%' . $request->input('search') . '%';
-                                             $query->where('first_name', 'like', $search_str)
-                                                   ->orWhere('last_name', 'like', $search_str)
-                                                   ->orWhere('note', 'like', $search_str);
-                                         })
-                                         ->get();
-            $total = $accessory_users->count();
+            $accessory_checkouts = $accessory_checkouts->TextSearch($request->input('search'));
         }
 
-        return (new AccessoriesTransformer)->transformCheckedoutAccessory($accessory, $accessory_users, $total);
+        $total = $accessory_checkouts->count();
+        $accessory_checkouts = $accessory_checkouts->skip($offset)->take($limit)->get();
+
+        return (new AccessoriesTransformer)->transformCheckedoutAccessory($accessory_checkouts, $total);
     }
 
 
@@ -228,7 +222,7 @@ class AccessoriesController extends Controller
      * @since [v4.0]
      * @param  \App\Http\Requests\ImageUploadRequest $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(ImageUploadRequest $request, $id)
     {
@@ -250,16 +244,16 @@ class AccessoriesController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
         $this->authorize('delete', Accessory::class);
-        $accessory = Accessory::findOrFail($id);
+        $accessory = Accessory::withCount('checkouts as checkouts_count')->findOrFail($id);
         $this->authorize($accessory);
 
-        if ($accessory->hasUsers() > 0) {
-            return response()->json(Helper::formatStandardApiResponse('error', null, trans('admin/accessories/message.assoc_users', ['count'=> $accessory->hasUsers()])));
+        if ($accessory->checkouts_count > 0) {
+            return response()->json(Helper::formatStandardApiResponse('error', null, trans('admin/accessories/general.delete_disabled')));
         }
 
         $accessory->delete();
@@ -274,43 +268,34 @@ class AccessoriesController extends Controller
      * If Slack is enabled and/or asset acceptance is enabled, it will also
      * trigger a Slack message and send an email.
      *
-     * @author [A. Gianotto] [<snipe@snipe.net>]
      * @param  int  $accessoryId
-     * @return Redirect
+     * @return \Illuminate\Http\JsonResponse
+     * @author [A. Gianotto] [<snipe@snipe.net>]
      */
-    public function checkout(Request $request, $accessoryId)
+    public function checkout(AccessoryCheckoutRequest $request, Accessory $accessory)
     {
-        // Check if the accessory exists
-        if (is_null($accessory = Accessory::find($accessoryId))) {
-            return response()->json(Helper::formatStandardApiResponse('error', null, trans('admin/accessories/message.does_not_exist')));
-        }
-
         $this->authorize('checkout', $accessory);
+        $target = $this->determineCheckoutTarget();
+        $accessory->checkout_qty = $request->input('checkout_qty', 1);
 
+        for ($i = 0; $i < $accessory->checkout_qty; $i++) {
 
-        if ($accessory->numRemaining() > 0) {
-
-            if (! $user = User::find($request->input('assigned_to'))) {
-                return response()->json(Helper::formatStandardApiResponse('error', null, trans('admin/accessories/message.checkout.user_does_not_exist')));
-            }
-
-            // Update the accessory data
-            $accessory->assigned_to = $request->input('assigned_to');
-
-            $accessory->users()->attach($accessory->id, [
+            $accessory_checkout = new AccessoryCheckout([
                 'accessory_id' => $accessory->id,
                 'created_at' => Carbon::now(),
-                'user_id' => Auth::id(),
-                'assigned_to' => $request->get('assigned_to'),
-                'note' => $request->get('note'),
+                'assigned_to' => $target->id,
+                'assigned_type' => $target::class,
+                'note' => $request->input('note'),
             ]);
 
-            $accessory->logCheckout($request->input('note'), $user);
-
-            return response()->json(Helper::formatStandardApiResponse('success', null, trans('admin/accessories/message.checkout.success')));
+            $accessory_checkout->created_by = auth()->id();
+            $accessory_checkout->save();
         }
 
-        return response()->json(Helper::formatStandardApiResponse('error', null, 'No accessories remaining'));
+        // Set this value to be able to pass the qty through to the event
+        event(new CheckoutableCheckedOut($accessory, $target, auth()->user(), $request->input('note')));
+
+        return response()->json(Helper::formatStandardApiResponse('success', null, trans('admin/accessories/message.checkout.success')));
 
     }
 
@@ -322,33 +307,25 @@ class AccessoriesController extends Controller
      * @param Request $request
      * @param int $accessoryUserId
      * @param string $backto
-     * @return Redirect
+     * @return \Illuminate\Http\RedirectResponse
      * @internal param int $accessoryId
      */
     public function checkin(Request $request, $accessoryUserId = null)
     {
-        if (is_null($accessory_user = DB::table('accessories_users')->find($accessoryUserId))) {
+        if (is_null($accessory_checkout = AccessoryCheckout::find($accessoryUserId))) {
             return response()->json(Helper::formatStandardApiResponse('error', null, trans('admin/accessories/message.does_not_exist')));
         }
 
-        $accessory = Accessory::find($accessory_user->accessory_id);
+        $accessory = Accessory::find($accessory_checkout->accessory_id);
         $this->authorize('checkin', $accessory);
 
-        $logaction = $accessory->logCheckin(User::find($accessory_user->user_id), $request->input('note'));
+        $accessory->logCheckin(User::find($accessory_checkout->assigned_to), $request->input('note'));
 
         // Was the accessory updated?
-        if (DB::table('accessories_users')->where('id', '=', $accessory_user->id)->delete()) {
-            if (! is_null($accessory_user->assigned_to)) {
-                $user = User::find($accessory_user->assigned_to);
+        if ($accessory_checkout->delete()) {
+            if (! is_null($accessory_checkout->assigned_to)) {
+                $user = User::find($accessory_checkout->assigned_to);
             }
-
-            $data['log_id'] = $logaction->id;
-            $data['first_name'] = $user->first_name;
-            $data['last_name'] = $user->last_name;
-            $data['item_name'] = $accessory->name;
-            $data['checkin_date'] = $logaction->created_at;
-            $data['item_tag'] = '';
-            $data['note'] = $logaction->note;
 
             return response()->json(Helper::formatStandardApiResponse('success', null,  trans('admin/accessories/message.checkin.success')));
         }

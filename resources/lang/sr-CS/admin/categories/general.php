@@ -4,10 +4,13 @@ return array(
     'asset_categories' 					=> 'Kategorije resursa',
     'category_name'  					=> 'Naziv kategorije',
     'checkin_email'                     => 'Send email to user on checkin/checkout.',
+    'email_to_initiator'                => 'Pošalji e-poruku sebi kada korisnik prihvati ili odbije zaduženje.',
     'checkin_email_notification'        => 'Korisniku će biti poslat email za checkin/checkout.',
     'clone'                             => 'Kloniraj kategoriju',
     'create'  							=> 'Kreiraj kategoriju',
     'edit'                              => 'Uredi kategoriju',
+    'email_will_be_sent_due_to_global_eula' => 'E-poruka će biti poslata korisniku jer se koristi globalna EULA.',
+    'email_will_be_sent_due_to_category_eula' => 'E-poruka će biti poslata korisniku jer je EULA podešena za ovu kategoriju.',
     'eula_text'							=> 'Category EULA',
     'eula_text_help'					=> 'Ovo polje vam omogućava da prilagodite svoje EULA-e za određene vrste sredstava. Ako imate samo jedan EULA za svu vašu imovinu, sredstva, možete označiti donji box kako biste koristili primarnu, podrazumevanu (default) postavku.',
     'name'                              => 'Naziv kategorije',
@@ -19,5 +22,9 @@ return array(
     'use_default_eula'					=> 'Umesto toga upotrebite <a href="#" data-toggle="modal" data-target="#eulaModal">primarnu, default postavku EULA</a>.',
     'use_default_eula_disabled'			=> '<del>Upotrebi primarnu default EULA.</del> Nije postavljena primarna default EULA. Dodajte jednu u Postavke.',
     'use_default_eula_column'			=> 'Koristi standardne korisničke privilegije',
+    'import_require_acceptance'         => 'Zahteva prihvatanje',
+    'import_checkin_email'              => 'Pošalji e-poruku razduživanja',
+    'import_eula_text'                  => 'EULA tekst',
+    'import_category_type'              => 'Vrsta kategorije',
 
 );
