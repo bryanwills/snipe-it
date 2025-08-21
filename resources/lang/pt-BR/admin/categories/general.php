@@ -3,11 +3,14 @@
 return array(
     'asset_categories' 					=> 'Categorias de Ativos',
     'category_name'  					=> 'Nome da Categoria',
-    'checkin_email'                     => 'Enviar email para o usuário no check-in / check-out.',
+    'checkin_email'                     => 'Enviar email para o usuário na devolução / saída.',
+    'email_to_initiator'                => 'Send email to you when user accepts or declines checkout.',
     'checkin_email_notification'        => 'Este usuário receberá um email no checkin / checkout.',
     'clone'                             => 'Clonar Categoria',
     'create'  							=> 'Criar Categoria',
     'edit'                              => 'Editar Categoria',
+    'email_will_be_sent_due_to_global_eula' => 'Um email será enviado ao usuário porque o EULA global está sendo utilizado.',
+    'email_will_be_sent_due_to_category_eula' => 'Um email será enviado para o usuário porque um EULA foi definido para essa categoria.',
     'eula_text'							=> 'EULA da Categoria',
     'eula_text_help'					=> 'Este campo lhe permite personalizar seus EULAs para tipos específicos de bens. Se você apenas tem um EULA para todos os seus bens, você pode selecionar a caixa abaixo para usar o padrão primário.',
     'name'                              => 'Nome da Categoria',
@@ -19,5 +22,9 @@ return array(
     'use_default_eula'					=> 'Em vez disso, use o <a href="#" data-toggle="modal" data-target="#eulaModal">EULA padrão primário</a>.',
     'use_default_eula_disabled'			=> '<del>Em vez disso, use o EULA padrão primário.</del> Nenhum EULA padrão primário foi definido. Adicione um nas Configurações.',
     'use_default_eula_column'			=> 'Usar padrão EULA',
+    'import_require_acceptance'         => 'Require Acceptance',
+    'import_checkin_email'              => 'Send Checkin Email',
+    'import_eula_text'                  => 'EULA text',
+    'import_category_type'              => 'Category Type',
 
 );

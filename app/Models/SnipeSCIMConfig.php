@@ -64,13 +64,17 @@ class SnipeSCIMConfig extends \ArieTimmerman\Laravel\SCIMServer\SCIMConfig
             //eager loading
             'withRelations' => [],
             'map_unmapped' => false,
-//            'unmapped_namespace' => 'urn:ietf:params:scim:schemas:laravel:unmapped',
+            //            'unmapped_namespace' => 'urn:ietf:params:scim:schemas:laravel:unmapped',
             'description' => 'User Account',
 
             // Map a SCIM attribute to an attribute of the object.
             'mapping' => [
 
-                'id' => AttributeMapping::eloquent("id")->disableWrite(),
+                'id' => (new AttributeMapping())->setRead(
+                    function (&$object) {
+                        return (string)$object->id;
+                    }
+                )->disableWrite(),
 
                 'externalId' => AttributeMapping::eloquent('scim_externalid'), // FIXME - I have a PR that changes a lot of this.
 
@@ -125,8 +129,20 @@ class SnipeSCIMConfig extends \ArieTimmerman\Laravel\SCIMServer\SCIMConfig
                     'preferredLanguage' => AttributeMapping::eloquent('locale'), // Section 5.3.5 of [RFC7231]
                     'locale' => null, // see RFC5646
                     'timezone' => null, // see RFC6557
-                    'active' => AttributeMapping::eloquent('activated'),
-
+                    'active' => (new AttributeMapping())->setAdd(
+                        function ($value, &$object) {
+                            $object->activated = $value;
+                        }
+                    )->setReplace(
+                        function ($value, &$object) {
+                            $object->activated = $value;
+                        }
+                    )->setRead(
+                        // this works as specified.
+                        function (&$object) {
+                            return (bool)$object->activated;
+                        }
+                    ),
                     'password' => AttributeMapping::eloquent('password')->disableRead(),
 
                     // Multi-Valued Attributes
@@ -137,12 +153,21 @@ class SnipeSCIMConfig extends \ArieTimmerman\Laravel\SCIMServer\SCIMConfig
                         "primary" => AttributeMapping::constant(true)->ignoreWrite()
                     ]],
 
-                    'phoneNumbers' => [[
-                        "value" => AttributeMapping::eloquent("phone"),
-                        "display" => null,
-                        "type" => AttributeMapping::constant("work")->ignoreWrite(),
-                        "primary" => AttributeMapping::constant(true)->ignoreWrite()
-                    ]],
+                    // Mobile and work phone numbers
+                    'phoneNumbers' => [
+                        [
+                            "value" => AttributeMapping::eloquent("phone"),
+                            "display" => null,
+                            "type" => AttributeMapping::constant("work")->ignoreWrite(),
+                            "primary" => AttributeMapping::constant(true)->ignoreWrite(),
+                        ],
+                        [
+                            "value" => AttributeMapping::eloquent("mobile"),
+                            "display" => null,
+                            "type" => AttributeMapping::constant("mobile")->ignoreWrite(),
+                            "primary" => AttributeMapping::constant(false)->ignoreWrite()
+                        ]
+                    ],
 
                     'ims' => [[
                         "value" => null,
@@ -174,7 +199,6 @@ class SnipeSCIMConfig extends \ArieTimmerman\Laravel\SCIMServer\SCIMConfig
                         '$ref' => null,
                         'display' => null,
                         'type' => null,
-                        'type' => null
                     ]],
 
                     'entitlements' => null,
