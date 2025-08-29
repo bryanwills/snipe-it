@@ -8,6 +8,22 @@
  | be modified directly.
 */
 
+
+// This is used by the mysql dump options in spatie backup
+$dump_options = [
+    'dump_binary_path' => env('DB_DUMP_PATH', '/usr/local/bin'),  // only the path, so without 'mysqldump'
+    'use_single_transaction' => false,
+    'timeout' => 60 * 5, // 5 minute timeout
+    //'exclude_tables' => ['table1', 'table2'],
+    //'add_extra_option' => '--optionname=optionvalue',
+];
+
+// Some versions of mysql do not support the --skip-ssl option and will fail if it is even set
+if (env('DB_DUMP_SKIP_SSL') == 'true') {
+    $dump_options['skip_ssl'] = true;
+}
+
+
 return [
 
     /*
@@ -69,7 +85,7 @@ return [
         'mysql' => [
             'driver'    => 'mysql',
             'host'      => env('DB_HOST', 'localhost'),
-            'port'      => env('DB_PORT', '3306'),
+            'port'      => env('DB_PORT', 3306),
             'database'  => env('DB_DATABASE', 'forge'),
             'username'  => env('DB_USERNAME', 'forge'),
             'password'  => env('DB_PASSWORD', ''),
@@ -79,14 +95,7 @@ return [
             'strict'    => false,
             'engine'    => 'InnoDB',
             'unix_socket' => env('DB_SOCKET', ''),
-            'dump' => [
-                'dump_binary_path' => env('DB_DUMP_PATH', '/usr/local/bin'),  // only the path, so without 'mysqldump'
-                'use_single_transaction' => false,
-                'timeout' => 60 * 5, // 5 minute timeout
-                //'exclude_tables' => ['table1', 'table2'],
-                //'add_extra_option' => '--optionname=optionvalue',
-            ],
-
+            'dump' => $dump_options,
             'dump_command_timeout' => 60 * 5, // 5 minute timeout
             'dump_using_single_transaction' => true, // perform dump using a single transaction
             'options' => (env('DB_SSL')) ? ((env('DB_SSL_IS_PAAS')) ? [
@@ -96,6 +105,7 @@ return [
                 PDO::MYSQL_ATTR_SSL_CERT                => env('DB_SSL_CERT_PATH'), // /path/to/cert.pem
                 PDO::MYSQL_ATTR_SSL_CA                  => env('DB_SSL_CA_PATH'),   // /path/to/ca.pem
                 PDO::MYSQL_ATTR_SSL_CIPHER              => env('DB_SSL_CIPHER'),
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT  => env('DB_SSL_VERIFY_SERVER'), //true/false
             ]) : [],
         ],
 
@@ -155,7 +165,7 @@ return [
             'host'     => env('REDIS_HOST', 'localhost'),
             'password' => env('REDIS_PASSWORD', null),
             'port'     => env('REDIS_PORT', 6379),
-            'database' => 0,
+            'database' => env('REDIS_DATABASE', 0),
         ],
 
     ],

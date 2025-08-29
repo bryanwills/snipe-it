@@ -59,23 +59,50 @@ class ComponentPresenter extends Presenter
                 'title' => trans('general.category'),
                 'formatter' => 'categoriesLinkObjFormatter',
             ], [
+                'field' => 'supplier',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.supplier'),
+                'visible' => false,
+                'formatter' => 'suppliersLinkObjFormatter',
+            ], [
+                'field' => 'model_number',
+                'searchable' => true,
+                'sortable' => true,
+                'title' => trans('admin/models/table.modelnumber'),
+            ], [
+                'field' => 'manufacturer',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.manufacturer'),
+                'visible' => false,
+                'formatter' => 'manufacturersLinkObjFormatter',
+            ], [
+                'field' => 'min_amt',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.min_amt'),
+                'visible' => true,
+                'class' => 'text-right text-padding-number-cell',
+                'formatter' => 'minAmtFormatter',
+            ], [
                 'field' => 'qty',
                 'searchable' => false,
                 'sortable' => true,
                 'title' => trans('admin/components/general.total'),
                 'visible' => true,
+                'class' => 'text-right text-padding-number-cell',
+                'footerFormatter' => 'qtySumFormatter',
             ], [
                 'field' => 'remaining',
                 'searchable' => false,
                 'sortable' => false,
                 'title' => trans('admin/components/general.remaining'),
                 'visible' => true,
-            ], [
-                'field' => 'min_amt',
-                'searchable' => false,
-                'sortable' => false,
-                'title' => trans('general.min_amt'),
-                'visible' => true,
+                'class' => 'text-right text-padding-number-cell',
+                'footerFormatter' => 'qtySumFormatter',
             ], [
                 'field' => 'location',
                 'searchable' => true,
@@ -110,6 +137,27 @@ class ComponentPresenter extends Presenter
                 'visible' => false,
                 'title' => trans('general.notes'),
                 'formatter' => 'notesFormatter',
+            ],[
+                'field' => 'created_by',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.created_by'),
+                'visible' => false,
+                'formatter' => 'usersLinkObjFormatter',
+            ],[
+                'field' => 'created_at',
+                'searchable' => false,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('general.created_at'),
+                'formatter' => 'dateDisplayFormatter',
+            ], [
+                'field' => 'updated_at',
+                'searchable' => false,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('general.updated_at'),
+                'formatter' => 'dateDisplayFormatter',
             ],
         ];
 
@@ -117,10 +165,11 @@ class ComponentPresenter extends Presenter
             'field' => 'checkincheckout',
             'searchable' => false,
             'sortable' => false,
-            'switchable' => true,
+            'switchable' => false,
             'title' => trans('general.checkin').'/'.trans('general.checkout'),
             'visible' => true,
             'formatter' => 'componentsInOutFormatter',
+            'printIgnore' => true,
         ];
 
         $layout[] = [
@@ -130,6 +179,7 @@ class ComponentPresenter extends Presenter
             'switchable' => false,
             'title' => trans('table.actions'),
             'formatter' => 'componentsActionsFormatter',
+            'printIgnore' => true,
         ];
 
         return json_encode($layout);
