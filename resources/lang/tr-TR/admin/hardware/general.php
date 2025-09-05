@@ -1,0 +1,47 @@
+<?php
+
+return [
+    'about_assets_title'           => 'Varlıklar hakkında',
+    'about_assets_text'            => 'Varlıklar Demirbaştır seri numarası veya varlık etiketi ile takibi yapılır. Bu nedenle değerli varlıklar benzersiz varlık kimliği ile ilişkilendirilirler.',
+    'archived'  				=> 'Arşivlenmiş',
+    'asset'  					=> 'Demirbaş',
+    'bulk_checkout'             => 'Toplu Teslim Et',
+    'bulk_checkin'              => 'Toplu Teslim Al',
+    'checkin'  					=> 'Demirbaş Girişi Yap',
+    'checkout'  				=> 'Ödenme Öğe',
+    'clear'                     => 'Temizle',
+    'clone'  					=> 'Demirbaşı Kopyala',
+    'deployable'  				=> 'Dağıtılabilir',
+    'deleted'  					=> 'Bu varlık silindi.',
+    'delete_confirm'            => 'Bu ürünü silmek istediğinize eminmisiniz?',
+    'edit'  					=> 'Demirbaşı Düzenle',
+    'model_deleted'  			=> 'Bu varlık modeli silindi. Varlığı geri almak için modelini geri almalısınız.',
+    'model_invalid'             => 'Bu model bu varlık için değildir.',
+    'model_invalid_fix'         => 'Bu varlık, teslim alma, teslim etme veya denetleme işlemlerinden önce geçerli bir varlık modeli kullanılarak güncellenmelidir.',
+    'requestable'               => 'Talep edilebilir',
+    'requested'				    => 'Talep edildi',
+    'not_requestable'           => 'Talep Edilemez',
+    'requestable_status_warning' => 'Talep edilebilir durumu değiştirme',
+    'restore'  					=> 'Demirbaşı Geri Getir',
+    'pending'  					=> 'Bekliyor',
+    'undeployable'  			=> 'Dağtılamaz',
+    'undeployable_tooltip'  	=> 'Bu varlığın konuşlandırılamayan ve şu anda teslim alınamayan bir durum etiketi var.',
+    'view'  					=> 'Demirbaşı Görüntüle',
+    'csv_error' => 'CSV dosyanızda bir hata var:',
+    'import_text' => '<p>Varlık geçmişini içeren bir CSV dosyası yükleyin. Varlıklar ve kullanıcılar sistemde HALİHAZIRDA mevcut olmalıdır, aksi takdirde atlanırlar. Geçmiş aktarımı için varlık eşleştirmesi, varlık etiketi üzerinden yapılır. Sağladığınız kullanıcı adına ve aşağıda seçeceğiniz kriterlere göre eşleşen bir kullanıcı bulmaya çalışacağız. Aşağıda herhangi bir kriter seçmezseniz, yalnızca <code>Yönetici &gt; Genel Ayarlar</code> bölümünde yapılandırdığınız kullanıcı adı biçimiyle eşleştirme yapılacaktır.</p>
+
+<p>CSV dosyasındaki alanlar şu başlıklarla eşleşmelidir: <strong>Varlık Etiketi, Ad, Teslim Alma Tarihi, Teslim Etme Tarihi</strong>. Ekstra alanlar yok sayılacaktır.</p>
+
+<p>Teslim Etme Tarihi: Boş bırakılan veya gelecekteki tarihler, ilgili kullanıcıya varlığı teslim edilmiş olarak gösterecektir. Teslim Etme Tarihi sütunu dahil edilmezse, bugünün tarihi teslim tarihi olarak kullanılır.</p>    ',
+    'csv_import_match_f-l' => 'Kullanıcıları <strong>isim.soyisim</strong> (<code>jane.smith</code>) formatına göre eşleştirmeyi dene',
+    'csv_import_match_initial_last' => 'Kullanıcıları <strong>ilk harf + soyisim</strong> (<code>jsmith</code>) formatına göre eşleştirmeyi dene',
+    'csv_import_match_first' => 'Kullanıcıları <strong>isim</strong> (<code>jane</code>) formatına göre eşleştirmeyi dene',
+    'csv_import_match_email' => 'Kullanıcıları <strong>e-posta</strong> adresini kullanıcı adı olarak kullanarak eşleştirmeyi dene',
+    'csv_import_match_username' => 'Kullanıcıları <strong>kullanıcı adı</strong> ile eşleştirmeyi dene',
+    'error_messages' => 'Hata mesajı:',
+    'success_messages' => 'Başarı mesajı:',
+    'alert_details' => 'Detaylar için aşağıyı okuyun.',
+    'custom_export' => 'Özel Dışarı Aktar',
+    'mfg_warranty_lookup' => ':Üretici garantisinin durumuna bakma',
+    'user_department' => 'Kullanıcı Departmanı',
+];
