@@ -24,10 +24,14 @@ class AcceptanceAssetAcceptedNotification extends Notification
         $this->item_tag = $params['item_tag'];
         $this->item_model = $params['item_model'];
         $this->item_serial = $params['item_serial'];
+        $this->item_status = $params['item_status'];
         $this->accepted_date = Helper::getFormattedDateObject($params['accepted_date'], 'date', false);
         $this->assigned_to = $params['assigned_to'];
+        $this->note = $params['note'];
         $this->company_name = $params['company_name'];
+        $this->admin = $params['admin'] ?? null;
         $this->settings = Setting::getSettings();
+        $this->qty = $params['qty'] ?? null;
 
     }
 
@@ -64,10 +68,14 @@ class AcceptanceAssetAcceptedNotification extends Notification
                 'item_tag'      => $this->item_tag,
                 'item_model'    => $this->item_model,
                 'item_serial'   => $this->item_serial,
+                'item_status'   => $this->item_status,
+                'note'          => $this->note,
                 'accepted_date' => $this->accepted_date,
                 'assigned_to'   => $this->assigned_to,
                 'company_name'  => $this->company_name,
+                'qty' => $this->qty,
                 'intro_text'    => trans('mail.acceptance_asset_accepted'),
+                'admin'         => $this->admin,
             ])
             ->subject(trans('mail.acceptance_asset_accepted'));
 

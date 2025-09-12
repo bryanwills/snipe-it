@@ -2,6 +2,7 @@
 
 return array(
 
+    'deleted' => 'Fornecedor excluído',
     'does_not_exist' => 'O fornecedor não existe.',
 
 
@@ -21,7 +22,7 @@ return array(
         'success' => 'O fornecedor foi excluído com sucesso.',
         'assoc_assets'	 => 'Este fornecedor está no momento associado com :asset_count asset(s) e não pode ser excluído. Atualize seus modelos para não referenciarem mais este fornecedor e tente novamente. ',
         'assoc_licenses'	 => 'Este fornecedor está no momento associado com :asset_count asset(s) e não pode ser excluído. Atualize seus modelos para não referenciarem mais este fornecedor e tente novamente. ',
-        'assoc_maintenances'	 => 'Este fornecedor está no momento associado com :asset_maintenances_count asset maintenance(s) e não pode ser excluído. Atualize seus modelos para não referenciarem mais este fornecedor e tente novamente. ',
+        'assoc_maintenances'	 => 'This supplier is currently associated with :maintenances_count asset maintenances(s) and cannot be deleted. Please update your asset maintenances to no longer reference this supplier and try again. ',
     )
 
 );
