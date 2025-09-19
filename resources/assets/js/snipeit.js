@@ -1,8 +1,41 @@
+var jQuery = require('jquery');
+window.jQuery = jQuery
+window.$ = jQuery
 
+// window._ = require('lodash'); //the only place I saw this used was vue.js, and we don't use that anymore
 
-// var jQuery = require('jquery');
-// window.jQuery = jQuery
-// window.$ = jQuery
+/****************************************
+ Much of what you'll see below is just plain require()'ed, this is because
+ it is mostly jQuery stuff, which attaches itself to the $() function/object
+ So we don't have to assign it to anything, it will just automagically attach
+ itself
+ *****************************************/
+
+require("jquery-ui/dist/jquery-ui")
+jQuery.fn.uitooltip = jQuery.fn.tooltip;
+require('bootstrap-less');
+require('select2');
+require('admin-lte');
+require('tether');
+require('jquery-slimscroll');
+require('jquery.iframe-transport'); //probably not needed anymore, if I'm honest
+require('blueimp-file-upload')
+require('bootstrap-colorpicker')
+require('bootstrap-datepicker')
+require('ekko-lightbox') //TODO - this doesn't seem jquery-ish, we might need to do something weird here
+                         // it *does* require Bootstrap, which requires jquery, so maybe that's OK
+                         // it seems to work...
+require('./extensions/pGenerator.jquery'); //WEIRD, but works
+//require('chart.js') // Weirdly, this seems to "just work." Without this line, the dashboard blows up
+// but it's *HUGE* - and we only use it one place. So we're taking it out of the bundle
+window.SignaturePad = require('./signature_pad'); //ALSO WEIRD - but works
+require('jquery-validation')
+window.List = require('list.js')
+window.ClipboardJS = require('clipboard')
+// TODO - find everything using moment.js and kill it or upgrade it? It's huge
+// - adminLTE (UGH)
+// - bootstrap-daterangepicker
+// - fullcalendar (what's that? it's used by AdminLTE)
 
 /**
  * Module containing core application logic.
@@ -80,136 +113,65 @@ pieOptions = {
 
 var baseUrl = $('meta[name="baseUrl"]').attr('content');
 
-(function($, settings) {
-    var Components = {};
-    Components.modals = {};
+
+
+$(function () {
+
+    var $el = $('body');
 
     // confirm restore modal
-    Components.modals.confirmRestore = function() {
-        var $el = $('table');
 
-        var events = {
-            'click': function(evnt) {
-                var $context = $(this);
-                var $restoreConfirmModal = $('#restoreConfirmModal');
-                var href = $context.attr('href');
-                var message = $context.attr('data-content');
-                var title = $context.attr('data-title');
+    $el.on('click', '.restore-asset', function (evnt) {
+        var $context = $(this);
+        var $restoreConfirmModal = $('#restoreConfirmModal');
+        var href = $context.attr('href');
+        var message = $context.attr('data-content');
+        var title = $context.attr('data-title');
 
-                $('#restoreConfirmModalLabel').text(title);
-                $restoreConfirmModal.find('.modal-body').text(message);
-                $('#restoreForm').attr('action', href);
-                $restoreConfirmModal.modal({
-                    show: true
-                });
-                return false;
-            }
-        };
-
-        var render = function() {
-            $el.on('click', '.restore-asset', events['click']);
-        };
-
-        return {
-            render: render
-        };
-    };
+        $('#confirmModalLabel').text(title);
+        $restoreConfirmModal.find('.modal-body').text(message);
+        $('#restoreForm').attr('action', href);
+        $restoreConfirmModal.modal({
+            show: true
+        });
+        return false;
+    });
 
     // confirm delete modal
-    Components.modals.confirmDelete = function() {
-        var $el = $('table');
+    $el.on('click', '.delete-asset', function (evnt) {
+        var $context = $(this);
+        var $dataConfirmModal = $('#dataConfirmModal');
+        var href = $context.attr('href');
+        var message = $context.attr('data-content');
+        var headericon = $context.attr('data-icon');
+        var title = $context.attr('data-title');
 
-        var events = {
-            'click': function(evnt) {
-                var $context = $(this);
-                var $dataConfirmModal = $('#dataConfirmModal');
-                var href = $context.attr('href');
-                var message = $context.attr('data-content');
-                var title = $context.attr('data-title');
+        // deleteForm is the ID of the modal form itself
+        $('#deleteForm').attr('action', href);
+        $dataConfirmModal.find('.modal-header-icon').addClass(headericon);
+        $dataConfirmModal.find('.modal-title').text(title).prepend('<i class="fa ' + headericon + '"></i> ');
+        $dataConfirmModal.find('.modal-body').text(message);
+        $dataConfirmModal.attr('action', href);
 
-                $('#myModalLabel').text(title);
-                $dataConfirmModal.find('.modal-body').text(message);
-                $('#deleteForm').attr('action', href);
-                $dataConfirmModal.modal({
-                    show: true
-                });
-                return false;
-            }
-        };
-
-        var render = function() {
-            $el.on('click', '.delete-asset', events['click']);
-        };
-
-        return {
-            render: render
-        };
-    };
-
-
-    /**
-     * Application start point
-     * Component definition stays out of load event, execution only happens.
-     */
-    $(function() {
-        new Components.modals.confirmRestore().render();
-        new Components.modals.confirmDelete().render();
+        // Fire the modal
+        $dataConfirmModal.modal({
+            show: true
+        });
+        return false;
     });
-}(jQuery, window.snipeit.settings));
 
-$(document).ready(function () {
-
-    /*
-    * Slideout help menu
-    */
-     $('.slideout-menu-toggle').on('click', function(event){
-        event.preventDefault();
-        // create menu variables
-        var slideoutMenu = $('.slideout-menu');
-        var slideoutMenuWidth = $('.slideout-menu').width();
-
-        // toggle open class
-        slideoutMenu.toggleClass("open");
-
-        // slide menu
-        if (slideoutMenu.hasClass("open")) {
-         slideoutMenu.show();
-            slideoutMenu.animate({
-                right: "0px"
-            });
-        } else {
-            slideoutMenu.animate({
-                right: -slideoutMenuWidth
-            }, "-350px");
-         slideoutMenu.fadeOut();
-        }
-     });
-
-     /*
-     * iCheck checkbox plugin
-     */
-
-     $('input[type="checkbox"].minimal, input[type="radio"].minimal').iCheck({
-         checkboxClass: 'icheckbox_minimal-blue',
-         radioClass: 'iradio_minimal-blue'
-     });
 
 
      /*
      * Select2
      */
 
-     var iOS = /iPhone|iPad|iPod/.test(navigator.userAgent)  && !window.MSStream;
-     if(!iOS)
-     {
-        // Vue collision: Avoid overriding a vue select2 instance
-        // by checking to see if the item has already been select2'd.
         $('select.select2:not(".select2-hidden-accessible")').each(function (i,obj) {
             {
                 $(obj).select2();
             }
         });
-     }
+
 
     // $('.datepicker').datepicker();
     // var datepicker = $.fn.datepicker.noConflict(); // return $.fn.datepicker to previously assigned value
@@ -230,6 +192,8 @@ $(document).ready(function () {
              */
             placeholder: '',
             allowClear: true,
+            language: $('meta[name="language"]').attr('content'),
+            dir: $('meta[name="language-direction"]').attr('content'),
             
             ajax: {
 
@@ -246,6 +210,7 @@ $(document).ready(function () {
                         search: params.term,
                         page: params.page || 1,
                         assetStatusType: link.data("asset-status-type"),
+                        companyId: link.data("company-id"),
                     };
                     return data;
                 },
@@ -462,12 +427,18 @@ $(document).ready(function () {
                 $('#assigned_location').hide();
                 $('.notification-callout').fadeOut();
 
+                $('[name="assigned_location"]').val('').trigger('change.select2');
+                $('[name="assigned_user"]').val('').trigger('change.select2');
+
             } else if (assignto_type == 'location') {
                 $('#current_assets_box').fadeOut();
                 $('#assigned_asset').hide();
                 $('#assigned_user').hide();
                 $('#assigned_location').show();
                 $('.notification-callout').fadeOut();
+
+                $('[name="assigned_asset"]').val('').trigger('change.select2');
+                $('[name="assigned_user"]').val('').trigger('change.select2');
             } else  {
 
                 $('#assigned_asset').hide();
@@ -478,6 +449,8 @@ $(document).ready(function () {
                 }
                 $('.notification-callout').fadeIn();
 
+                $('[name="assigned_asset"]').val('').trigger('change.select2');
+                $('[name="assigned_location"]').val('').trigger('change.select2');
             }
         });
     });
@@ -607,52 +580,33 @@ function htmlEntities(str) {
 })(jQuery);
 
 /**
- * Universal Livewire Select2 and iCheck integration
+ * Universal Livewire Select2 integration
  *
  * How to use:
  *
- * 1. Set the class of your select2 elements to 'livewire-select2' and your icheck elements to 'livewire-icheck' (as appropriate).
- *    (For iCheck, you may still need to apply the other iCheck classes like 'minimal' or 'iCheck')
+ * 1. Set the class of your select2 elements to 'livewire-select2').
  * 2. Name your element to match a property in your Livewire component
- * 3. Add an attribute called 'data-livewire-component' that points to $_instance->id (via `{{ }}` if you're in a blade,
- *    or just $_instance->id if not).
- * 4. For iCheck, you need to wrap the 'checkbox' element with wire:ignore - perhaps in the <label> if it wraps the
- *    <input> element, or just put a <span wire:ignore></span> around just the input element.
- * 5. If you have dynamically shown/hidden checkboxes, you might need to initialize iCheck on them on component page-load.
- *    Just use $('.livewire-icheck').iCheck(), or for the minimal-style, use:
- *
- *    $('input[type="checkbox"].minimal.livewire-icheck, input[type="radio"].minimal.livewire-icheck').iCheck({
- *          checkboxClass: 'icheckbox_minimal-blue',
- *          radioClass: 'iradio_minimal-blue'
- *      });
- *
- *    (which is stolen from above here in this JS file)
+ * 3. Add an attribute called 'data-livewire-component' that points to $this->getId() (via `{{ }}` if you're in a blade,
+ *    or just $this->getId() if not).
  */
-$(function () {
+document.addEventListener('livewire:init', () => {
     $('.livewire-select2').select2()
 
     $(document).on('select2:select', '.livewire-select2', function (event) {
         var target = $(event.target)
         if(!event.target.name || !target.data('livewire-component')) {
             console.error("You need to set both name (which should match a Livewire property) and data-livewire-component on your Livewire-ed select2 elements!")
-            console.error("For data-livewire-component, you probably want to use $_instance->id or {{ $_instance->id }}, as appropriate")
+            console.error("For data-livewire-component, you probably want to use $this->getId() or {{ $this->getId() }}, as appropriate")
             return false
         }
-        window.livewire.find(target.data('livewire-component')).set(event.target.name, this.options[this.selectedIndex].value)
-    })
-
-    window.livewire.hook('message.processed', function (el,component) {
-        $('.livewire-select2').select2();
-        //$('.livewire-icheck').iCheck(); //this seems to blow up pretty badly.
+        Livewire.find(target.data('livewire-component')).set(event.target.name, this.options[this.selectedIndex].value)
     });
 
-    $(document).on('ifToggled', '.livewire-icheck', function (event) {
-        if(!event.target.name || !$(event.target).data('livewire-component')) {
-            console.error("You need to set both name (which should match a Livewire property) and data-livewire-component on your iCheck elements!")
-            console.error("For data-livewire-component, you probably want to use $_instance->id or {{ $_instance->id }}, as appropriate")
-            return false
-        }
-        window.livewire.find($(event.target).data('livewire-component')).set(event.target.name, event.target.checked)
-    })
-
-})
+    Livewire.hook('request', ({succeed}) => {
+        succeed(() => {
+            queueMicrotask(() => {
+                $('.livewire-select2').select2();
+            });
+        });
+    });
+});

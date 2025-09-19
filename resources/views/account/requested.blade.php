@@ -15,13 +15,10 @@
                 <div class="box-body">
 
                     <table
+
                             data-cookie-id-table="userRequests"
-                            data-pagination="true"
                             data-id-table="userRequests"
                             data-side-pagination="server"
-                            data-show-columns="true"
-                            data-show-export="true"
-                            data-show-refresh="true"
                             data-sort-order="desc"
                             id="userRequests"
                             class="table table-striped snipe-table"
@@ -32,13 +29,19 @@
                 }'>
                         <thead>
                         <tr>
-                            <th class="col-md-1" data-field="image" data-formatter="imageFormatter">{{ trans('general.image') }}</th>
-                            <th class="col-md-2" data-field="name">{{ trans('general.item_name') }}</th>
-                            <th class="col-md-2" data-field="type">{{ trans('general.type') }}</th>
-                            <th class="col-md-2" data-field="qty">{{ trans('general.qty') }}</th>
-                            <th class="col-md-2" data-field="location">{{ trans('admin/hardware/table.location') }}</th>
-                            <th class="col-md-2" data-field="expected_checkin" data-formatter="dateDisplayFormatter"> {{ trans('admin/hardware/form.expected_checkin') }}</th>
-                            <th class="col-md-2" data-field="request_date" data-formatter="dateDisplayFormatter"> {{ trans('general.requested_date') }}</th>
+                            <th data-field="image" data-formatter="imageFormatter">{{ trans('general.image') }}</th>
+                            <th data-field="name">{{ trans('general.item_name') }}</th>
+                            <th data-field="type">{{ trans('general.type') }}</th>
+                            <th data-field="qty">{{ trans('general.qty') }}</th>
+                            <th data-field="location">{{ trans('admin/hardware/table.location') }}</th>
+                            <th data-field="expected_checkin" data-formatter="dateDisplayFormatter"> {{ trans('admin/hardware/form.expected_checkin') }}</th>
+                            <th data-field="request_date" data-formatter="dateDisplayFormatter"> {{ trans('general.requested_date') }}</th>
+
+                            @foreach(\App\Models\CustomField::get() as $field)
+                                @if (($field->field_encrypted=='0') && ($field->show_in_requestable_list=='1'))
+                                    <th data-field="custom_fields.{{ $field->db_column }}">{{ $field->name }}</th>
+                                @endif
+                            @endforeach
                         </tr>
                         </thead>
                     </table>
