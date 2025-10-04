@@ -12,17 +12,10 @@
     <div class="col-md-12">
         <div class="box box-default">
             <div class="box-body">
-                <div class="table-responsive">
-
                     <table
                             data-cookie-id-table="licensesReport"
-                            data-pagination="true"
                             data-id-table="licensesReport"
-                            data-search="true"
                             data-side-pagination="client"
-                            data-show-columns="true"
-                            data-show-export="true"
-                            data-show-refresh="true"
                             data-sort-order="asc"
                             id="licensesReport"
                             class="table table-striped snipe-table"
@@ -38,6 +31,7 @@
                                 <th class="col-sm-1">{{ trans('admin/licenses/form.seats') }}</th>
                                 <th class="col-sm-1">{{ trans('admin/licenses/form.remaining_seats') }}</th>
                                 <th class="col-sm-1">{{ trans('admin/licenses/form.expiration') }}</th>
+                                <th class="col-sm-1">{{ trans('admin/licenses/form.termination_date') }}</th>
                                 <th class="col-sm-1">{{ trans('general.purchase_date') }}</th>
                                 <th class="col-sm-1 text-right" class="col-sm-1">{{ trans('general.purchase_cost') }}</th>
                                 <th class="col-sm-1">{{ trans('general.depreciation') }}</th>
@@ -61,6 +55,12 @@
                                 <td>{{ $license->seats }}</td>
                                 <td>{{ $license->remaincount() }}</td>
                                 <td>{{ $license->expiration_date }}</td>
+                                <td>{{ $license->termination_date }}
+                                    @if ($license->isTerminated())
+                                        <span class="text-danger">
+                                        <x-icon type="warning" class="text-warning" />
+                                        </span>
+                                    @endif</td>
                                 <td>{{ $license->purchase_date }}</td>
                                 <td class="text-right">
                                     {{ $snipeSettings->default_currency }}{{ Helper::formatCurrencyOutput($license->purchase_cost) }}
@@ -78,7 +78,6 @@
                             @endforeach
                         </tbody>
                     </table>
-                </div> <!-- /.table-responsive-->
             </div>
         </div>
     </div>
