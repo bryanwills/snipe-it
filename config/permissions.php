@@ -106,6 +106,13 @@ return [
             'display'    => true,
         ],
 
+        [
+            'permission' => 'assets.view.encrypted_custom_fields',
+            'label'      => 'View and Modify Encrypted Custom Fields',
+            'note'       => '',
+            'display'    => true,
+        ],
+
     ],
 
     'Accessories' => [
@@ -222,6 +229,12 @@ return [
         [
             'permission' => 'licenses.checkout',
             'label'      => 'Checkout ',
+            'note'       => '',
+            'display'    => true,
+        ],
+        [
+            'permission' => 'licenses.checkin',
+            'label'      => 'Checkin ',
             'note'       => '',
             'display'    => true,
         ],
