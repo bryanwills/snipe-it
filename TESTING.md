@@ -9,43 +9,57 @@ Before starting, follow the [instructions](README.md#installation) for installin
 Before attempting to run the test suite copy the example environment file for tests and update the values to match your environment:
 
 `cp .env.testing.example .env.testing`
-> Since the data in the database is flushed after each test it is recommended you create a separate mysql database for specifically for tests
+
+The following should work for running tests in memory with sqlite:
+```
+# --------------------------------------------
+# REQUIRED: BASIC APP SETTINGS
+# --------------------------------------------
+APP_ENV=testing
+APP_DEBUG=true
+APP_KEY=base64:glJpcM7BYwWiBggp3SQ/+NlRkqsBQMaGEOjemXqJzOU=
+APP_URL=http://localhost:8000
+APP_TIMEZONE='UTC'
+APP_LOCALE=en-US
+
+# --------------------------------------------
+# REQUIRED: DATABASE SETTINGS
+# --------------------------------------------
+DB_CONNECTION=sqlite_testing
+#DB_HOST=127.0.0.1
+#DB_PORT=3306
+#DB_DATABASE=null
+#DB_USERNAME=null
+#DB_PASSWORD=null
+```
+
+To use MySQL you should update the `DB_` variables to match your local test database:
+```
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE={}
+DB_USERNAME={}
+DB_PASSWORD={}
+```
 
 Now you are ready to run the entire test suite from your terminal:
 
-`php artisan test`
+```shell
+php artisan test
+````
 
 To run individual test files, you can pass the path to the test that you want to run:
 
-`php artisan test tests/Unit/AccessoryTest.php`
+```shell
+php artisan test tests/Unit/AccessoryTest.php
+```
 
-## Browser Tests 
+Some tests, like ones concerning LDAP, are marked with the `@group` annotation. Those groups can be run, or excluded, using the `--group` or `--exclude-group` flags:
 
-Browser tests are run via [Laravel Dusk](https://laravel.com/docs/8.x/dusk) and require Google Chrome to be installed.
+```shell
+php artisan test --group=ldap
 
-Before attempting to run Dusk tests copy the example environment file for Dusk and update the values to match your environment:
-
-`cp .env.dusk.example .env.dusk.local`
-> `local` refers to the value of `APP_ENV` in your `.env` so if you have it set to `dev` then the file should be named `.env.dusk.dev`.
-
-**Important**: Dusk tests cannot be run using an in-memory SQLite database. Additionally, the Dusk test suite uses the `DatabaseMigrations` trait which will leave the database in a fresh state after running. Therefore, it is recommended that you create a test database and point `DB_DATABASE` in `.env.dusk.local` to it.  
-
-### Running Browser Tests
-
-Your application needs to be configured and up and running in order for the browser tests to actually run. When running the tests locally, you can start the application using the following command:
-
-`php artisan serve`
-
-Now you are ready to run the test suite. Use the following command from another terminal tab or window:
-
-`php artisan dusk`
-
-To run individual test files, you can pass the path to the test that you want to run:
-
-`php artisan dusk tests/Browser/LoginTest.php`
-
-If you get an error when attempting to run Dusk tests that says `Couldn't connect to server` run:
-
-`php artisan dusk:chrome-driver --detect`
-
-This command will install the specific ChromeDriver Dusk needs for your operating system and Chrome version.
+php artisan test --exclude-group=ldap
+```
+This can be helpful if a set of tests are failing because you don't have an extension, like LDAP, installed.
