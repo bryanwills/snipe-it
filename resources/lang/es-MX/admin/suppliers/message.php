@@ -2,26 +2,27 @@
 
 return array(
 
-    'does_not_exist' => 'Proveedor does not exist.',
+    'deleted' => 'Proveedor eliminado',
+    'does_not_exist' => 'El proveedor no existe.',
 
 
     'create' => array(
-        'error'   => 'Proveedor no creado, Intentalo de nuevo.',
-        'success' => 'Proveedor creado.'
+        'error'   => 'El proveedor no fue creado, por favor inténtelo de nuevo.',
+        'success' => 'Proveedor creado con éxito.'
     ),
 
     'update' => array(
-        'error'   => 'Proveedor no actualizado, Intentalo de nuevo',
+        'error'   => 'El proveedor no fue actualizado, por favor inténtelo de nuevo',
         'success' => 'Proveedor actualizado.'
     ),
 
     'delete' => array(
-        'confirm'   => 'Estás seguro de querer eliminar este Proveedor?',
-        'error'   => 'Ha habido un problema eliminando el Proveedor. Intentalo de nuevo.',
-        'success' => 'Proveedor eliminado.',
-        'assoc_assets'	 => 'Este proveedor esta asociado a uno o más modelos y no puede ser eliminado. ',
-        'assoc_licenses'	 => 'Este proveedor está actualmente asociado con :licenses_count licencia(s) y no puede ser eliminado. Por favor, actualiza tus licencias para no referenciar este proveedor e inténtalo de nuevo. ',
-        'assoc_maintenances'	 => 'Este proveedor está actualmente asociado con :asset_maintenances_count mantenedor(es) de activo y no puede ser eliminado. Por favor, actualiza tus mantenedores de activo para no referenciar este proveedor e inténtalo de nuevo. ',
+        'confirm'   => '¿Está seguro de que desea eliminar este proveedor?',
+        'error'   => 'Hubo un problema al eliminar el proveedor, por favor inténtelo de nuevo.',
+        'success' => 'Proveedor eliminado correctamente.',
+        'not_found'               => 'Supplier not found.',
+        'bulk_success'            => 'Suppliers were deleted successfully.',
+        'partial_success'        => 'Supplier deleted successfully. See additional information below. | :count suppliers were deleted successfully. See additional information below.',
     )
 
 );

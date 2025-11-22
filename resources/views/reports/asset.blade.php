@@ -23,10 +23,10 @@
                     <table
                     name="assetsReport"
                     class="table table-striped snipe-table"
+                    data-advanced-search="false"
                     id="table"
                     data-url="{{route('api.assets.index', array(''=>e(Request::get('status')),'order_number'=>e(Request::get('order_number')), 'status_id'=>e(Request::get('status_id')), 'report'=>'true'))}}"
                     data-cookie="true"
-                    data-click-to-select="true"
                     data-cookie-id-table="{{ e(Request::get('status')) }}assetTable-{{ config('version.hash_version') }}">
                         <thead>
                             <tr>
