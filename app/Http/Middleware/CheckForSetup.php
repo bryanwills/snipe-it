@@ -7,26 +7,31 @@ use Closure;
 
 class CheckForSetup
 {
+
+    protected $except = [
+        '_debugbar*',
+        'health'
+    ];
+
     public function handle($request, Closure $next, $guard = null)
     {
 
         /**
-         * This is dumb
-         * @todo Check on removing this, not sure if it's still needed
+         * Skip this middleware for the debugbar and health check
          */
-        if ($request->is('_debugbar*')) {
+        if ($request->is($this->except))  {
             return $next($request);
         }
 
         if (Setting::setupCompleted()) {
             if ($request->is('setup*')) {
-                return redirect(url('/'));
+                return redirect(config('app.url'));
             } else {
                 return $next($request);
             }
         } else {
-            if (! ($request->is('setup*')) && ! ($request->is('.env')) && ! ($request->is('health'))) {
-                return redirect(url('/').'/setup');
+            if (! ($request->is('setup*')) && ! ($request->is('.env'))) {
+                return redirect(config('app.url').'/setup');
             }
 
             return $next($request);

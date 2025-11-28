@@ -41,8 +41,15 @@ class SuppliersTransformer
                 'assets_count' => (int) $supplier->assets_count,
                 'accessories_count' => (int) $supplier->accessories_count,
                 'licenses_count' => (int) $supplier->licenses_count,
-                'notes' => ($supplier->notes) ? e($supplier->notes) : null,
+                'consumables_count' => (int) $supplier->consumables_count,
+                'components_count' => (int) $supplier->components_count,
+                'tag_color' => $supplier->tag_color ? e($supplier->tag_color) : null,
+                'notes' => ($supplier->notes) ? Helper::parseEscapedMarkedownInline($supplier->notes) : null,
                 'created_at' => Helper::getFormattedDateObject($supplier->created_at, 'datetime'),
+                'created_by' => $supplier->adminuser ? [
+                    'id' => (int) $supplier->adminuser->id,
+                    'name'=> e($supplier->adminuser->present()->fullName),
+                ]: null,
                 'updated_at' => Helper::getFormattedDateObject($supplier->updated_at, 'datetime'),
 
             ];

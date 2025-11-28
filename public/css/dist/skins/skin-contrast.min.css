@@ -125,6 +125,18 @@
 .skin-contrast.layout-top-nav .main-header > .logo .logo-variant {
   background-color: none;
 }
+.btn.btn-default:hover,
+.btn:hover.btn-default:hover,
+.btn .btn-default:link:hover,
+.btn:hover .btn-default:link:hover {
+  color: #00060c;
+}
+.btn.btn-default:visited,
+.btn:hover.btn-default:visited,
+.btn .btn-default:link:visited,
+.btn:hover .btn-default:link:visited {
+  color: #00060c;
+}
 .btn.btn-primary,
 .btn:hover.btn-primary,
 .btn .btn-primary:link,
@@ -170,6 +182,10 @@ a.btn:hover {
   color: #fff;
   text-decoration: underline;
 }
+a.btn:visited {
+  color: #fff;
+  text-decoration: none;
+}
 .text-primary {
   color: #000000;
 }
@@ -195,7 +211,7 @@ a.btn:hover {
   background-color: #001F3F;
   color: #FFF !important;
 }
-btn-success {
+.btn-success {
   background-color: #000d07;
 }
 input::-webkit-input-placeholder {
@@ -225,3 +241,5 @@ input::-ms-input-placeholder {
   background-color: #e9d15b;
 }
 
+
+/*# sourceMappingURL=skin-contrast.css.map*/
