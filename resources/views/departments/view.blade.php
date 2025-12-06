@@ -9,7 +9,7 @@
 @stop
 
 @section('header_right')
-    <a href="{{ route('departments.edit', ['department' => $department->id]) }}" class="btn btn-sm btn-primary pull-right">{{ trans('admin/departments/table.update') }} </a>
+    <a href="{{ route('departments.edit', ['department' => $department->id]) }}" class="btn btn-sm btn-theme pull-right">{{ trans('admin/departments/table.update') }} </a>
 @stop
 
 {{-- Page content --}}
@@ -26,14 +26,9 @@
                                 <table
                                         data-columns="{{ \App\Presenters\UserPresenter::dataTableLayout() }}"
                                         data-cookie-id-table="departmentsUsersTable"
-                                        data-pagination="true"
                                         data-id-table="departmentsUsersTable"
-                                        data-search="true"
                                         data-show-footer="true"
                                         data-side-pagination="server"
-                                        data-show-columns="true"
-                                        data-show-export="true"
-                                        data-show-refresh="true"
                                         data-sort-order="asc"
                                         id="departmentsUsersTable"
                                         class="table table-striped snipe-table"

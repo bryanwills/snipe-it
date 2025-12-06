@@ -6,14 +6,14 @@ return array(
     'account_not_found'      => '用户名或密码错误',
     'account_not_activated'  => '用户还未激活',
     'account_suspended'      => '账户已经被停用',
-    'account_banned'         => '账户已经被禁用',
-    'throttle'               => '登录失败的次数太多。请在 :minutes分钟后重试。',
 
     'two_factor' => array(
         'already_enrolled'      => '您的设备已经登记了。',
         'success'               => '恭喜，登陆成功。',
         'code_required'         => '需要两步验证码。',
         'invalid_code'          => '两步验证码无效。',
+        'enter_two_factor_code' => '请输入您的两步验证码。',
+        'please_enroll'         => '请在两步验证中登记一个设备。',
     ),
 
     'signin' => array(
