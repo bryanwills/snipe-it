@@ -18,21 +18,23 @@
         <div class="col-md-8 col-md-offset-2">
             <div class="box box-solid box-danger">
                 <div class="box-header with-border">
-                    <h2 class="box-title"><i class="fas fa-exclamation-triangle"></i> {{ trans('admin/settings/general.purge') }}</h2>
+                    <h2 class="box-title">
+                        <x-icon type="warning"/>
+                        {{ trans('admin/settings/general.purge') }}</h2>
                 </div>
-            {{ Form::open(['method' => 'POST', 'files' => false, 'autocomplete' => 'off', 'class' => 'form-horizontal', 'role' => 'form' ]) }}
+                <form method="POST" action="{{ route('settings.purge.save') }}" accept-charset="UTF-8" autocomplete="off" class="form-horizontal" role="form">
             <!-- CSRF Token -->
                 {{csrf_field()}}
                 <div class="box-body">
                     <p>{{ trans('admin/settings/general.confirm_purge_help') }}</p>
                     <div class="col-md-3{{ $errors->has('confirm_purge') ? 'error' : '' }}">
-                        {{ Form::label('confirm_purge', trans('admin/settings/general.confirm_purge')) }}
+                        <label for="confirm_purge">{{ trans('admin/settings/general.confirm_purge') }}</label>
                     </div>
                     <div class="col-md-9{{ $errors->has('confirm_purge') ? 'error' : '' }}">
                         @if (config('app.lock_passwords')===true)
-                            {{ Form::text('confirm_purge', Request::old('confirm_purge'), array('class' => 'form-control', 'disabled'=>'true')) }}
+                            <input class="form-control" disabled="true" name="confirm_purge" type="text" id="confirm_purge" value="{{ old('confirm_purge') }}">
                         @else
-                            {{ Form::text('confirm_purge', Request::old('confirm_purge'), array('class' => 'form-control')) }}
+                            <input class="form-control" name="confirm_purge" type="text" id="confirm_purge" value="{{ old('confirm_purge') }}">
                         @endif
 
                         @if (config('app.lock_passwords')===true)
@@ -43,11 +45,9 @@
                 <div class="box-footer text-right">
                     <button type="submit" class="btn btn-danger" {{ (config('app.lock_passwords')===true) ? ' disabled' : '' }}>{{ trans('admin/settings/general.purge') }}</button>
                 </div> <!--/box-footer-->
-                {{ Form::close() }}
+                </form>
             </div> <!--/.box-solid-->
         </div><!-- /.col-md-8-->
     </div><!--/.row-->
-
-    {{Form::close()}}
 
 @stop

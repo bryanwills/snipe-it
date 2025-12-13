@@ -30,29 +30,57 @@
             <!-- Custom Tabs -->
             <div class="nav-tabs-custom">
                 <ul class="nav nav-tabs">
-                    <li class="active"><a href="#assets" data-toggle="tab">{{ trans('general.assets') }}</a></li>
-                    <li><a href="#licenses" data-toggle="tab">{{ trans('general.licenses') }}</a></li>
-                    <li><a href="#models" data-toggle="tab">{{ trans('general.asset_models') }}</a></li>
-                    </ul>
+                    @can('view', \App\Models\Asset::class)
+                    <li class="active">
+                        <a href="#assets" data-toggle="tab">
+                            {{ trans('general.assets') }}
+
+                            {!! ($depreciation->assets()->AssetsForShow()->count() > 0 ) ? '<span class="badge badge-secondary">'.number_format($depreciation->assets()->AssetsForShow()->count()).'</span>' : '' !!}
+                        </a>
+                    </li>
+                    @endcan
+                    @can('view', \App\Models\License::class)
+                    <li>
+                        <a href="#licenses" data-toggle="tab">
+                            {{ trans('general.licenses') }}
+
+                            {!! ($depreciation->licenses_count > 0 ) ? '<span class="badge badge-secondary">'.number_format($depreciation->licenses_count).'</span>' : '' !!}
+                        </a>
+                    </li>
+                    @endcan
+                    @can('view', \App\Models\AssetModel::class)
+                    <li>
+                        <a href="#models" data-toggle="tab">
+                            {{ trans('general.asset_models') }}
+
+                            {!! ($depreciation->models_count > 0 ) ? '<span class="badge badge-secondary">'.number_format($depreciation->models_count).'</span>' : '' !!}
+                        </a>
+                    </li>
+                    @endcan
+                </ul>
 
                 <div class="tab-content">
 
                     <div class="tab-pane active" id="assets">
 
+                        @include('partials.asset-bulk-actions', [
+                                'id_divname' => 'assetsBulkEditToolbar',
+                                'id_formname' => 'assetsBulkForm',
+                                'id_button' => 'assetEditButton'
+                                ])
 
                         <table
                                 data-columns="{{ \App\Presenters\AssetPresenter::dataTableLayout() }}"
+                                data-show-columns-search="true"
                                 data-cookie-id-table="depreciationsAssetTable"
                                 data-id-table="depreciationsAssetTable"
                                 id="depreciationsAssetTable"
-                                data-pagination="true"
-                                data-search="true"
                                 data-side-pagination="server"
-                                data-show-columns="true"
-                                data-show-export="true"
-                                data-show-refresh="true"
                                 data-sort-order="asc"
                                 data-sort-name="name"
+                                data-toolbar="#assetsBulkEditToolbar"
+                                data-bulk-button-id="#assetEditButton"
+                                data-bulk-form-id="#assetsBulkForm"
                                 class="table table-striped snipe-table"
                                 data-url="{{ route('api.assets.index',['depreciation_id'=> $depreciation->id]) }}"
                                 data-export-options='{
@@ -67,20 +95,12 @@
                     <div class="tab-pane" id="licenses">
                         <div class="row">
                             <div class="col-md-12">
-
-                                <div class="table-responsive">
-
                                     <table
                                             data-columns="{{ \App\Presenters\LicensePresenter::dataTableLayout() }}"
                                             data-cookie-id-table="depreciationsLicenseTable"
                                             data-id-table="depreciationsLicenseTable"
                                             id="depreciationsLicenseTable"
-                                            data-pagination="true"
-                                            data-search="true"
                                             data-side-pagination="server"
-                                            data-show-columns="true"
-                                            data-show-export="true"
-                                            data-show-refresh="true"
                                             data-sort-order="asc"
                                             data-sort-name="name"
                                             class="table table-striped snipe-table"
@@ -90,9 +110,6 @@
                         "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
                         }'>
                                     </table>
-
-                                </div>
-
                             </div>
 
                         </div> <!--/.row-->
@@ -102,38 +119,27 @@
                     <div class="tab-pane" id="models">
 
                         <div class="row">
-                            {{ Form::open(
-                                      [
-                                     'method' => 'POST',
-                                     'route' => ['models.bulkedit.index'],
-                                     'class' => 'form-inline',
-                                      'id' => 'bulkForm']
-                                      ) }}
+                            <form method="POST" action="{{ route('models.bulkedit.index') }}" accept-charset="UTF-8" class="form-inline" id="bulkForm">
+                            @csrf
                             <div class="col-md-12">
-                                <div id="toolbar">
-                                    <label for="bulk_actions" class="sr-only">{{ trans('general.bulk_actions') }}</label>
-                                    <select name="bulk_actions" class="form-control select2" aria-label="bulk_actions" style="width: 300px;">
-                                        <option value="edit">{{ trans('general.bulk_edit') }}</option>
-                                        <option value="delete">{{ trans('general.bulk_delete') }}</option>
-                                    </select>
-                                    <button class="btn btn-primary" id="bulkEdit" disabled>{{ trans('button.go') }}</button>
-                                </div>
 
-                                <div class="table-responsive">
+                                @include('partials.models-bulk-actions', [
+                               'id_divname' => 'assetModelsBulkEditToolbar',
+                               'id_formname' => 'assetModelsBulkForm',
+                               'id_button' => 'AssetModelsBulkEditButton'
+                               ])
+
                                     <table
                                             data-columns="{{ \App\Presenters\AssetModelPresenter::dataTableLayout() }}"
                                             data-cookie-id-table="depreciationsModelsTable"
                                             data-id-table="depreciationsModelsTable"
                                             id="depreciationsModelsTable"
-                                            data-pagination="true"
-                                            data-search="true"
                                             data-toolbar="#toolbar"
                                             data-side-pagination="server"
-                                            data-show-columns="true"
-                                            data-show-export="true"
-                                            data-show-refresh="true"
                                             data-sort-order="asc"
                                             data-sort-name="name"
+                                            data-bulk-button-id="#AssetModelsBulkEditButton"
+                                            data-bulk-form-id="#bulkForm"
                                             class="table table-striped snipe-table"
                                             data-url="{{ route('api.models.index',['depreciation_id'=> $depreciation->id]) }}"
                                             data-export-options='{
@@ -141,12 +147,8 @@
                         "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
                         }'>
                                     </table>
-
-
                                 </div>
-
-                            </div>
-                            {{ Form::close() }}
+                            </form>
 
                         </div> <!--/.row-->
                     </div> <!-- /.tab-pane -->

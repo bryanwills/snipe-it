@@ -2,12 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Manufacturers\DeleteManufacturerAction;
+use App\Exceptions\ItemStillHasAccessories;
+use App\Exceptions\ItemStillHasAssets;
+use App\Exceptions\ItemStillHasChildren;
+use App\Exceptions\ItemStillHasComponents;
+use App\Exceptions\ItemStillHasConsumables;
+use App\Exceptions\ItemStillHasLicenses;
+use App\Helpers\Helper;
 use App\Http\Requests\ImageUploadRequest;
+use App\Models\Actionlog;
 use App\Models\Manufacturer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Redirect;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\RedirectResponse;
+use \Illuminate\Contracts\View\View;
 
 /**
  * This controller handles all actions related to Manufacturers for
@@ -24,14 +36,34 @@ class ManufacturersController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @see Api\ManufacturersController::index() method that generates the JSON response
      * @since [v1.0]
-     * @return \Illuminate\Contracts\View\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function index()
+    public function index() : View
+    {
+        $this->authorize('index', Manufacturer::class);
+        $manufacturer_count = Manufacturer::withTrashed()->count();
+        return view('manufacturers/index')->with('manufacturer_count', $manufacturer_count);
+    }
+
+    /**
+     * Returns a view that invokes the ajax tables which actually contains
+     * the content for the manufacturers listing, which is generated in getDatatable.
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     * @see Api\ManufacturersController::index() method that generates the JSON response
+     * @since [v1.0]
+     */
+    public function seed() : RedirectResponse
     {
         $this->authorize('index', Manufacturer::class);
 
-        return view('manufacturers/index');
+        $manufacturers_count = Manufacturer::withTrashed()->count();
+
+        if ($manufacturers_count == 0) {
+            Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\ManufacturerSeeder', '--force' => true]);
+            return redirect()->route('manufacturers.index')->with('success', trans('general.seeding.manufacturers.success'));
+        }
+
+        return redirect()->route('manufacturers.index')->with('error', trans_choice('general.seeding.manufacturers.error', ['count' => $manufacturers_count]));
     }
 
     /**
@@ -40,10 +72,8 @@ class ManufacturersController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @see ManufacturersController::store()
      * @since [v1.0]
-     * @return \Illuminate\Contracts\View\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function create()
+    public function create() : View
     {
         $this->authorize('create', Manufacturer::class);
 
@@ -57,20 +87,21 @@ class ManufacturersController extends Controller
      * @see ManufacturersController::create()
      * @since [v1.0]
      * @param ImageUploadRequest $request
-     * @return \Illuminate\Http\RedirectResponse
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function store(ImageUploadRequest $request)
+    public function store(ImageUploadRequest $request) : RedirectResponse
     {
         $this->authorize('create', Manufacturer::class);
         $manufacturer = new Manufacturer;
         $manufacturer->name = $request->input('name');
-        $manufacturer->user_id = Auth::id();
+        $manufacturer->created_by = auth()->id();
         $manufacturer->url = $request->input('url');
         $manufacturer->support_url = $request->input('support_url');
+        $manufacturer->warranty_lookup_url = $request->input('warranty_lookup_url');
         $manufacturer->support_phone = $request->input('support_phone');
         $manufacturer->support_email = $request->input('support_email');
+        $manufacturer->notes = $request->input('notes');
         $manufacturer = $request->handleImages($manufacturer);
+        $manufacturer->tag_color  = $request->input('tag_color');
 
         if ($manufacturer->save()) {
             return redirect()->route('manufacturers.index')->with('success', trans('admin/manufacturers/message.create.success'));
@@ -86,21 +117,11 @@ class ManufacturersController extends Controller
      * @see ManufacturersController::update()
      * @param int $manufacturerId
      * @since [v1.0]
-     * @return \Illuminate\Contracts\View\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function edit($manufacturerId = null)
+    public function edit(Manufacturer $manufacturer) : View | RedirectResponse
     {
-        // Handles manufacturer checks and permissions.
         $this->authorize('update', Manufacturer::class);
-
-        // Check if the manufacturer exists
-        if (! $item = Manufacturer::find($manufacturerId)) {
-            return redirect()->route('manufacturers.index')->with('error', trans('admin/manufacturers/message.does_not_exist'));
-        }
-
-        // Show the page
-        return view('manufacturers/edit', compact('item'));
+        return view('manufacturers/edit')->with('item', $manufacturer);
     }
 
     /**
@@ -110,25 +131,20 @@ class ManufacturersController extends Controller
      * @see ManufacturersController::getEdit()
      * @param Request $request
      * @param int $manufacturerId
-     * @return \Illuminate\Http\RedirectResponse
      * @since [v1.0]
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function update(ImageUploadRequest $request, $manufacturerId = null)
+    public function update(ImageUploadRequest $request, Manufacturer $manufacturer) : RedirectResponse
     {
         $this->authorize('update', Manufacturer::class);
-        // Check if the manufacturer exists
-        if (is_null($manufacturer = Manufacturer::find($manufacturerId))) {
-            // Redirect to the manufacturer  page
-            return redirect()->route('manufacturers.index')->with('error', trans('admin/manufacturers/message.does_not_exist'));
-        }
 
-        // Save the  data
         $manufacturer->name = $request->input('name');
         $manufacturer->url = $request->input('url');
         $manufacturer->support_url = $request->input('support_url');
+        $manufacturer->warranty_lookup_url = $request->input('warranty_lookup_url');
         $manufacturer->support_phone = $request->input('support_phone');
         $manufacturer->support_email = $request->input('support_email');
+        $manufacturer->tag_color  = $request->input('tag_color');
+        $manufacturer->notes = $request->input('notes');
 
         // Set the model's image property to null if the image is being deleted
         if ($request->input('image_delete') == 1) {
@@ -150,35 +166,19 @@ class ManufacturersController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @param int $manufacturerId
      * @since [v1.0]
-     * @return \Illuminate\Http\RedirectResponse
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function destroy($manufacturerId)
+    public function destroy(Manufacturer $manufacturer): RedirectResponse
     {
-        $this->authorize('delete', Manufacturer::class);
-        if (is_null($manufacturer = Manufacturer::withTrashed()->withCount('models as models_count')->find($manufacturerId))) {
-            return redirect()->route('manufacturers.index')->with('error', trans('admin/manufacturers/message.not_found'));
+        $this->authorize('delete', $manufacturer);
+        try {
+            DeleteManufacturerAction::run($manufacturer);
+        } catch (ItemStillHasChildren $e) {
+            return redirect()->route('manufacturers.index')->with('error', trans('general.bulk_delete_associations.general_assoc_warning', ['item' => trans('general.manufacturer')]));
+        } catch (\Exception $e) {
+            report($e);
+            return redirect()->route('manufacturers.index')->with('error', trans('general.something_went_wrong'));
         }
 
-        if (! $manufacturer->isDeletable()) {
-            return redirect()->route('manufacturers.index')->with('error', trans('admin/manufacturers/message.assoc_users'));
-        }
-
-        if ($manufacturer->image) {
-            try {
-                Storage::disk('public')->delete('manufacturers/'.$manufacturer->image);
-            } catch (\Exception $e) {
-                \Log::info($e);
-            }
-        }
-
-        // Soft delete the manufacturer if active, permanent delete if is already deleted
-        if ($manufacturer->deleted_at === null) {
-            $manufacturer->delete();
-        } else {
-            $manufacturer->forceDelete();
-        }
-        // Redirect to the manufacturers management page
         return redirect()->route('manufacturers.index')->with('success', trans('admin/manufacturers/message.delete.success'));
     }
 
@@ -190,21 +190,11 @@ class ManufacturersController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @param int $manufacturerId
      * @since [v1.0]
-     * @return \Illuminate\Contracts\View\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function show($manufacturerId = null)
+    public function show(Manufacturer $manufacturer) : View | RedirectResponse
     {
         $this->authorize('view', Manufacturer::class);
-        $manufacturer = Manufacturer::find($manufacturerId);
-
-        if (isset($manufacturer->id)) {
-            return view('manufacturers/view', compact('manufacturer'));
-        }
-
-        $error = trans('admin/manufacturers/message.does_not_exist');
-        // Redirect to the user management page
-        return redirect()->route('manufacturers.index')->with('error', $error);
+        return view('manufacturers/view', compact('manufacturer'));
     }
 
     /**
@@ -213,25 +203,38 @@ class ManufacturersController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.1.15]
      * @param int $manufacturers_id
-     * @return Redirect
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function restore($manufacturers_id)
+    public function restore($id) : RedirectResponse
     {
-        $this->authorize('create', Manufacturer::class);
-        $manufacturer = Manufacturer::onlyTrashed()->where('id', $manufacturers_id)->first();
+        $this->authorize('delete', Manufacturer::class);
 
-        if ($manufacturer) {
+        if ($manufacturer = Manufacturer::withTrashed()->find($id)) {
 
-            // Not sure why this is necessary - it shouldn't fail validation here, but it fails without this, so....
-            $manufacturer->setValidating(false);
+            if ($manufacturer->deleted_at == '') {
+                return redirect()->back()->with('error', trans('general.not_deleted', ['item_type' => trans('general.manufacturer')]));
+            }
+
             if ($manufacturer->restore()) {
+                $logaction = new Actionlog();
+                $logaction->item_type = Manufacturer::class;
+                $logaction->item_id = $manufacturer->id;
+                $logaction->created_at = date('Y-m-d H:i:s');
+                $logaction->created_by = auth()->id();
+                $logaction->logaction('restore');
+
+                // Redirect them to the deleted page if there are more, otherwise the section index
+                $deleted_manufacturers = Manufacturer::onlyTrashed()->count();
+                if ($deleted_manufacturers > 0) {
+                    return redirect()->back()->with('success', trans('admin/manufacturers/message.success.restored'));
+                }
                 return redirect()->route('manufacturers.index')->with('success', trans('admin/manufacturers/message.restore.success'));
             }
 
-            return redirect()->back()->with('error', 'Could not restore.');
+            // Check validation to make sure we're not restoring an asset with the same asset tag (or unique attribute) as an existing asset
+            return redirect()->back()->with('error', trans('general.could_not_restore', ['item_type' => trans('general.manufacturer'), 'error' => $manufacturer->getErrors()->first()]));
         }
 
-        return redirect()->back()->with('error', trans('admin/manufacturers/message.does_not_exist'));
+        return redirect()->route('manufacturers.index')->with('error', trans('admin/manufacturers/message.does_not_exist'));
+
     }
 }
