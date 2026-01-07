@@ -6,6 +6,7 @@ use App\Models\Setting;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use App\Rules\UserCannotSwitchCompaniesIfItemsAssigned;
 
 class SaveUserRequest extends FormRequest
 {
@@ -32,7 +33,9 @@ class SaveUserRequest extends FormRequest
     public function rules()
     {
         $rules = [
+            'department_id' => 'nullable|integer|exists:departments,id',
             'manager_id' => 'nullable|exists:users,id',
+            'company_id' => ['nullable', 'integer', 'exists:companies,id']
         ];
 
         switch ($this->method()) {
@@ -41,7 +44,7 @@ class SaveUserRequest extends FormRequest
             case 'POST':
                 $rules['first_name'] = 'required|string|min:1';
                 $rules['username'] = 'required_unless:ldap_import,1|string|min:1';
-                if ($this->request->get('ldap_import') == false) {
+                if ($this->input('ldap_import') == false) {
                     $rules['password'] = Setting::passwordComplexityRulesSaving('store').'|confirmed';
                 }
                 break;
@@ -51,11 +54,13 @@ class SaveUserRequest extends FormRequest
                 $rules['first_name'] = 'required|string|min:1';
                 $rules['username'] = 'required_unless:ldap_import,1|string|min:1';
                 $rules['password'] = Setting::passwordComplexityRulesSaving('update').'|confirmed';
+                $rules['company_id'] = [new UserCannotSwitchCompaniesIfItemsAssigned()];
                 break;
 
             // Save only what's passed
             case 'PATCH':
                 $rules['password'] = Setting::passwordComplexityRulesSaving('update');
+                $rules['company_id'] = [new UserCannotSwitchCompaniesIfItemsAssigned()];
                 break;
 
             default:

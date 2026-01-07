@@ -6,14 +6,14 @@ return array(
     'account_not_found'      => 'The username or password is incorrect.',
     'account_not_activated'  => 'This user account is not activated.',
     'account_suspended'      => 'This user account is suspended.',
-    'account_banned'         => 'This user account is banned.',
-    'throttle'               => 'Too many failed login attempts. Please try again in :minutes minutes.',
 
     'two_factor' => array(
         'already_enrolled'      => 'Your device is already enrolled.',
         'success'               => 'You have successfully logged in.',
         'code_required'         => 'Two-factor code is required.',
         'invalid_code'          => 'Two-factor code is invalid.',
+        'enter_two_factor_code' => 'Please enter your two-factor authentication code.',
+        'please_enroll'         => 'Please enroll a device in two-factor authentication.',
     ),
 
     'signin' => array(

@@ -25,11 +25,13 @@ class CategoryFactory extends Factory
         return [
             'name' => $this->faker->catchPhrase(),
             'category_type' => 'asset',
-            'checkin_email' => $this->faker->boolean(),
+            'checkin_email' => true,
             'eula_text' => $this->faker->paragraph(),
             'require_acceptance' => false,
-            'use_default_eula' => $this->faker->boolean(),
-            'user_id' => User::factory()->superuser(),
+            'use_default_eula' => false,
+            'created_by' => User::factory()->superuser(),
+            'notes'   => 'Created by DB seeder',
+            'tag_color' => $this->faker->hexColor(),
         ];
     }
 
@@ -172,4 +174,45 @@ class CategoryFactory extends Factory
          ]);
      }
 
+    public function forAccessories()
+    {
+        return $this->state([
+            'category_type' => 'accessory',
+        ]);
+    }
+
+    public function forAssets()
+    {
+        return $this->state([
+            'category_type' => 'asset',
+        ]);
+    }
+
+    public function forLicenses()
+    {
+        return $this->state([
+            'category_type' => 'license',
+        ]);
+    }
+
+    public function forComponents()
+    {
+        return $this->state([
+            'category_type' => 'component',
+        ]);
+    }
+
+    public function forConsumables()
+    {
+        return $this->state([
+            'category_type' => 'consumable',
+        ]);
+    }
+
+    public function doesNotRequireAcceptance()
+    {
+        return $this->state([
+            'require_acceptance' => false,
+        ]);
+    }
 }
