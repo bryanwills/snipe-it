@@ -31,11 +31,11 @@
             <a href="#assets" data-toggle="tab">
 
                 <span class="hidden-lg hidden-md">
-                    <i class="fas fa-barcode fa-2x" aria-hidden="true"></i>
+                    <x-icon type="assets" class="fa-2x" />
                 </span>
                 <span class="hidden-xs hidden-sm">
                     {{ trans('general.assets') }}
-                    {!! (($supplier->assets) && ($supplier->assets()->AssetsForShow()->count() > 0 )) ? '<badge class="badge badge-secondary">'.number_format($supplier->assets()->AssetsForShow()->count()).'</badge>' : '' !!}
+                    {!! ($supplier->assets()->AssetsForShow()->count() > 0 ) ? '<span class="badge badge-secondary">'.number_format($supplier->assets()->AssetsForShow()->count()).'</span>' : '' !!}
                </span>
 
             </a>
@@ -44,11 +44,11 @@
           <li>
             <a href="#accessories" data-toggle="tab">
                     <span class="hidden-lg hidden-md">
-                        <i class="far fa-keyboard fa-2x" aria-hidden="true"></i>
+                        <x-icon type="accessories" class="fa-2x" />
                     </span>
               <span class="hidden-xs hidden-sm">
                           {{ trans('general.accessories') }}
-                          {!! (($supplier->accessories) && ($supplier->accessories->count() > 0 )) ? '<badge class="badge badge-secondary">'.number_format($supplier->accessories->count()).'</badge>' : '' !!}
+                          {!! ($supplier->accessories->count() > 0 ) ? '<span class="badge badge-secondary">'.number_format($supplier->accessories->count()).'</span>' : '' !!}
                     </span>
             </a>
           </li>
@@ -56,26 +56,70 @@
           <li>
             <a href="#licenses" data-toggle="tab">
                     <span class="hidden-lg hidden-md">
-                        <i class="far fa-save fa-2x" aria-hidden="true"></i>
+                        <x-icon type="licenses" class="fa-2x" />
                     </span>
               <span class="hidden-xs hidden-sm">
                           {{ trans('general.licenses') }}
-                          {!! (($supplier->licenses) && ($supplier->licenses->count() > 0 )) ? '<badge class="badge badge-secondary">'.number_format($supplier->licenses->count()).'</badge>' : '' !!}
+                          {!! ($supplier->licenses->count() > 0 ) ? '<span class="badge badge-secondary">'.number_format($supplier->licenses->count()).'</span>' : '' !!}
                     </span>
             </a>
           </li>
 
+            <li>
+                <a href="#components" data-toggle="tab">
+                    <span class="hidden-lg hidden-md">
+                        <x-icon type="components" class="fa-2x" />
+                    </span>
+                    <span class="hidden-xs hidden-sm">
+                          {{ trans('general.components') }}
+                        {!! ($supplier->components->count() > 0 ) ? '<span class="badge badge-secondary">'.number_format($supplier->components->count()).'</span>' : '' !!}
+                    </span>
+                </a>
+            </li>
+
+            <li>
+                <a href="#consumables" data-toggle="tab">
+                    <span class="hidden-lg hidden-md">
+                        <x-icon type="consumables" class="fa-2x" />
+                    </span>
+                    <span class="hidden-xs hidden-sm">
+                          {{ trans('general.consumables') }}
+                        {!! ($supplier->consumables->count() > 0 ) ? '<span class="badge badge-secondary">'.number_format($supplier->consumables->count()).'</span>' : '' !!}
+                    </span>
+                </a>
+            </li>
+
           <li>
             <a href="#maintenances" data-toggle="tab">
                     <span class="hidden-lg hidden-md">
-                        <i class="fas fa-wrench fa-2x"></i>
+                        <x-icon type="maintenances" class="fa-2x" />
                     </span>
               <span class="hidden-xs hidden-sm">
-                        {{ trans('admin/asset_maintenances/general.asset_maintenances') }}
-                        {!! (($supplier->asset_maintenances) && ($supplier->asset_maintenances->count() > 0 )) ? '<badge class="badge badge-secondary">'.number_format($supplier->asset_maintenances->count()).'</badge>' : '' !!}
+                        {{ trans('admin/maintenances/general.maintenances') }}
+                        {!! ($supplier->maintenances->count() > 0 ) ? '<span class="badge badge-secondary">'.number_format($supplier->maintenances->count()).'</span>' : '' !!}
                     </span>
             </a>
           </li>
+
+            <li>
+                <a href="#files" data-toggle="tab">
+
+                        <span class="hidden-lg hidden-md">
+                          <i class="fas fa-barcode fa-2x"></i>
+                        </span>
+                    <span class="hidden-xs hidden-sm">
+                            {{ trans('general.files') }}
+                        {!! ($supplier->uploads->count() > 0 ) ? '<span class="badge badge-secondary">'.number_format($supplier->uploads->count()).'</span>' : '' !!}
+                          </span>
+                </a>
+            </li>
+
+            <li class="pull-right">
+                <a href="#" data-toggle="modal" data-target="#uploadFileModal">
+                    <x-icon type="paperclip" />
+                    {{ trans('button.upload') }}
+                </a>
+            </li>
         </ul>
 
 
@@ -85,25 +129,19 @@
           <div class="tab-pane active" id="assets">
             <h2 class="box-title">{{ trans('general.assets') }}</h2>
 
-            <div class="table table-responsive">
+
               @include('partials.asset-bulk-actions')
               <table
                       data-cookie-id-table="suppliersAssetsTable"
                       data-columns="{{ \App\Presenters\AssetPresenter::dataTableLayout() }}"
-                      data-pagination="true"
+                      data-show-columns-search="true"
                       data-id-table="suppliersAssetsTable"
-                      data-search="true"
                       data-show-footer="true"
                       data-side-pagination="server"
-                      data-show-columns="true"
-                      data-show-export="true"
-                      data-show-refresh="true"
-                      data-show-fullscreen="true"
                       data-sort-order="asc"
                       data-toolbar="#assetsBulkEditToolbar"
                       data-bulk-button-id="#bulkAssetEditButton"
                       data-bulk-form-id="#assetsBulkForm"
-                      data-click-to-select="true"
                       id="suppliersAssetsTable"
                       class="table table-striped snipe-table"
                       data-url="{{route('api.assets.index', ['supplier_id' => $supplier->id]) }}"
@@ -112,26 +150,17 @@
                               "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
                               }'>
               </table>
-
-            </div><!-- /.table-responsive -->
           </div><!-- /.tab-pane -->
 
 
 
           <div class="tab-pane" id="accessories">
             <h2 class="box-title">{{ trans('general.accessories') }}</h2>
-            <div class="table table-responsive">
               <table
                       data-columns="{{ \App\Presenters\AccessoryPresenter::dataTableLayout() }}"
                       data-cookie-id-table="accessoriesListingTable"
-                      data-pagination="true"
                       data-id-table="accessoriesListingTable"
-                      data-search="true"
                       data-side-pagination="server"
-                      data-show-columns="true"
-                      data-show-fullscreen="true"
-                      data-show-export="true"
-                      data-show-refresh="true"
                       data-sort-order="asc"
                       id="accessoriesListingTable"
                       class="table table-striped snipe-table"
@@ -141,25 +170,17 @@
                               "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
                               }'>
               </table>
-            </div><!-- /.table-responsive -->
           </div><!-- /.tab-pane -->
 
 
           <div class="tab-pane" id="licenses">
             <h2 class="box-title">{{ trans('general.licenses') }}</h2>
 
-            <div class="table table-responsive">
               <table
                       data-columns="{{ \App\Presenters\LicensePresenter::dataTableLayout() }}"
                       data-cookie-id-table="licensesListingTable"
-                      data-pagination="true"
                       data-id-table="licensesListingTable"
-                      data-search="true"
                       data-side-pagination="server"
-                      data-show-columns="true"
-                      data-show-fullscreen="true"
-                      data-show-export="true"
-                      data-show-refresh="true"
                       data-sort-order="asc"
                       id="licensesListingTable"
                       class="table table-striped snipe-table"
@@ -170,26 +191,58 @@
                               }'>
               </table>
 
-            </div><!-- /.table-responsive -->
           </div><!-- /.tab-pane -->
 
+            <div class="tab-pane" id="components">
+                <h2 class="box-title">{{ trans('general.components') }}</h2>
+
+                    <table
+                            data-columns="{{ \App\Presenters\ComponentPresenter::dataTableLayout() }}"
+                            data-cookie-id-table="componentsListingTable"
+                            data-id-table="componentsListingTable"
+                            data-side-pagination="server"
+                            data-sort-order="asc"
+                            id="accessoriesListingTable"
+                            class="table table-striped snipe-table"
+                            data-url="{{route('api.components.index', ['supplier_id' => $supplier->id]) }}"
+                            data-export-options='{
+                              "fileName": "export-suppliers-{{ str_slug($supplier->name) }}-components-{{ date('Y-m-d') }}",
+                              "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
+                              }'>
+                    </table>
+            </div><!-- /.tab-pane -->
+
+            <div class="tab-pane" id="consumables">
+            <h2 class="box-title">{{ trans('general.consumables') }}</h2>
+
+                <table
+                        data-columns="{{ \App\Presenters\ConsumablePresenter::dataTableLayout() }}"
+                        data-cookie-id-table="consumablesListingTable"
+                        data-id-table="consumablesListingTable"
+                        data-side-pagination="server"
+                        data-sort-order="asc"
+                        id="accessoriesListingTable"
+                        class="table table-striped snipe-table"
+                        data-url="{{route('api.consumables.index', ['supplier_id' => $supplier->id]) }}"
+                        data-export-options='{
+                              "fileName": "export-suppliers-{{ str_slug($supplier->name) }}-consumables-{{ date('Y-m-d') }}",
+                              "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
+                              }'>
+                </table>
+        </div><!-- /.tab-pane -->
+
+
           <div class="tab-pane" id="maintenances">
-            <h2 class="box-title">{{ trans('admin/asset_maintenances/general.asset_maintenances') }}</h2>
-            <div class="table table-responsive">
+            <h2 class="box-title">{{ trans('admin/maintenances/general.maintenances') }}</h2>
 
               <table
-                      data-columns="{{ \App\Presenters\AssetMaintenancesPresenter::dataTableLayout() }}"
+                      data-columns="{{ \App\Presenters\MaintenancesPresenter::dataTableLayout() }}"
                       data-cookie-id-table="maintenancesTable"
-                      data-pagination="true"
                       data-id-table="maintenancesTable"
-                      data-search="true"
                       data-side-pagination="server"
-                      data-show-columns="true"
-                      data-show-fullscreen="true"
-                      data-show-export="true"
-                      data-show-refresh="true"
                       data-sort-order="asc"
                       id="maintenancesTable"
+                      data-buttons="maintenanceButtons"
                       class="table table-striped snipe-table"
                       data-url="{{ route('api.maintenances.index', ['supplier_id' => $supplier->id])}}"
                       data-export-options='{
@@ -198,8 +251,15 @@
                               }'>
 
               </table>
-            </div><!-- /.table-responsive -->
           </div><!-- /.tab-pane -->
+
+            <div class="tab-pane fade" id="files">
+                <div class="row">
+                    <div class="col-md-12">
+                        <x-filestable object_type="suppliers" :object="$supplier" />
+                    </div> <!-- /.col-md-12 -->
+                </div> <!-- /.row -->
+            </div>
 
         </div><!--/.col-md-9-->
       </div><!--/.col-md-9-->
@@ -218,7 +278,7 @@
 
           <ul class="list-unstyled" style="line-height: 25px; padding-bottom: 20px; padding-top: 20px;">
               @if ($supplier->contact!='')
-                  <li><i class="fas fa-user" aria-hidden="true"></i> {{ $supplier->contact }}</li>
+                  <li><x-icon type="user" /> {{ $supplier->contact }}</li>
               @endif
               @if ($supplier->phone!='')
                   <li><i class="fas fa-phone"></i>
@@ -261,7 +321,7 @@
               @endif
 
               @if ($supplier->notes!='')
-                  <li><i class="fa fa-comment"></i> {{ $supplier->notes }}</li>
+                  <li><i class="fa fa-comment"></i> {!! nl2br(Helper::parseEscapedMarkedownInline($supplier->notes)) !!}</li>
               @endif
 
           </ul>
@@ -276,6 +336,9 @@
   </div>
   </div>
 
+  @can('update', \App\Models\Supplier::class)
+      @include ('modals.upload-file', ['item_type' => 'supplier', 'item_id' => $supplier->id])
+  @endcan
 @stop
 
 @section('moar_scripts')
