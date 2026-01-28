@@ -17,7 +17,7 @@
     <div class="row">
         <!-- left column -->
         <div class="col-md-7">
-            <form class="form-horizontal" method="post" action="{{ route('components.checkin.store', $component_assets->id) }}" autocomplete="off">
+            <form class="form-horizontal" method="post" action="{{ route('components.checkin.store', [$component_assets->id, 'backto' => 'asset']) }}" autocomplete="off">
                 {{csrf_field()}}
 
                 <div class="box box-default">
@@ -38,7 +38,7 @@
                         <!-- Qty -->
                         <div class="form-group {{ $errors->has('checkin_qty') ? 'error' : '' }}">
                             <label for="checkin_qty" class="col-md-2 control-label">{{ trans('general.qty') }}</label>
-                            <div class="col-md-3">
+                            <div class="col-md-3 text-right">
                                 <input type="text" class="form-control" name="checkin_qty" aria-label="checkin_qty" value="{{ old('assigned_qty', $component_assets->assigned_qty) }}">
                             </div>
                             <div class="col-md-9 col-md-offset-2">
@@ -56,10 +56,14 @@
                                 {!! $errors->first('note', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
                             </div>
                         </div>
-                        <div class="box-footer">
-                            <a class="btn btn-link" href="{{ route('components.index') }}">{{ trans('button.cancel') }}</a>
-                            <button type="submit" class="btn btn-primary pull-right"><i class="fas fa-check icon-white" aria-hidden="true"></i> {{ trans('general.checkin') }}</button>
-                        </div>
+                        <x-redirect_submit_options
+                                index_route="components.index"
+                                :button_label="trans('general.checkin')"
+                                :options="[
+                                'index' => trans('admin/hardware/form.redirect_to_all', ['type' => trans('general.components')]),
+                                'item' => trans('admin/hardware/form.redirect_to_type', ['type' => trans('general.component')]),
+                               ]"
+                        />
                     </div> <!-- /.box-->
             </form>
         </div> <!-- /.col-md-7-->

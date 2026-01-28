@@ -23,6 +23,23 @@ class LocationFactory extends Factory
             'currency' => $this->faker->currencyCode(),
             'zip' => $this->faker->postcode(),
             'image' => rand(1, 9).'.jpg',
+            'notes'   => 'Created by DB seeder',
+            'tag_color' => $this->faker->hexColor(),
         ];
+    }
+  
+    // one of these can eventuall go away - left temporarily for conflict resolution
+    public function deleted(): self
+    {
+        return $this->state(['deleted_at' => $this->faker->dateTime()]);
+    }
+  
+    public function deletedLocation()
+    {
+        return $this->state(function () {
+            return [
+                'deleted_at' => $this->faker->dateTime(),
+            ];
+        });
     }
 }

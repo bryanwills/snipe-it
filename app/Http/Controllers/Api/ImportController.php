@@ -9,26 +9,29 @@ use App\Http\Transformers\ImportsTransformer;
 use App\Models\Asset;
 use App\Models\Company;
 use App\Models\Import;
-use Artisan;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Database\Eloquent\JsonEncodingException;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use League\Csv\Reader;
+use Onnov\DetectEncoding\EncodingDetector;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\JsonResponse;
 
 class ImportController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index() : JsonResponse | array
     {
         $this->authorize('import');
-        $imports = Import::latest()->get();
-
+        $imports = Import::with('adminuser')->latest()->get();
         return (new ImportsTransformer)->transformImports($imports);
     }
 
@@ -36,9 +39,8 @@ class ImportController extends Controller
      * Process and store a CSV upload file.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function store()
+    public function store() : JsonResponse
     {
         $this->authorize('import');
         if (! config('app.lock_passwords')) {
@@ -46,6 +48,8 @@ class ImportController extends Controller
             $path = config('app.private_uploads').'/imports';
             $results = [];
             $import = new Import;
+            $detector = new EncodingDetector();
+
             foreach ($files as $file) {
                 if (! in_array($file->getMimeType(), [
                     'application/vnd.ms-excel',
@@ -56,7 +60,6 @@ class ImportController extends Controller
                     'text/comma-separated-values',
                     'text/tsv', ])) {
                     $results['error'] = 'File type must be CSV. Uploaded file is '.$file->getMimeType();
-
                     return response()->json(Helper::formatStandardApiResponse('error', null, $results['error']), 422);
                 }
 
@@ -64,10 +67,44 @@ class ImportController extends Controller
                 if (! ini_get('auto_detect_line_endings')) {
                     ini_set('auto_detect_line_endings', '1');
                 }
+                if (function_exists('iconv')) {
+                    $file_contents = $file->getContent(); //TODO - this *does* load the whole file in RAM, but we need that to be able to 'iconv' it?
+                    $encoding = $detector->getEncoding($file_contents);
+                    \Log::debug("Discovered encoding: $encoding in uploaded CSV");
+                    $reader = null;
+                    if (strcasecmp($encoding, 'UTF-8') != 0) {
+                        $transliterated = false;
+                        try {
+                            $transliterated = iconv(strtoupper($encoding), 'UTF-8', $file_contents);
+                        } catch (\Exception $e) {
+                            $transliterated = false; //blank out the partially-decoded string
+                            return response()->json(
+                                Helper::formatStandardApiResponse(
+                                    'error',
+                                    null,
+                                    trans('admin/hardware/message.import.transliterate_failure', ["encoding" => $encoding])
+                                ),
+                                422
+                            );
+                        }
+                        if ($transliterated !== false) {
+                            $tmpname = tempnam(sys_get_temp_dir(), '');
+                            $tmpresults = file_put_contents($tmpname, $transliterated);
+                            $transliterated = null; //save on memory?
+                            if ($tmpresults !== false) {
+                                $newfile = new UploadedFile($tmpname, $file->getClientOriginalName(), null, null, true); //WARNING: this is enabling 'test mode' - which is gross, but otherwise the file won't be treated as 'uploaded'
+                                if ($newfile->isValid()) {
+                                    $file = $newfile;
+                                }
+                            }
+                        }
+                    }
+                    $file_contents = null; //try to save on memory, I guess?
+                }
                 $reader = Reader::createFromFileObject($file->openFile('r')); //file pointer leak?
 
                 try {
-                    $import->header_row = $reader->fetchOne(0);
+                    $import->header_row = $reader->nth(0);
                 } catch (JsonEncodingException $e) {
                     return response()->json(
                         Helper::formatStandardApiResponse(
@@ -100,7 +137,7 @@ class ImportController extends Controller
 
                 try {
                     // Grab the first row to display via ajax as the user picks fields
-                    $import->first_row = $reader->fetchOne(1);
+                    $import->first_row = $reader->nth(1);
                 } catch (JsonEncodingException $e) {
                     return response()->json(
                         Helper::formatStandardApiResponse(
@@ -113,7 +150,9 @@ class ImportController extends Controller
                 }
 
                 $date = date('Y-m-d-his');
-                $fixed_filename = str_slug($file->getClientOriginalName());
+
+                $fixed_filename = Str::of($file->getClientOriginalName())->basename('.csv').'.csv';
+
                 try {
                     $file->move($path, $date.'-'.$fixed_filename);
                 } catch (FileException $exception) {
@@ -133,7 +172,7 @@ class ImportController extends Controller
                 }
 
                 $import->filesize = filesize($path.'/'.$file_name);
-                
+                $import->created_by = auth()->id();
                 $import->save();
                 $results[] = $import;
             }
@@ -151,18 +190,17 @@ class ImportController extends Controller
      * Processes the specified Import.
      *
      * @param  int  $import_id
-     * @return \Illuminate\Http\Response
      */
-    public function process(ItemImportRequest $request, $import_id)
+    public function process(ItemImportRequest $request, $import_id) : JsonResponse
     {
         $this->authorize('import');
 
         // Run a backup immediately before processing
-        if ($request->get('run-backup')) {
-            \Log::debug('Backup manually requested via importer');
-            Artisan::call('backup:run');
+        if ($request->input('run-backup')) {
+            Log::debug('Backup manually requested via importer');
+            Artisan::call('snipeit:backup', ['--filename' => 'pre-import-backup-'.date('Y-m-d-H-i-s')]);
         } else {
-            \Log::debug('NO BACKUP requested via importer');
+            Log::debug('NO BACKUP requested via importer');
         }
 
         $import = Import::find($import_id);
@@ -174,24 +212,50 @@ class ImportController extends Controller
 
         $errors = $request->import($import);
         $redirectTo = 'hardware.index';
-        switch ($request->get('import-type')) {
+        switch ($request->input('import-type')) {
             case 'asset':
+                $model_perms = 'App\Models\Asset';
                 $redirectTo = 'hardware.index';
                 break;
+            case 'assetModel':
+                $model_perms = 'App\Models\AssetModel';
+                $redirectTo = 'models.index';
+                break;
             case 'accessory':
+                $model_perms = 'App\Models\Accessory';
                 $redirectTo = 'accessories.index';
                 break;
             case 'consumable':
+                $model_perms = 'App\Models\Consumable';
                 $redirectTo = 'consumables.index';
                 break;
             case 'component':
+                $model_perms = 'App\Models\Component';
                 $redirectTo = 'components.index';
                 break;
             case 'license':
+                $model_perms = 'App\Models\License';
                 $redirectTo = 'licenses.index';
                 break;
             case 'user':
+                $model_perms = 'App\Models\User';
                 $redirectTo = 'users.index';
+                break;
+            case 'location':
+                $model_perms = 'App\Models\Location';
+                $redirectTo = 'locations.index';
+                break;
+            case 'supplier':
+                $model_perms = 'App\Models\Supplier';
+                $redirectTo = 'suppliers.index';
+                break;
+            case 'manufacturer':
+                $model_perms = 'App\Models\Manufacturer';
+                $redirectTo = 'manufacturers.index';
+                break;
+            case 'category':
+                $model_perms = 'App\Models\Category';
+                $redirectTo = 'categories.index';
                 break;
         }
 
@@ -201,20 +265,30 @@ class ImportController extends Controller
         //Flash message before the redirect
         Session::flash('success', trans('admin/hardware/message.import.success'));
 
-        return response()->json(Helper::formatStandardApiResponse('success', null, ['redirect_url' => route($redirectTo)]));
+        if (auth()->user()->can('view', $model_perms)) {
+            return response()->json(Helper::formatStandardApiResponse('success', null, ['redirect_url' => route($redirectTo)]));
+        }
+
+        return response()->json(Helper::formatStandardApiResponse('success', null, ['redirect_url' => route('imports.index')]));
     }
 
     /**
      * Remove the specified resource from storage.
      *
      * @param  int  $import_id
-     * @return \Illuminate\Http\Response
      */
-    public function destroy($import_id)
+    public function destroy($import_id) : JsonResponse
     {
-        $this->authorize('create', Asset::class);
+        $this->authorize('import');
 
         if ($import = Import::find($import_id)) {
+
+
+            if ((auth()->user()->id != $import->created_by) && (!auth()->user()->isSuperUser())) {
+                return response()->json(Helper::formatStandardApiResponse('warning', null, trans('admin/hardware/message.import.file_not_deleted_warning')));
+            }
+
+
             try {
                 // Try to delete the file
                 Storage::delete('imports/'.$import->file_path);
@@ -227,6 +301,10 @@ class ImportController extends Controller
 
                 return response()->json(Helper::formatStandardApiResponse('warning', null, trans('admin/hardware/message.import.file_not_deleted_warning')));
             }
+
         }
+        return response()->json(Helper::formatStandardApiResponse('warning', null, trans('admin/hardware/message.import.file_not_deleted_warning')));
     }
+
+
 }

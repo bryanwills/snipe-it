@@ -3,11 +3,15 @@
 return array(
     'asset_categories' 					=> 'Kategori Aset',
     'category_name'  					=> 'Nama Kategori',
-    'checkin_email'                     => 'Kirim email ke pengguna saat checkin/checkout.',
+    'email_to_user_upon_checkin' => 'Send email to user upon checkin.',
+    'email_to_user_upon_checkin_and_checkout' => 'Send email to user upon checkin/checkout.',
+    'email_to_initiator'                => 'Send email to you when user accepts or declines checkout.',
     'checkin_email_notification'        => 'Pengguna ini akan dikirimi email saat checkin/checkout.',
     'clone'                             => 'Salin Kategori',
     'create'  							=> 'Buat Kategori',
     'edit'                              => 'Edit Kategori',
+    'email_will_be_sent_due_to_global_eula' => 'An email will be sent to the user upon checkout because the global EULA is being used.',
+    'email_will_be_sent_due_to_category_eula' => 'An email will be sent to the user upon checkout because a EULA is set for this category.',
     'eula_text'							=> 'Kategori EULA',
     'eula_text_help'					=> 'Bidang ini memungkinkan Anda untuk menyesuaikan EULA Anda untuk jenis tertentu dari aset. Jika Anda hanya memiliki satu EULA untuk semua aset Anda, Anda dapat memeriksa kotak di bawah untuk menggunakan default primer.',
     'name'                              => 'Nama Kategori',
@@ -19,5 +23,9 @@ return array(
     'use_default_eula'					=> 'Gunakan <a href="#" data-toggle="modal" data-target="#eulaModal"> standar primer EULA </a> gantinya.',
     'use_default_eula_disabled'			=> '<del> Gunakan EULA standar utama sebagai gantinya. </ del> Tidak ada standar utama EULA diatur. Silakan menambahkan satu di Settings.',
     'use_default_eula_column'			=> 'Gunakan kebijakan bawaan',
+    'import_require_acceptance'         => 'Require Acceptance',
+    'import_checkin_email'              => 'Send Checkin Email',
+    'import_eula_text'                  => 'EULA text',
+    'import_category_type'              => 'Category Type',
 
 );
