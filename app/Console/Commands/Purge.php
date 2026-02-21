@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Accessory;
+use App\Models\Actionlog;
 use App\Models\Asset;
 use App\Models\AssetModel;
 use App\Models\Category;
@@ -15,6 +16,8 @@ use App\Models\Statuslabel;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class Purge extends Command
 {
@@ -59,19 +62,19 @@ class Purge extends Command
             $assetcount = $assets->count();
             $this->info($assets->count().' assets purged.');
             $asset_assoc = 0;
-            $asset_maintenances = 0;
+            $maintenances = 0;
 
             foreach ($assets as $asset) {
-                $this->info('- Asset "'.$asset->present()->name().'" deleted.');
+                $this->info('- Asset "'.$asset->display_name.'" deleted.');
                 $asset_assoc += $asset->assetlog()->count();
                 $asset->assetlog()->forceDelete();
-                $asset_maintenances += $asset->assetmaintenances()->count();
-                $asset->assetmaintenances()->forceDelete();
+                $maintenances += $asset->maintenances()->count();
+                $asset->maintenances()->forceDelete();
                 $asset->forceDelete();
             }
 
             $this->info($asset_assoc.' corresponding log records purged.');
-            $this->info($asset_maintenances.' corresponding maintenance records purged.');
+            $this->info($maintenances.' corresponding maintenance records purged.');
 
             $locations = Location::whereNotNull('deleted_at')->withTrashed()->get();
             $this->info($locations->count().' locations purged.');
@@ -141,6 +144,20 @@ class Purge extends Command
             $this->info($users->count().' users purged.');
             $user_assoc = 0;
             foreach ($users as $user) {
+
+                $rel_path = 'private_uploads/users';
+                $filenames = Actionlog::where('action_type', 'uploaded')
+                    ->where('item_id', $user->id)
+                    ->pluck('filename');
+                foreach($filenames as $filename) {
+                    try {
+                        if (Storage::exists($rel_path . '/' . $filename)) {
+                            Storage::delete($rel_path . '/' . $filename);
+                        }
+                    } catch (\Exception $e) {
+                        Log::info('An error occurred while deleting files: ' . $e->getMessage());
+                    }
+                }
                 $this->info('- User "'.$user->username.'" deleted.');
                 $user_assoc += $user->userlog()->count();
                 $user->userlog()->forceDelete();

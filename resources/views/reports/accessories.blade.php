@@ -13,19 +13,13 @@
         <div class="col-md-12">
             <div class="box box-default">
                 <div class="box-body">
-                    <div class="table-responsive">
-
                         <table
                                 data-cookie-id-table="accessoriesReport"
-                                data-pagination="true"
                                 data-id-table="accessoriesReport"
-                                data-search="true"
                                 data-side-pagination="server"
-                                data-show-columns="true"
-                                data-show-export="true"
-                                data-show-refresh="true"
                                 data-sort-order="asc"
                                 id="accessoriesReport"
+                                data-advanced-search="false"
                                 class="table table-striped snipe-table"
                                 data-url="{{ route('api.accessories.index') }}"
                                 data-export-options='{
@@ -45,8 +39,6 @@
                             <tbody>
                             </tbody>
                         </table>
-
-                    </div>
                 </div>
             </div>
         </div>

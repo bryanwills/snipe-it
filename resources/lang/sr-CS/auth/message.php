@@ -6,14 +6,14 @@ return array(
     'account_not_found'      => 'Korisničko ime ili lozinka nisu ispravni.',
     'account_not_activated'  => 'Ovaj korisnički nalog nije aktiviran.',
     'account_suspended'      => 'Ovaj je korisnički nalog je blokiran.',
-    'account_banned'         => 'Ovaj je korisnički nalog je zabranjen.',
-    'throttle'               => 'Previše neuspelih pokušaja. Pokušajte ponovo za :seconds sekundi.',
 
     'two_factor' => array(
         'already_enrolled'      => 'Vaš uređaj je već registrovan.',
         'success'               => 'Uspešno ste se prijavili.',
         'code_required'         => 'Potreban je dvofaktorski kod.',
         'invalid_code'          => 'Dvofaktorski kod je nevažeći.',
+        'enter_two_factor_code' => 'Molim vas unesite vaš kod za dvofaktorsku autentifikaciju.',
+        'please_enroll'         => 'Molim vas prijavite uređaj za dvofaktorsku autentifikaciju.',
     ),
 
     'signin' => array(

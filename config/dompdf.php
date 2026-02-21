@@ -74,13 +74,16 @@ return array(
          * This is only checked on command line call by dompdf.php, but not by
          * direct class use like:
          * $dompdf = new DOMPDF();	$dompdf->load_html($htmldata); $dompdf->render(); $pdfdata = $dompdf->output();
+         * 
+         * 
+         * Hardcoding 2 Paths needed for Docker Containers
          */
-        "chroot" => realpath(base_path()),
+        "chroot" => realpath(base_path()) . ",/var/lib/snipeit/data/uploads,/var/lib/snipeit/data/private_uploads",
 
         /**
          * Whether to enable font subsetting or not.
          */
-        "enable_font_subsetting" => false,
+        "enable_font_subsetting" => true,
 
         /**
          * The PDF rendering backend to use

@@ -10,8 +10,8 @@
 
 
 <div class="row">
-    <div class="col-md-9">
-    {{ Form::open(['method' => 'POST', 'files' => true, 'class' => 'form-horizontal', 'autocomplete' => 'off']) }}
+    <div class="col-md-6 col-md-offset-3">
+    <form method="POST" action="{{ route('account.password.update') }}" accept-charset="UTF-8" class="form-horizontal" autocomplete="off">
     <!-- CSRF Token -->
         <input type="hidden" name="_token" value="{{ csrf_token() }}" />
         <div class="box box-default">
@@ -23,7 +23,7 @@
         <label for="current_password" class="col-md-3 control-label"> {{ trans('general.current_password') }} </label>
         </label>
         <div class="col-md-5 required">
-            <input class="form-control" type="password" name="current_password" id="current_password" {{ (config('app.lock_passwords') ? ' disabled' : '') }}>
+            <input class="form-control" type="password" name="current_password" id="current_password" required {{ (config('app.lock_passwords') ? ' disabled' : '') }}>
             {!! $errors->first('current_password', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
             @if (config('app.lock_passwords')===true)
                 <p class="text-warning"><i class="fas fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
@@ -34,7 +34,7 @@
     <div class="form-group {{ $errors->has('password') ? ' has-error' : '' }}">
         <label for="password" class="col-md-3 control-label">{{ trans('general.new_password') }}</label>
         <div class="col-md-5 required">
-            <input class="form-control" type="password" name="password" id="password" {{ (config('app.lock_passwords') ? ' disabled' : '') }}>
+            <input class="form-control" type="password" name="password" id="password" required {{ (config('app.lock_passwords') ? ' disabled' : '') }}>
             {!! $errors->first('password', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
             @if (config('app.lock_passwords')===true)
                 <p class="text-warning"><i class="fas fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
@@ -59,11 +59,11 @@
             </div> <!-- .box-body -->
             <div class="box-footer text-right">
                 <a class="btn btn-link" href="{{ URL::previous() }}">{{ trans('button.cancel') }}</a>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-check icon-white" aria-hidden="true"></i> {{ trans('general.save') }}</button>
+                <button type="submit" class="btn btn-primary"><x-icon type="checkmark" /> {{ trans('general.save') }}</button>
             </div>
 
         </div> <!-- .box-default -->
-        {{ Form::close() }}
+        </form>
     </div> <!-- .col-md-9 -->
 </div> <!-- .row-->
 @stop

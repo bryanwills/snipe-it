@@ -21,8 +21,15 @@ class ConsumablePresenter extends Presenter
                 'switchable' => true,
                 'title' => trans('general.id'),
                 'visible' => false,
-            ],
-            [
+            ], [
+                'field' => 'name',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => false,
+                'title' => trans('general.name'),
+                'visible' => true,
+                'formatter' => 'consumablesLinkFormatter',
+            ], [
                 'field' => 'company',
                 'searchable' => true,
                 'sortable' => true,
@@ -31,14 +38,7 @@ class ConsumablePresenter extends Presenter
                 'visible' => false,
                 'formatter' => 'companiesLinkObjFormatter',
             ],
-            [
-                'field' => 'name',
-                'searchable' => true,
-                'sortable' => true,
-                'title' => trans('general.name'),
-                'visible' => true,
-                'formatter' => 'consumablesLinkFormatter',
-            ],
+
             [
                 'field' => 'image',
                 'searchable' => false,
@@ -54,40 +54,31 @@ class ConsumablePresenter extends Presenter
                 'title' => trans('general.category'),
                 'formatter' => 'categoriesLinkObjFormatter',
             ], [
+                'field' => 'supplier',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.supplier'),
+                'visible' => false,
+                'formatter' => 'suppliersLinkObjFormatter',
+            ], [
                 'field' => 'model_number',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('general.model_no'),
             ], [
-                'field' => 'item_no',
-                'searchable' => true,
-                'sortable' => true,
-                'title' => trans('admin/consumables/general.item_no'),
-            ], [
-                'field' => 'qty',
-                'searchable' => false,
-                'sortable' => false,
-                'title' => trans('admin/components/general.total'),
-                'visible' => true,
-            ], [
-                'field' => 'remaining',
-                'searchable' => false,
-                'sortable' => false,
-                'title' => trans('admin/components/general.remaining'),
-                'visible' => true,
-            ], [
-                'field' => 'min_amt',
-                'searchable' => false,
-                'sortable' => false,
-                'title' => trans('general.min_amt'),
-                'visible' => true,
-            ],  [
                 'field' => 'location',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('general.location'),
                 'formatter' => 'locationsLinkObjFormatter',
             ], [
+                'field' => 'item_no',
+                'searchable' => true,
+                'sortable' => true,
+                'title' => trans('admin/consumables/general.item_no'),
+            ], [
+
                 'field' => 'manufacturer',
                 'searchable' => true,
                 'sortable' => true,
@@ -108,13 +99,43 @@ class ConsumablePresenter extends Presenter
                 'visible' => true,
                 'formatter' => 'dateDisplayFormatter',
             ], [
+                'field' => 'min_amt',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.min_amt'),
+                'visible' => true,
+                'formatter' => 'minAmtFormatter',
+                'class' => 'text-right text-padding-number-cell',
+            ], [
+                'field' => 'qty',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('admin/components/general.total'),
+                'visible' => true,
+                'class' => 'text-right text-padding-number-cell',
+                'footerFormatter' => 'qtySumFormatter',
+            ], [
+                'field' => 'remaining',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('admin/components/general.remaining'),
+                'visible' => true,
+                'class' => 'text-right text-padding-number-cell',
+                'footerFormatter' => 'qtySumFormatter',
+            ], [
                 'field' => 'purchase_cost',
                 'searchable' => true,
                 'sortable' => true,
-                'title' => trans('general.purchase_cost'),
+                'title' => trans('general.unit_cost'),
                 'visible' => true,
+                'class' => 'text-right text-padding-number-cell',
+            ], [
+                'field' => 'total_cost',
+                'searchable' => true,
+                'sortable' => true,
+                'title' => trans('general.total_cost'),
                 'footerFormatter' => 'sumFormatterQuantity',
-                'class' => 'text-right',
+                'class' => 'text-right text-padding-number-cell',
             ], [
                 'field' => 'notes',
                 'searchable' => true,
@@ -123,12 +144,34 @@ class ConsumablePresenter extends Presenter
                 'title' => trans('general.notes'),
                 'formatter' => 'notesFormatter',
             ], [
+                'field' => 'created_by',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.created_by'),
+                'visible' => false,
+                'formatter' => 'usersLinkObjFormatter',
+            ],[
+                'field' => 'created_at',
+                'searchable' => false,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('general.created_at'),
+                'formatter' => 'dateDisplayFormatter',
+            ], [
+                'field' => 'updated_at',
+                'searchable' => false,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('general.updated_at'),
+                'formatter' => 'dateDisplayFormatter',
+            ], [
                 'field' => 'change',
                 'searchable' => false,
                 'sortable' => false,
                 'visible' => true,
                 'title' => trans('general.change'),
                 'formatter' => 'consumablesInOutFormatter',
+                'printIgnore' => true,
             ], [
                 'field' => 'actions',
                 'searchable' => false,
@@ -137,7 +180,60 @@ class ConsumablePresenter extends Presenter
                 'title' => trans('table.actions'),
                 'visible' => true,
                 'formatter' => 'consumablesActionsFormatter',
+                'printIgnore' => true,
             ],
+        ];
+
+        return json_encode($layout);
+    }
+
+    public static function checkedOut()
+    {
+        $layout = [
+
+            [
+                'field' => 'avatar',
+                'searchable' => false,
+                'sortable' => false,
+                'title' => trans('general.image'),
+                'visible' => true,
+                'formatter' => 'imageFormatter',
+            ],
+            [
+                'field' => 'user',
+                'searchable' => false,
+                'sortable' => false,
+                'title' => trans('general.name'),
+                'visible' => true,
+                'formatter' => 'usersLinkObjFormatter',
+            ],
+            [
+                'field' => 'created_at',
+                'searchable' => false,
+                'sortable' => false,
+                'title' => trans('general.date'),
+                'visible' => true,
+                'formatter' => 'dateDisplayFormatter',
+            ],
+
+            [
+                'field' => 'note',
+                'searchable' => false,
+                'sortable' => false,
+                'title' => trans('general.notes'),
+                'visible' => true,
+            ],
+
+            [
+                'field' => 'created_by',
+                'searchable' => false,
+                'sortable' => false,
+                'title' => trans('general.created_by'),
+                'visible' => true,
+                'formatter' => 'usersLinkObjFormatter',
+            ],
+
+
         ];
 
         return json_encode($layout);

@@ -2,18 +2,19 @@
 
 return [
     'does_not_exist' => 'La compañía no existe.',
-    'assoc_users'    => 'Esta compañía ya está asociada con al menos un modelo y no puede eliminarse. Por favor, actualiza tus modelos para no referenciar esta compañía de nuevo y prueba otra vez. ',
+    'deleted'        => 'Compañía eliminada',
+    'assoc_users'    => 'Esta compañía está actualmente asociada con al menos un modelo y no puede ser eliminada. Por favor actualice sus modelos para que no hagan referencia a esta compañía e inténtelo de nuevo. ',
     'create' => [
-        'error'   => 'Esta compañía no ha sido creada, por favor pruebe de nuevo.',
+        'error'   => 'La compañía no fue creada, por favor, inténtelo de nuevo.',
         'success' => 'Compañía creada satisfactoriamente.',
     ],
     'update' => [
-        'error'   => 'Compañía no actualizada, por favor inténtelo de nuevo',
+        'error'   => 'La compañía no fue actualizada, por favor, inténtelo de nuevo',
         'success' => 'Compañía actualizada correctamente.',
     ],
     'delete' => [
-        'confirm' => '¿Seguro que quieres eliminar esta compañía?',
-        'error'   => 'Hubo un problema eliminando esta compañía. Inténtelo de nuevo.',
-        'success' => 'Esta compañía se eliminó satisfactoriamente.',
+        'confirm' => '¿Está seguro de que quiere eliminar esta compañía?',
+        'error'   => 'Hubo un problema eliminando la compañía. Por favor, inténtelo de nuevo.',
+        'success' => 'La compañía fue eliminada correctamente.',
     ],
 ];

@@ -21,7 +21,7 @@
     </style>
 
 
-    {{ Form::open(['method' => 'POST', 'files' => false, 'autocomplete' => 'off', 'class' => 'form-horizontal', 'role' => 'form' ]) }}
+    <form method="POST" action="{{ route('settings.localization.save') }}" accept-charset="UTF-8" autocomplete="off" class="form-horizontal" role="form">
     <!-- CSRF Token -->
     {{csrf_field()}}
 
@@ -32,56 +32,124 @@
             <div class="panel box box-default">
                 <div class="box-header with-border">
                     <h2 class="box-title">
-                        <i class="fas fa-globe-americas" aria-hidden="true"></i> {{ trans('admin/settings/general.localization') }}
+                        <x-icon type="globe-us" /> {{ trans('admin/settings/general.localization') }}
                     </h2>
                 </div>
                 <div class="box-body">
 
 
-                    <div class="col-md-11 col-md-offset-1">
+                    <div class="col-md-12">
 
                         <!-- Language -->
-                        <div class="form-group {{ $errors->has('site_name') ? 'error' : '' }}">
-                            <div class="col-md-3">
-                                {{ Form::label('site_name', trans('admin/settings/general.default_language')) }}
-                            </div>
-                            <div class="col-md-9">
-                                {!! Form::locales('locale', Request::old('locale', $setting->locale), 'select2') !!}
+                        <div class="form-group {{ $errors->has('locale') ? 'error' : '' }}">
+
+                           <label for="site_name" class="col-md-3 control-label">{{ trans('admin/settings/general.default_language') }}</label>
+
+                            <div class="col-md-5 col-xs-12">
+                                <x-input.locale-select name="locale" :selected="old('locale', $setting->locale)" />
 
                                 {!! $errors->first('locale', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
                             </div>
                         </div>
 
+                        <!-- name display format -->
+                        <div class="form-group {{ $errors->has('name_display_format') ? 'error' : '' }}">
+
+                            <label for="name_display_format" class="col-md-3 control-label">{{ trans('general.name_display_format') }}</label>
+
+                            <div class="col-md-5 col-xs-12">
+                                <x-input.select
+                                    name="name_display_format"
+                                    :options="['first_last' => trans('general.firstname_lastname_display'), 'last_first' => trans('general.lastname_firstname_display')]"
+                                    :selected="old('name_display_format', $setting->name_display_format)"
+                                    style="width: 100%"
+                                />
+                                {!! $errors->first('name_display_format', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                            </div>
+                        </div>
+
+
+
                         <!-- Date format -->
                         <div class="form-group {{ $errors->has('time_display_format') ? 'error' : '' }}">
-                            <div class="col-md-3">
-                                {{ Form::label('time_display_format', trans('general.time_and_date_display')) }}
-                            </div>
-                            <div class="col-md-9">
-                                {!! Form::date_display_format('date_display_format', Request::old('date_display_format', $setting->date_display_format), 'select2') !!}
 
-                                {!! Form::time_display_format('time_display_format', Request::old('time_display_format', $setting->time_display_format), 'select2') !!}
+                            <label for="time_display_format" class="col-md-3 control-label">{{ trans('general.time_and_date_display') }}</label>
 
-                                {!! $errors->first('time_display_format', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                            <div class="col-md-5 col-xs-12">
+                                <x-input.date-display-format name="date_display_format" :selected="old('date_display_format', $setting->date_display_format)" style="min-width:100%" />
                             </div>
+                            <div class="col-md-3 col-xs-12">
+                                <x-input.time-display-format name="time_display_format" :selected="old('time_display_format', $setting->time_display_format)" style="min-width:150px" />
+                            </div>
+                            
+                            {!! $errors->first('time_display_format', '<div class="col-md-9 col-md-offset-3"><span class="alert-msg" aria-hidden="true">:message</span> </div>') !!}
+
+                        </div>
+
+                        <!-- Week Start format -->
+                        <div class="form-group {{ $errors->has('week_start') ? 'error' : '' }}">
+
+                            <label for="week_start" class="col-md-3 control-label">{{ trans('datepicker.week_start') }}</label>
+
+                            <div class="col-md-5 col-xs-12">
+                                <select name="week_start" class="select2" style="width: 100%;" aria-label="week_start" data-placeholder="{{ trans('datepicker.select_day') }}">
+                                    <option value="0" @selected(old('week_start', $setting->week_start) == 0)>
+                                        {{ trans('datepicker.days.sunday') }}
+                                    </option>
+                                    <option value="1" @selected(old('week_start', $setting->week_start) == 1)>
+                                        {{ trans('datepicker.days.monday') }}
+                                    </option>
+                                    <option value="2" @selected(old('week_start', $setting->week_start) == 2)>
+                                        {{ trans('datepicker.days.tuesday') }}
+                                    </option>
+                                    <option value="3" @selected(old('week_start', $setting->week_start) == 3)>
+                                        {{ trans('datepicker.days.wednesday') }}
+                                    </option>
+                                    <option value="4" @selected(old('week_start', $setting->week_start) == 4)>
+                                        {{ trans('datepicker.days.thursday') }}
+                                    </option>
+                                    <option value="5" @selected(old('week_start', $setting->week_start) == 5)>
+                                        {{ trans('datepicker.days.friday') }}
+                                    </option>
+                                    <option value="6" @selected(old('week_start', $setting->week_start) == 6)>
+                                        {{ trans('datepicker.days.saturday') }}
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            {!! $errors->first('week_start', '<div class="col-md-9 col-md-offset-3"><span class="alert-msg" aria-hidden="true">:message</span> </div>') !!}
+
                         </div>
 
                         <!-- Currency -->
                         <div class="form-group {{ $errors->has('default_currency') ? 'error' : '' }}">
-                            <div class="col-md-3">
-                                {{ Form::label('default_currency', trans('admin/settings/general.default_currency')) }}
-                            </div>
-                            <div class="col-md-9">
-                                {{ Form::text('default_currency', old('default_currency', $setting->default_currency), array('class' => 'form-control select2-container','placeholder' => 'USD', 'maxlength'=>'3', 'style'=>'width: 60px; display: inline-block; ')) }}
 
-                                {!! Form::digit_separator('digit_separator', old('digit_separator', $setting->digit_separator), 'select2') !!}
+                                <label for="default_currency" class="col-md-3 control-label">{{ trans('admin/settings/general.default_currency') }}</label>
+
+                            <div class="col-md-9 col-xs-12">
+                                <input
+                                    class="form-control select2-container"
+                                    placeholder="USD"
+                                    maxlength="3"
+                                    style="width: 60px; display: inline-block; "
+                                    name="default_currency"
+                                    type="text"
+                                    value="{{ old('default_currency', $setting->default_currency) }}"
+                                    id="default_currency"
+                                >
+
+                                <x-input.select
+                                    name="digit_separator"
+                                    :options="['1,234.56' => '1,234.56', '1.234,56'=> '1.234,56']"
+                                    :selected="old('digit_separator', $setting->digit_separator)"
+                                    style="min-width:120px"
+                                />
 
                                 {!! $errors->first('default_currency', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
                             </div>
                         </div>
-
-
-
 
 
                     </div>
@@ -92,7 +160,7 @@
                         <a class="btn btn-link text-left" href="{{ route('settings.index') }}">{{ trans('button.cancel') }}</a>
                     </div>
                     <div class="text-right col-md-6">
-                        <button type="submit" class="btn btn-primary"><i class="fas fa-check icon-white" aria-hidden="true"></i> {{ trans('general.save') }}</button>
+                        <button type="submit" class="btn btn-primary"><x-icon type="checkmark" /> {{ trans('general.save') }}</button>
                     </div>
 
                 </div>
@@ -100,7 +168,7 @@
         </div> <!-- /.col-md-8-->
     </div> <!-- /.row-->
 
-    {{Form::close()}}
+    </form>
 
 @stop
 

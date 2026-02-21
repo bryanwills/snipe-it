@@ -26,22 +26,28 @@ class DepartmentsTransformer
             $array = [
                 'id' => (int) $department->id,
                 'name' => e($department->name),
+                'phone' => ($department->phone!='') ? e($department->phone): null,
+                'fax' => ($department->fax!='') ? e($department->fax): null,
                 'image' =>   ($department->image) ? Storage::disk('public')->url(app('departments_upload_url').e($department->image)) : null,
                 'company' => ($department->company) ? [
                     'id' => (int) $department->company->id,
                     'name'=> e($department->company->name),
+                    'tag_color' => $department->company->tag_color ? e($department->company->tag_color) : null,
                 ] : null,
                 'manager' => ($department->manager) ? [
                     'id' => (int) $department->manager->id,
-                    'name' => e($department->manager->getFullNameAttribute()),
+                    'name' => e($department->manager->display_name),
                     'first_name'=> e($department->manager->first_name),
                     'last_name'=> e($department->manager->last_name),
                 ] : null,
                 'location' => ($department->location) ? [
                     'id' => (int) $department->location->id,
                     'name' => e($department->location->name),
+                    'tag_color' => $department->location->tag_color ? e($department->location->tag_color) : null,
                 ] : null,
-                'users_count' => e($department->users_count),
+                'users_count' => (int) ($department->users_count),
+                'tag_color' => $department->tag_color ? e($department->tag_color) : null,
+                'notes' => Helper::parseEscapedMarkedownInline($department->notes),
                 'created_at' => Helper::getFormattedDateObject($department->created_at, 'datetime'),
                 'updated_at' => Helper::getFormattedDateObject($department->updated_at, 'datetime'),
             ];

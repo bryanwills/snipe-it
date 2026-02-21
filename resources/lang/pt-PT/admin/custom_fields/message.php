@@ -5,6 +5,7 @@ return array(
     'field' => array(
         'invalid'   => 'Esse campo não existe.',
         'already_added'   => 'Campo já adicionado',
+        'none_selected'   => 'Nenhum campo selecionado',
 
         'create' => array(
             'error'   => 'Campo não criado. Por favor tente novamente.',
@@ -51,7 +52,7 @@ return array(
 
     'fieldset_default_value' => array(
 
-        'error' => 'Error validating default fieldset values.',
+        'error' => 'Erro ao validar valores padrão do conjunto de campos.',
 
     ),
 

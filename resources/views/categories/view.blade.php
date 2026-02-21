@@ -3,184 +3,240 @@
 {{-- Page title --}}
 @section('title')
 
- {{ $category->name }}
- {{ ucwords($category_type_route) }}
+{{ $category->name }}
 
 @parent
 @stop
 
 @section('header_right')
-
-    <a href="{{ URL::previous() }}" class="btn btn-primary" style="margin-right: 10px;">
-        {{ trans('general.back') }}</a>
-
-<div class="btn-group pull-right">
-  <button class="btn btn-default dropdown-toggle" data-toggle="dropdown">{{ trans('button.actions') }}
-    <span class="caret"></span>
-  </button>
-  <ul class="dropdown-menu">
-    <li><a href="{{ route('categories.edit', ['category' => $category->id]) }}">{{ trans('admin/categories/general.edit') }}</a></li>
-    <li><a href="{{ route('categories.create') }}">{{ trans('general.create') }}</a></li>
-  </ul>
-
-</div>
-@stop
+    <i class="fa-regular fa-2x fa-square-caret-right pull-right" id="expand-info-panel-button" data-tooltip="true" title="{{ trans('button.show_hide_info') }}"></i>
+@endsection
 
 {{-- Page content --}}
 @section('content')
-
-
-
-    <div class="row">
-        <div class="col-md-12">
-
-            <div class="nav-tabs-custom">
-                <ul class="nav nav-tabs">
-                    <li class="active">
-                        <a href="#items" data-toggle="tab" title="{{ trans('general.items') }}"> {{ ucwords($category_type_route) }}
-                            @if ($category->category_type=='asset')
-                            <badge class="badge badge-secondary"> {{ $category->showableAssets()->count() }}</badge>
-                            @endif
-                        </a>
-                    </li>
+    <x-container columns="2">
+        <x-page-column class="col-md-9 main-panel">
+            <x-tabs>
+                <x-slot:tabnav>
                     @if ($category->category_type=='asset')
-                    <li>
-                        <a href="#models" data-toggle="tab" title="{{ trans('general.asset_models') }}">{{ trans('general.asset_models') }}
-                            <badge class="badge badge-secondary"> {{ $category->models->count()}}</badge>
-                        </a>
-                    </li>
-                   @endif
-                </ul>
-                <div class="tab-content">
-                    <div class="tab-pane fade in active" id="items">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="table-responsive">
-                                    @if ($category->category_type=='asset')
-                                        @include('partials.asset-bulk-actions')
-                                    @endif
+                        @can('view', \App\Models\Asset::class)
 
-                                    <table
+                            <x-tabs.nav-item
+                                    name="assets"
+                                    class="active"
+                                    icon_type="asset"
+                                    label="{{ trans('general.assets') }}"
+                                    count="{{ $category->showableAssets()->count() }}"
+                            />
 
-                                            @if ($category->category_type=='asset')
+                            <x-tabs.nav-item
+                                    name="models"
+                                    icon_type="models"
+                                    label="{{ trans('general.asset_models') }}"
+                                    count="{{ $category->models->count() }}"
+                            />
+                        @endcan
 
-                                            data-columns="{{ \App\Presenters\AssetPresenter::dataTableLayout() }}"
-                                            data-cookie-id-table="categoryAssetsTable"
-                                            id="categoryAssetsTable"
-                                            data-id-table="categoryAssetsTable"
-                                            data-toolbar="#assetsBulkEditToolbar"
-                                            data-bulk-button-id="#bulkAssetEditButton"
-                                            data-bulk-form-id="#assetsBulkForm"
-                                            data-click-to-select="true"
-                                            data-export-options='{
-                    "fileName": "export-{{ str_slug($category->name) }}-assets-{{ date('Y-m-d') }}",
-                    "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                    }'
-                                            @elseif ($category->category_type=='accessory')
-                                                data-columns="{{ \App\Presenters\AccessoryPresenter::dataTableLayout() }}"
-                                            data-cookie-id-table="categoryAccessoryTable"
-                                            id="categoryAccessoryTable"
-                                            data-id-table="categoryAccessoryTable"
-                                            data-export-options='{
-                      "fileName": "export-{{ str_slug($category->name) }}-accessories-{{ date('Y-m-d') }}",
-                      "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                      }'
-                                            @elseif ($category->category_type=='consumable')
-                                                data-columns="{{ \App\Presenters\ConsumablePresenter::dataTableLayout() }}"
-                                            data-cookie-id-table="categoryConsumableTable"
-                                            id="categoryConsumableTable"
-                                            data-id-table="categoryConsumableTable"
-                                            data-export-options='{
-                      "fileName": "export-{{ str_slug($category->name) }}-consumables-{{ date('Y-m-d') }}",
-                      "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                      }'
-                                            @elseif ($category->category_type=='component')
-                                                data-columns="{{ \App\Presenters\ComponentPresenter::dataTableLayout() }}"
-                                            data-cookie-id-table="categoryCompomnentTable"
-                                            id="categoryCompomnentTable"
-                                            data-id-table="categoryCompomnentTable"
-                                            data-export-options='{
-                      "fileName": "export-{{ str_slug($category->name) }}-components-{{ date('Y-m-d') }}",
-                      "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                      }'
-                                            @elseif ($category->category_type=='license')
-                                                data-columns="{{ \App\Presenters\LicensePresenter::dataTableLayout() }}"
-                                            data-cookie-id-table="categoryLicenseTable"
-                                            id="categoryLicenseTable"
-                                            data-id-table="categoryLicenseTable"
-                                            data-export-options='{
-                      "fileName": "export-{{ str_slug($category->name) }}-licenses-{{ date('Y-m-d') }}",
-                      "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                      }'
-                                            @endif
+                    @elseif ($category->category_type=='accessory')
 
-                                            data-pagination="true"
-                                            data-search="true"
-                                            data-show-footer="true"
-                                            data-side-pagination="server"
-                                            data-show-columns="true"
-                                            data-show-export="true"
-                                            data-show-refresh="true"
-                                            data-sort-order="asc"
-                                            class="table table-striped snipe-table"
-                                            data-url="{{ route('api.'.$category_type_route.'.index',['category_id'=> $category->id]) }}">
+                        @can('view', \App\Models\Accessory::class)
+                            <x-tabs.nav-item
+                                    name="accessories"
+                                    class="active"
+                                    icon_type="accessory"
+                                    label="{{ trans('general.accessories') }}"
+                                    count="{{ $category->accessories()->count() }}"
+                            />
+                        @endcan
 
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    @elseif ($category->category_type=='license')
+                        @can('view', \App\Models\License::class)
 
-                    <div class="tab-pane fade" id="models">
-                        <div class="row">
-                            <div class="col-md-12">
+                            <x-tabs.nav-item
+                                    name="licenses"
+                                    class="active"
+                                    icon_type="license"
+                                    label="{{ trans('general.licenses') }}"
+                            />
+                        @endcan
 
-                                @can('update', \App\Models\AssetModel::class)
-                                @if ($category->models->count() > 0)
-                                    @if ($category->category_type=='asset')
-                                        @include('partials.models-bulk-actions')
-                                    @endif
-                                @endif
-                                @endcan
+                    @elseif ($category->category_type=='consumable')
 
-                                    <table
-                                            data-columns="{{ \App\Presenters\AssetModelPresenter::dataTableLayout() }}"
-                                            data-cookie-id-table="asssetModelsTable"
-                                            data-pagination="true"
-                                            data-id-table="asssetModelsTable"
-                                            data-search="true"
-                                            data-show-footer="true"
-                                            data-side-pagination="server"
-                                            data-show-columns="true"
-                                            data-toolbar="#modelsBulkEditToolbar"
-                                            data-bulk-button-id="#bulkModelsEditButton"
-                                            data-bulk-form-id="#modelsBulkForm"
-                                            data-show-export="true"
-                                            data-show-refresh="true"
-                                            data-sort-order="asc"
-                                            id="asssetModelsTable"
-                                            class="table table-striped snipe-table"
-                                            data-url="{{ route('api.models.index', ['status' => request('status'), 'category_id' => $category->id]) }}"
-                                            data-export-options='{
-              "fileName": "export-models-{{ date('Y-m-d') }}",
-              "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-              }'>
-                                    </table>
+                        @can('view', \App\Models\Consumable::class)
+                            <x-tabs.nav-item
+                                    name="consumables"
+                                    class="active"
+                                    icon_type="consumable"
+                                    label="{{ trans('general.consumables') }}"
+                                    count="{{ $category->consumables()->count() }}"
+                            />
+                        @endcan
 
-                            </div>
-                        </div>
-                    </div>
+                    @elseif ($category->category_type=='component')
 
-                </div> <!-- .tab-content-->
-            </div> <!-- .nav-tabs-custom -->
-        </div> <!-- .col-md-12> -->
-    </div> <!-- .row -->
-@stop
+                        @can('view', \App\Models\Component::class)
+                            <x-tabs.nav-item
+                                    name="components"
+                                    class="active"
+                                    icon_type="component"
+                                    label="{{ trans('general.components') }}"
+                                    count="{{ $category->components()->count() }}"
+                            />
+                        @endcan
+                    @endif
 
 
 
 
+                </x-slot:tabnav>
 
+                <x-slot:tabpanes>
+
+                    <!-- start assets tab pane -->
+                    @if ($category->category_type=='asset')
+                        @can('view', \App\Models\Asset::class)
+                            <x-tabs.pane name="assets" class="in active">
+                                <x-slot:header>
+                                    {{ trans('general.assets') }}
+                                </x-slot:header>
+
+                                <x-slot:bulkactions>
+                                    <x-table.bulk-assets />
+                                </x-slot:bulkactions>
+
+                                <x-slot:content>
+                                    <x-table
+                                            show_column_search="true"
+                                            show_advanced_search="true"
+                                            buttons="assetButtons"
+                                            api_url="{{ route('api.assets.index', ['category_id' => $category->id, 'itemtype' => 'assets']) }}"
+                                            :presenter="\App\Presenters\AssetPresenter::dataTableLayout()"
+                                            export_filename="export-{{ str_slug($category->name) }}-assets-{{ date('Y-m-d') }}"
+                                    />
+                                </x-slot:content>
+
+                            </x-tabs.pane>
+
+                            <x-tabs.pane name="models">
+                                <x-slot:header>
+                                    {{ trans('general.asset_models') }}
+                                </x-slot:header>
+
+                                <x-slot:bulkactions>
+                                    @include('partials.models-bulk-actions')
+                                </x-slot:bulkactions>
+
+                                <x-slot:content>
+                                    <x-table
+                                        buttons="modelButtons"
+                                        api_url="{{ route('api.models.index', ['status' => e(request('status')), 'category_id' => $category->id]) }}"
+                                        :presenter="\App\Presenters\AssetModelPresenter::dataTableLayout()"
+                                        export_filename="export-{{ str_slug($category->name) }}-models-{{ date('Y-m-d') }}"
+                                    />
+                                </x-slot:content>
+
+                            </x-tabs.pane>
+                        @endcan
+
+                    @elseif ($category->category_type=='license')
+                        @can('view', \App\Models\License::class)
+                            <x-tabs.pane name="licenses" class="in active">
+                                <x-slot:header>
+                                    {{ trans('general.licenses') }}
+                                </x-slot:header>
+
+                                <x-slot:content>
+                                    <x-table
+                                            buttons="licenseButtons"
+                                            api_url="{{ route('api.licenses.index', ['category_id' => $category->id]) }}"
+                                            :presenter="\App\Presenters\LicensePresenter::dataTableLayout()"
+                                            export_filename="export-{{ str_slug($category->name) }}-licenses-{{ date('Y-m-d') }}"
+                                    />
+                                </x-slot:content>
+
+                            </x-tabs.pane>
+                        @endcan
+
+                    @elseif ($category->category_type=='accessory')
+                        @can('view', \App\Models\Accessory::class)
+                            <x-tabs.pane name="accessories" class="in active">
+                                <x-slot:header>
+                                    {{ trans('general.accessories') }}
+                                </x-slot:header>
+
+
+                                <x-slot:content>
+                                    <x-table
+                                        buttons="accessoryButtons"
+                                        api_url="{{ route('api.accessories.index', ['category_id' => $category->id]) }}"
+                                        :presenter="\App\Presenters\AccessoryPresenter::dataTableLayout()"
+                                        export_filename="export-{{ str_slug($category->name) }}-accessories-{{ date('Y-m-d') }}"
+                                    />
+                                </x-slot:content>
+
+                            </x-tabs.pane>
+                        @endcan
+
+                    @elseif ($category->category_type=='consumable')
+                        @can('view', \App\Models\Consumable::class)
+                            <x-tabs.pane name="consumables" class="in active">
+                                <x-slot:header>
+                                    {{ trans('general.consumables') }}
+                                </x-slot:header>
+
+                                <x-slot:content>
+                                    <x-table
+                                            buttons="consumableButtons"
+                                            api_url="{{ route('api.consumables.index', ['category_id' => $category->id]) }}"
+                                            :presenter="\App\Presenters\ConsumablePresenter::dataTableLayout()"
+                                            export_filename="export-{{ str_slug($category->name) }}-consumables-{{ date('Y-m-d') }}"
+                                    />
+                                </x-slot:content>
+
+                            </x-tabs.pane>
+                        @endcan
+
+                    @elseif ($category->category_type=='component')
+                        @can('view', \App\Models\Component::class)
+                            <x-tabs.pane name="components" class="in active">
+                                <x-slot:header>
+                                    {{ trans('general.components') }}
+                                </x-slot:header>
+
+                                <x-slot:content>
+                                    <x-table
+                                            buttons="componentButtons"
+                                            api_url="{{ route('api.components.index', ['category_id' => $category->id]) }}"
+                                            :presenter="\App\Presenters\ComponentPresenter::dataTableLayout()"
+                                            export_filename="export-{{ str_slug($category->name) }}-components-{{ date('Y-m-d') }}"
+                                    />
+                                </x-slot:content>
+
+                            </x-tabs.pane>
+                        @endcan
+                    @endif
+                    <!-- end assets tab pane -->
+
+                </x-slot:tabpanes>
+            </x-tabs>
+        </x-page-column>
+    <x-page-column class="col-md-3">
+
+        <x-box>
+            <x-box.info-panel :infoPanelObj="$category" img_path="{{ app('categories_upload_url') }}">
+
+                <x-slot:before_list>
+
+                    <x-button.wide-edit :item="$category" :route="route('categories.edit', $category->id)" />
+                    <x-button.wide-delete :item="$category" />
+
+                </x-slot:before_list>
+            </x-box.info-panel>
+        </x-box>
+    </x-page-column>
+</x-container>
+
+@endsection
 @section('moar_scripts')
 @include ('partials.bootstrap-table')
 @stop

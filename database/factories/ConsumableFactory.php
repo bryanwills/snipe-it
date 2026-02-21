@@ -7,7 +7,9 @@ use App\Models\Company;
 use App\Models\Consumable;
 use App\Models\Manufacturer;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Models\Supplier;
 
 class ConsumableFactory extends Factory
 {
@@ -26,16 +28,17 @@ class ConsumableFactory extends Factory
     public function definition()
     {
         return [
-            'name' => $this->faker->word(),
             'category_id' => Category::factory(),
-            'user_id' => User::factory()->superuser(),
-            'item_no' => $this->faker->numberBetween(1000000, 50000000),
-            'order_number' => $this->faker->numberBetween(1000000, 50000000),
-            'purchase_date' => $this->faker->dateTimeBetween('-1 years', 'now', date_default_timezone_get())->format('Y-m-d'),
-            'purchase_cost' => $this->faker->randomFloat(2, 1, 50),
-            'qty' => $this->faker->numberBetween(5, 10),
-            'min_amt' => $this->faker->numberBetween($min = 1, $max = 2),
             'company_id' => Company::factory(),
+            'created_by' => User::factory()->superuser(),
+            'item_no' => $this->faker->numberBetween(1000000, 50000000),
+            'min_amt' => $this->faker->numberBetween($min = 1, $max = 2),
+            'name' => $this->faker->words(3, true),
+            'order_number' => $this->faker->numberBetween(1000000, 50000000),
+            'purchase_cost' => $this->faker->randomFloat(2, 1, 50),
+            'purchase_date' => $this->faker->dateTimeBetween('-1 years', 'now', date_default_timezone_get())->format('Y-m-d'),
+            'qty' => $this->faker->numberBetween(5, 10),
+            'supplier_id' => Supplier::factory(),
         ];
     }
 
@@ -87,6 +90,43 @@ class ConsumableFactory extends Factory
                 'qty' => 20,
                 'min_amt' => 2,
             ];
+        });
+    }
+
+    public function withoutItemsRemaining()
+    {
+        return $this->state(function () {
+            return [
+                'qty' => 1,
+            ];
+        })->afterCreating(function (Consumable $consumable) {
+            $user = User::factory()->create();
+
+            $consumable->users()->attach($consumable->id, [
+                'consumable_id' => $consumable->id,
+                'created_by' => $user->id,
+                'assigned_to' => $user->id,
+                'note' => '',
+            ]);
+        });
+    }
+
+    public function requiringAcceptance()
+    {
+        return $this->afterCreating(function (Consumable $consumable) {
+            $consumable->category->update(['require_acceptance' => 1]);
+        });
+    }
+
+    public function checkedOutToUser(User $user = null)
+    {
+        return $this->afterCreating(function (Consumable $consumable) use ($user) {
+            $consumable->users()->attach($consumable->id, [
+                'consumable_id' => $consumable->id,
+                'created_at' => Carbon::now(),
+                'created_by' => User::factory()->create()->id,
+                'assigned_to' => $user->id ?? User::factory()->create()->id,
+            ]);
         });
     }
 }

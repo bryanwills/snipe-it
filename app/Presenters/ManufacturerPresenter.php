@@ -14,7 +14,11 @@ class ManufacturerPresenter extends Presenter
     public static function dataTableLayout()
     {
         $layout = [
-
+            [
+                'field'        => 'checkbox',
+                'checkbox'     => true,
+                'titleTooltip' => trans('general.select_all_none'),
+            ],
             [
                 'field' => 'id',
                 'searchable' => false,
@@ -27,6 +31,7 @@ class ManufacturerPresenter extends Presenter
                 'field' => 'name',
                 'searchable' => true,
                 'sortable' => true,
+                'switchable' => false,
                 'title' => trans('admin/manufacturers/table.name'),
                 'visible' => true,
                 'formatter' => 'manufacturersLinkFormatter',
@@ -45,9 +50,9 @@ class ManufacturerPresenter extends Presenter
                 'searchable' => true,
                 'sortable' => true,
                 'switchable' => true,
-                'title' => trans('admin/manufacturers/table.url'),
+                'title' => trans('general.url'),
                 'visible' => true,
-                'formatter' => 'linkFormatter',
+                'formatter' => 'externalLinkFormatter',
             ],
             [
                 'field' => 'support_url',
@@ -56,7 +61,7 @@ class ManufacturerPresenter extends Presenter
                 'switchable' => true,
                 'title' => trans('admin/manufacturers/table.support_url'),
                 'visible' => true,
-                'formatter' => 'linkFormatter',
+                'formatter' => 'externalLinkFormatter',
             ],
 
             [
@@ -78,44 +83,67 @@ class ManufacturerPresenter extends Presenter
                 'visible' => true,
                 'formatter' => 'emailFormatter',
             ],
+            [
+                'field' => 'warranty_lookup_url',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/manufacturers/table.warranty_lookup_url'),
+                'visible' => false,
+                'formatter' => 'externalLinkFormatter',
+            ],
 
             [
                 'field' => 'assets_count',
                 'searchable' => false,
                 'sortable' => true,
                 'switchable' => true,
-                'title' => ' <span class="hidden-md hidden-lg">Assets</span>'
-                    .'<span class="hidden-xs"><i class="fas fa-barcode fa-lg"></i></span>',
+                'title' => trans('general.assets'),
                 'visible' => true,
+                'class' => 'css-barcode',
             ],
             [
                 'field' => 'licenses_count',
                 'searchable' => false,
                 'sortable' => true,
                 'switchable' => true,
-                'title' => ' <span class="hidden-md hidden-lg">Licenses</span>'
-                    .'<span class="hidden-xs"><i class="far fa-save fa-lg"></i></span>',
+                'title' => trans('general.licenses'),
                 'visible' => true,
+                'class' => 'css-license',
             ],
             [
                 'field' => 'consumables_count',
                 'searchable' => false,
                 'sortable' => true,
                 'switchable' => true,
-                'title' => ' <span class="hidden-md hidden-lg">Consumables</span>'
-                    .'<span class="hidden-xs"><i class="fas fa-tint fa-lg"></i></span>',
+                'title' => trans('general.consumables'),
                 'visible' => true,
+                'class' => 'css-consumable',
             ],
             [
                 'field' => 'accessories_count',
                 'searchable' => false,
                 'sortable' => true,
                 'switchable' => true,
-                'title' => ' <span class="hidden-md hidden-lg">Accessories</span>'
-                    .'<span class="hidden-xs"><i class="far fa-keyboard fa-lg"></i></span>',
+                'title' => trans('general.accessories'),
                 'visible' => true,
-            ],
-            [
+                'class' => 'css-accessory',
+            ], [
+                'field' => 'components_count',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.components'),
+                'visible' => true,
+                'class' => 'css-component',
+            ], [
+                'field' => 'created_by',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.created_by'),
+                'visible' => false,
+                'formatter' => 'usersLinkObjFormatter',
+            ], [
                 'field' => 'created_at',
                 'searchable' => true,
                 'sortable' => true,
@@ -123,9 +151,15 @@ class ManufacturerPresenter extends Presenter
                 'title' => trans('general.created_at'),
                 'visible' => false,
                 'formatter' => 'dateDisplayFormatter',
-            ],
-
-            [
+            ], [
+                'field' => 'updated_at',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.updated_at'),
+                'visible' => false,
+                'formatter' => 'dateDisplayFormatter',
+            ], [
                 'field' => 'actions',
                 'searchable' => false,
                 'sortable' => false,
@@ -133,6 +167,7 @@ class ManufacturerPresenter extends Presenter
                 'title' => trans('table.actions'),
                 'visible' => true,
                 'formatter' => 'manufacturersActionsFormatter',
+                'printIgnore' => true,
             ],
         ];
 
@@ -145,7 +180,11 @@ class ManufacturerPresenter extends Presenter
      */
     public function nameUrl()
     {
-        return (string) link_to_route('manufacturers.show', $this->name, $this->id);
+        if (auth()->user()->can('view', ['\App\Models\Manufacturer', $this])) {
+            return (string)link_to_route('manufacturers.show', e($this->display_name), $this->id);
+        } else {
+            return e($this->display_name);
+        }
     }
 
     /**
@@ -156,4 +195,14 @@ class ManufacturerPresenter extends Presenter
     {
         return route('manufacturers.show', $this->id);
     }
+
+    public function formattedNameLink() {
+
+        if (auth()->user()->can('view', ['\App\Models\Manufacturer', $this])) {
+            return ($this->tag_color ? "<i class='fa-solid fa-fw fa-square' style='color: ".e($this->tag_color)."' aria-hidden='true'></i>" : '').'<a href="'.route('manufacturers.show', e($this->id)).'">'.e($this->display_name).'</a>';
+        }
+
+        return ($this->tag_color ? "<i class='fa-solid fa-fw fa-square' style='color: ".e($this->tag_color)."' aria-hidden='true'></i>" : '').e($this->display_name);
+    }
+
 }

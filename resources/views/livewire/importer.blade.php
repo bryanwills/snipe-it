@@ -9,7 +9,7 @@
 {{-- alert --}}
 @if($message != '')
     <div class="col-md-12" class="{{ $message_type }}">
-        <div class="alert alert-{{ $this->message_type }} ">
+        <div class="alert alert-{{ $this->message_type }}">
             <button type="button" class="close" wire:click="$set('message','')">&times;</button>
             @if($message_type == 'success')
                 <i class="fas fa-check faa-pulse animated" aria-hidden="true"></i>
@@ -20,31 +20,30 @@
     </div>
 @endif
 
-@if($import_errors)
-            <div class="box">
+        @if($import_errors)
+          <div class="col-md-12">
+            <div class="box box-default">
                 <div class="box-body">
                     <div class="alert alert-warning">
-                        <strong><i class="fa fa-warning info" aria-hidden="true"></i> {{ trans('general.warning', ['warning'=> trans('general.errors_importing')]) }}</strong>
+
+                        <i class="fa fa-warning info" aria-hidden="true"></i> <strong>{{ trans('general.warning', ['warning'=> trans('general.errors_importing')]) }}</strong>
                     </div>
 
                     <div class="errors-table">
                         <table class="table table-striped table-bordered" id="errors-table">
                             <thead>
                             <th>{{ trans('general.item') }}</th>
+                            <th>{{ trans('admin/custom_fields/general.field') }}</th>
                             <th>{{ trans('general.error') }}</th>
                             </thead>
                             <tbody>
-                            @php \Log::error("import errors are: ".print_r($import_errors,true)); @endphp
                             @foreach($import_errors AS $key => $actual_import_errors)
-                                @php \Log::error("Key is: $key"); @endphp
                                 @foreach($actual_import_errors AS $table => $error_bag)
-                                    @php \Log::error("Table is: $table"); @endphp
                                     @foreach($error_bag as $field => $error_list)
-                                        @php \Log::error("Field is: $field"); @endphp
                                         <tr>
-                                            <td>{{ $activeFile->file_path ?? "Unknown File" }}</td>
+                                            <td><b>{{ $key }}</b></td>
+                                            <td><b>{{ $field }}</b></td>
                                             <td>
-                                                <b>{{ $field }}:</b>
                                                 <span>{{ implode(", ",$error_list) }}</span>
                                                 <br />
                                             </td>
@@ -57,29 +56,31 @@
                     </div>
                 </div>
             </div>
+       </div>
 @endif
 
             <div class="col-md-9">
-                <div class="box">
+                <div class="box box-default">
                     <div class="box-body">
                         <div class="row">
 
                             <div class="col-md-12">
+
                                 @if($progress != -1)
-                                    <div class="col-md-9" style="padding-bottom:20px" id='progress-container'>
-                                        <div class="progress progress-striped-active" style="margin-top: 8px"> {{-- so someof these values are in importer.vue! --}}
-                                            <div id='progress-bar' class="progress-bar {{ $progress_bar_class }}" role="progressbar" style="width: {{ $progress }}%">
-                                                <span id='progress-text'>{{ $progress_message }}</span>
+                                    <div class="col-md-10 col-sm-5 col-xs-12" style="height: 33px;" id='progress-container'>
+                                        <div class="progress progress-striped-active" style="height: 100%;">
+                                            <div id='progress-bar' class="progress-bar progress-bar-striped {{ $progress_bar_class }}" role="progressbar" style="width: {{ $progress }}%">
+                                                <h4 id="progress-text">{!! $progress_message  !!}</h4>
                                             </div>
                                         </div>
                                     </div>
                                 @endif
 
-                                <div class="col-md-3 text-right pull-right">
+                                <div class="col-md-2 col-sm-5 col-xs-12 text-right pull-right">
 
                                     <!-- The fileinput-button span is used to style the file input field as button -->
                                     @if (!config('app.lock_passwords'))
-                                        <span class="btn btn-primary fileinput-button">
+                                        <span class="btn btn-theme btn-block fileinput-button">
                                         <span>{{ trans('button.select_file') }}</span>
                                          <!-- The file input field used as target for the file upload widget -->
                                         <label for="files[]"><span class="sr-only">{{ trans('admin/importer/general.select_file') }}</span></label>
@@ -96,21 +97,23 @@
                         </div>
                         <div class="row">
                             <div class="col-md-12 table-responsive" style="padding-top: 30px;">
-                                <table data-pagination="true"
-                                        data-id-table="upload-table"
-                                        data-search="true"
+                                <table data-id-table="upload-table"
                                         data-side-pagination="client"
                                         id="upload-table"
                                         class="col-md-12 table table-striped snipe-table">
 
                                     <tr>
-                                        <th class="col-md-6">
+                                        <th>
                                             {{ trans('general.file_name') }}
                                         </th>
-                                        <th class="col-md-3">
+                                        <th>
                                             {{ trans('general.created_at') }}
                                         </th>
-                                        <th class="col-md-1">
+                                        <th>
+                                            {{ trans('general.created_by') }}
+                                        </th>
+
+                                        <th>
                                             {{ trans('general.filesize') }}
                                         </th>
                                         <th class="col-md-1 text-right">
@@ -118,82 +121,132 @@
                                         </th>
                                     </tr>
 
-                                    @foreach($files as $currentFile)
+                                    @foreach($this->files as $currentFile)
 
-                                    		<tr style="{{ ($activeFile && ($currentFile->id == $activeFile->id)) ? 'font-weight: bold' : '' }}" class="{{ ($activeFile && ($currentFile->id == $activeFile->id)) ? 'warning' : '' }}">
-                                    			<td class="col-md-6">{{ $currentFile->file_path }}</td>
-                                    			<td class="col-md-3">{{ Helper::getFormattedDateObject($currentFile->created_at, 'datetime', false) }}</td>
-                                    			<td class="col-md-1">{{ Helper::formatFilesizeUnits($currentFile->filesize) }}</td>
-                                                <td class="col-md-1 text-right">
-                                                    <button class="btn btn-sm btn-info" wire:click="selectFile({{ $currentFile->id }})">
-                                                        <i class="fas fa-retweet fa-fw" aria-hidden="true"></i>
+                                    		<tr style="{{ ($this->activeFile && ($currentFile->id == $this->activeFile->id)) ? 'font-weight: bold' : '' }}" class="{{ ($this->activeFile && ($currentFile->id == $this->activeFile->id)) ? '' : '' }}">
+                                    			<td>
+
+                                                    @if ((auth()->user()->id == $currentFile->adminuser?->id) || (auth()->user()->isSuperUser()))
+                                                        <a href="{{ route('imports.download', $currentFile) }}">{{ $currentFile->file_path }}</a>
+                                                    @else
+                                                        {{ $currentFile->file_path }}
+                                                    @endif
+                                                </td>
+                                    			<td>{{ Helper::getFormattedDateObject($currentFile->created_at, 'datetime', false) }}</td>
+                                                <td>
+                                                    @if ($currentFile->adminuser)
+                                                        @can('view', $currentFile->adminuser)
+                                                            <a href="{{ route('users.show', $currentFile->adminuser) }}">{{ $currentFile->adminuser->display_name }}</a>
+                                                        @else
+                                                            {{ $currentFile->adminuser->display_name }}
+                                                        @endcan
+                                                    @else
+                                                        ---
+                                                    @endif
+
+                                                </td>
+                                    			<td>{{ Helper::formatFilesizeUnits($currentFile->filesize) }}</td>
+                                                <td class="col-md-1 text-right" style="white-space: nowrap;">
+                                                    <button class="btn btn-sm btn-info" wire:click="selectFile({{ $currentFile->id }})" data-tooltip="true" data-title="{{ trans('general.import_this_file') }}">
+                                                        <i class="fa-solid fa-list-check" aria-hidden="true"></i>
                                                         <span class="sr-only">{{ trans('general.import') }}</span>
                                                     </button>
-                                                    <button class="btn btn-sm btn-danger" wire:click="destroy({{ $currentFile->id }})">
-                                                        <i class="fas fa-trash icon-white" aria-hidden="true"></i><span class="sr-only"></span></button>
+
+                                                    @if ((auth()->user()->id == $currentFile->adminuser?->id) || (auth()->user()->isSuperUser()))
+                                                        <a href="#" wire:click.prevent="$set('activeFileId',null)" data-tooltip="true" data-title="{{ trans('general.delete') }}">
+                                                            <button class="btn btn-sm btn-danger" wire:click="destroy({{ $currentFile->id }})">
+                                                                <i class="fas fa-trash icon-white" aria-hidden="true"></i>
+                                                                <span class="sr-only">{{ trans('general.delete') }}</span>
+                                                            </button>
+                                                        </a>
+                                                    @else
+                                                        <a data-tooltip="true" class="btn btn-sm btn-danger disabled" data-title="{{ trans('general.delete') }}">
+                                                            <i class="fas fa-trash icon-white" aria-hidden="true"></i>
+                                                            <span class="sr-only">{{ trans('general.delete') }}</span>
+                                                        </a>
+                                                    @endif
+
                                     			</td>
                                     		</tr>
 
-                                            @if( $currentFile && $activeFile && ($currentFile->id == $activeFile->id))
-                                                <tr class="warning">
-                                                    <td colspan="4">
+                                            @if( $currentFile && $this->activeFile && ($currentFile->id == $this->activeFile->id))
+                                                <tr>
+                                                    <td colspan="5">
 
-                                                        <div class="col-md-12">
+                                                        <div class="form-group">
 
-                                                            <div class="form-group col-md-12">
-
-                                                                <label for="activeFile.import_type" class="col-md-3 col-xs-12 text-right">
+                                                                <label for="typeOfImport" class="col-md-3 col-xs-12 control-label">
                                                                     {{ trans('general.import_type') }}
                                                                 </label>
 
-                                                                <div class="col-md-9 col-xs-12">
-                                                                    {{ Form::select('activeFile.import_type', $importTypes, $activeFile->import_type, [
-                                                                        'id' => 'import_type',
-                                                                        'class' => 'livewire-select2',
-                                                                        'style' => 'min-width: 350px',
-                                                                        'data-placeholder' => trans('general.select_var', ['thing' => trans('general.import_type')]), /* TODO: translate me */
-                                                                        'placeholder' => '', //needed so that the form-helper will put an empty option first
-                                                                        'data-minimum-results-for-search' => '-1', // Remove this if the list gets long enough that we need to search
-                                                                        'data-livewire-component' => $_instance->id
-                                                                    ]) }}
+                                                            <div class="col-md-9 col-xs-12">
+                                                                <x-input.select
+                                                                    name="typeOfImport"
+                                                                    id="import_type"
+                                                                    :options="$importTypes"
+                                                                    :selected="$typeOfImport"
+                                                                    :for-livewire="true"
+                                                                    :include-empty="true"
+                                                                    :data-placeholder="trans('general.select_var', ['thing' => trans('general.import_type')])"
+                                                                    {{--placeholder needed so that the form-helper will put an empty option first--}}
+                                                                    placeholder=""
+                                                                    {{--Remove this if the list gets long enough that we need to search--}}
+                                                                    data-minimum-results-for-search="-1"
+                                                                    style="min-width: 350px;"
+                                                                />
+                                                                    @if ($typeOfImport === 'asset' && $snipeSettings->auto_increment_assets == 0)
+                                                                        <p class="help-block">
+                                                                            {{ trans('general.auto_incrementing_asset_tags_disabled_so_tags_required') }}
+                                                                        </p>
+                                                                    @endif
                                                                 </div>
                                                             </div>
 
-                                                            <div class="form-group col-md-12">
-                                                                <label for="update" class="col-md-9 col-md-offset-3 col-xs-12" wire:ignore>
-                                                                    <input type="checkbox" class="minimal livewire-icheck" name="update" data-livewire-component="{{ $_instance->id }}">
+                                                            <div class="form-group col-md-9 col-md-offset-3">
+                                                                <label class="form-control">
+                                                                    <input type="checkbox" name="update" data-livewire-component="{{ $this->getId() }}" wire:model.live="update">
                                                                     {{ trans('general.update_existing_values') }}
                                                                 </label>
-                                                            </div>
 
-                                                            <div class="form-group col-md-12">
-                                                                <label for="send_welcome" class="col-md-9 col-md-offset-3 col-xs-12" wire:ignore>
-                                                                    <input type="checkbox" class="minimal livewire-icheck" name="send_welcome" data-livewire-component="{{ $_instance->id }}">
+                                                                @if ($typeOfImport === 'asset' && $snipeSettings->auto_increment_assets == 1 && $update)
+                                                                    <p class="help-block">
+                                                                        {{ trans('general.auto_incrementing_asset_tags_enabled_so_now_assets_will_be_created') }}
+                                                                    </p>
+                                                                @endif
+
+
+
+                                                                @if ($typeOfImport === 'user')
+                                                                <label class="form-control">
+                                                                    <input type="checkbox" name="send_welcome" data-livewire-component="{{ $this->getId() }}" wire:model.live="send_welcome">
                                                                     {{ trans('general.send_welcome_email_to_users') }}
                                                                 </label>
-                                                            </div>
+                                                                    <p class="help-block"> {{ trans('general.send_welcome_email_import_help') }}</p>
+                                                                @endif
 
-                                                            <div class="form-group col-md-12">
-                                                                <label for="run_backup" class="col-md-9 col-md-offset-3 col-xs-12" wire:ignore>
-                                                                    <input type="checkbox" class="minimal livewire-icheck" name="run_backup" data-livewire-component="{{ $_instance->id }}">
-                                                                    {{ trans('general.back_before_importing') }}
+                                                                <label class="form-control">
+                                                                    <input type="checkbox" name="run_backup" data-livewire-component="{{ $this->getId() }}" wire:model.live="run_backup">
+                                                                   {{ trans('general.back_before_importing') }}
                                                                 </label>
+
                                                             </div>
 
 
-                                                            @if ($statusText)
-                                                                <div class="form-group">
-                                                                    <div class="alert col-md-8 col-md-offset-2 {{ $statusType == 'success' ? 'alert-success' : ($statusType == 'error' ? 'alert-danger' : 'alert-info') }}" style="text-align:left">
-                                                                        {{ $statusText }}
-                                                                    </div><!-- /alert -->
+                                                            @if($statusText)
+                                                                <div class="alert col-md-8 col-md-offset-3{{ $statusType == 'success' ? ' alert-success' : ($statusType == 'error' ? ' alert-danger' : ' alert-info') }}" style="padding-top: 20px;">
+                                                                    {!! $statusText !!}
                                                                 </div>
                                                             @endif
 
 
-                                                            @if ($activeFile->import_type)
+                                                            @if ($typeOfImport)
                                                                 <div class="form-group col-md-12">
                                                                     <hr style="border-top: 1px solid lightgray">
-                                                                    <h3><i class="{{ Helper::iconTypeByItem($activeFile->import_type) }}"></i> Map {{ ucwords($activeFile->import_type) }} Import Fields</h3>
+                                                                    <h3>
+                                                                        <i class="{{ \App\Helpers\IconHelper::icon($typeOfImport) }}">
+                                                                        </i>
+                                                                        {{ trans('general.map_fields', ['item_type' => ucwords($typeOfImport)]) }}
+                                                                       </h3>
                                                                     <hr style="border-top: 1px solid lightgray">
                                                                 </div>
                                                                 <div class="form-group col-md-12">
@@ -208,29 +261,41 @@
                                                                     </div>
                                                                 </div><!-- /div row -->
 
-                                                                @if($activeFile->header_row)
+                                                                @if(! empty($headerRow))
 
-                                                                    @foreach($activeFile->header_row as $index => $header)
+                                                                    @foreach($headerRow as $index => $header)
 
                                                                         <div class="form-group col-md-12" wire:key="header-row-{{ $index }}">
 
                                                                             <label for="field_map.{{ $index }}" class="col-md-3 control-label text-right">{{ $header }}</label>
                                                                             <div class="col-md-4">
-
-                                                                                {{ Form::select('field_map.'.$index, $columnOptions[$activeFile->import_type], @$field_map[$index],
-                                                                                    [
-                                                                                        'class' => 'mappings livewire-select2',
-                                                                                        'placeholder' => 'Do Not Import',
-                                                                                        'style' => 'min-width: 100%',
-                                                                                        'data-livewire-component' => $_instance->id
-                                                                                    ],[
-                                                                                        '-' => ['disabled' => true] // this makes the "-----" line unclickable
-                                                                                    ])
-                                                                                }}
+                                                                                <x-input.select
+                                                                                    :name="'field_map.'.$index"
+                                                                                    :for-livewire="true"
+                                                                                    :placeholder="trans('general.importer.do_not_import')"
+                                                                                    class="mappings"
+                                                                                    style="min-width: 100%;"
+                                                                                >
+                                                                                    <option selected="selected" value="">Do Not Import</option>
+                                                                                    @foreach($columnOptions[$typeOfImport] as $key => $value)
+                                                                                        <option
+                                                                                            value="{{ $key }}"
+                                                                                            @selected(@$field_map[$index] === $key)
+                                                                                            @disabled($key === '-')
+                                                                                        >{{ $value }}</option>
+                                                                                    @endforeach
+                                                                                </x-input.select>
                                                                             </div>
+									                                    @if (($this->activeFile->first_row) && (array_key_exists($index, $this->activeFile->first_row)))
                                                                             <div class="col-md-5">
-                                                                                <p class="form-control-static">{{ str_limit($activeFile->first_row[$index], 50, '...') }}</p>
+                                                                                <p class="form-control-static">{{ str_limit($this->activeFile->first_row[$index], 50, '...') }}</p>
                                                                             </div>
+                                                                        @else
+                                                                            @php
+                                                                            $statusText = trans('help.empty_file');
+                                                                            $statusType = 'info';
+                                                                            @endphp
+                                                                        @endif
                                                                         </div><!-- /div row -->
                                                                     @endforeach
                                                                 @else
@@ -239,26 +304,26 @@
 
                                                                 <div class="form-group col-md-12">
                                                                     <div class="col-md-3 text-left">
-                                                                        <a href="#" wire:click="$set('activeFile',null)">{{ trans('general.cancel') }}</a>
+                                                                        <a href="#" wire:click.prevent="$set('activeFileId',null)">{{ trans('general.cancel') }}</a>
                                                                     </div>
                                                                     <div class="col-md-9">
-                                                                        <button type="submit" class="btn btn-primary col-md-5" id="import">Import</button>
+                                                                        <button type="submit" class="btn btn-primary col-md-5" id="import">{{ trans('admin/hardware/message.import.import_button') }}</button>
                                                                         <br><br>
                                                                     </div>
                                                                 </div>
 
                                                                 @if($statusText)
-                                                                    <div class="alert col-md-12 col-md-offset-2 {{ $statusType == 'success' ? 'alert-success' : ($statusType == 'error' ? 'alert-danger' : 'alert-info') }}" style="padding-top: 20px;">
-                                                                        {{ $statusText }}
+                                                                    <div class="alert col-md-8 col-md-offset-3{{ $statusType == 'success' ? ' alert-success' : ($statusType == 'error' ? ' alert-danger' : ' alert-info') }}" style="padding-top: 20px;">
+                                                                        {!! $statusText !!}
                                                                     </div>
                                                                 @endif
                                                             @else
-                                                                <div class="form-group col-md-12">
+                                                                <div class="form-group col-md-10">
                                                                     <div class="col-md-3 text-left">
-                                                                        <a href="#" wire:click="$set('activeFile',null)"><?php echo e(trans('general.cancel')); ?></a>
+                                                                        <a href="#" wire:click.prevent="$set('activeFileId',null)">{{ trans('general.cancel') }}</a>
                                                                     </div>
                                                                 </div>
-                                                            @endif {{-- end of if ... activeFile->import_type --}}
+                                                            @endif {{-- end of if ... $typeOfImport --}}
 
                                                         </div><!-- /div v-show -->                                                    </td>
                                                 </tr>
@@ -278,16 +343,16 @@
 
         </div>
 </div>
-@push('js')
+@script
     <script>
 
         {{-- TODO: Maybe change this to the file upload thing that's baked-in to Livewire? --}}
         $('#fileupload').fileupload({
             dataType: 'json',
             done: function(e, data) {
-                @this.progress_bar_class = 'progress-bar-success';
-                @this.progress_message = '{{ trans('general.notification_success') }}'; // TODO - we're already round-tripping to the server here - I'd love it if we could get internationalized text here
-                @this.progress = 100;
+                $wire.$set('progress_bar_class', 'progress-bar-success');
+                $wire.$set('progress_message', '<i class="fas fa-check faa-pulse animated"></i> {{ trans('general.notification_success') }}');
+                $wire.$set('progress', 100);
             },
             add: function(e, data) {
                 data.headers = {
@@ -295,56 +360,49 @@
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content')
                 };
                 data.process().done( function () {data.submit();});
-                @this.progress = 0;
+                $wire.$set('progress', 0);
+                $wire.clearMessage();
             },
             progress: function(e, data) {
-                @this.progress = parseInt((data.loaded / data.total * 100, 10));
-                @this.progress_message = @this.progress+'% Complete'; // TODO - make this use general.percent_complete as a translation, passing :percent as a variable
+                $wire.$set('progress', parseInt((data.loaded / data.total * 100, 10)));
+                $wire.$set('progress_message', '{{ trans('general.uploading') }}');
             },
-            fail: function(e, data) {
-                @this.progress_bar_class = "progress-bar-danger";
-                @this.progress = 100;
-
-                var error_message = ''
-                for(var i in data.jqXHR.responseJSON.messages) {
-                    error_message += i+": "+data.jqXHR.responseJSON.messages[i].join(", ")
-                }
-                @this.progress_message = error_message;
+            fail: function() {
+                $wire.$set('progress_bar_class', "progress-bar-danger");
+                $wire.$set('progress', 100);
+                $wire.$set('progress_message', '<i class="fas fa-exclamation-triangle faa-pulse animated"></i> {{ trans('general.upload_error') }}');
             }
         })
 
         // For the importFile part:
         $(function () {
-            // initialize iCheck for use with livewire
-            $('.minimal.livewire-icheck').iCheck({
-                checkboxClass: 'icheckbox_minimal-blue',
-            })
+
 
             // we have to hook up to the `<tr id='importer-file'>` at the root of this display,
             // because the #import button isn't visible until you click an import_type
             $('#upload-table').on('click', '#import', function () {
-                if(!@this.activeFile.import_type) {
-                    @this.statusType='error';
-                    @this.statusText= "An import type is required... "; //TODO: translate?
+                if (!$wire.$get('typeOfImport')) {
+                    $wire.$set('statusType', 'error');
+                    $wire.$set('statusText', "An import type is required... "); //TODO: translate?
                     return;
                 }
-                @this.statusType ='pending';
-                @this.statusText = "{{ trans('admin/hardware/form.processing_spinner') }}";
-                @this.generate_field_map().then(function (mappings_raw) {
+                $wire.$set('statusType', 'pending');
+                $wire.$set('statusText', '<i class="fa fa-spinner fa-spin" aria-hidden="true"></i> {{ trans('admin/hardware/form.processing_spinner') }}');
+                $wire.generate_field_map().then(function (mappings_raw) {
                     var mappings = JSON.parse(mappings_raw)
                     // console.warn("Here is the mappings:")
                     // console.dir(mappings)
-                    // console.warn("Uh, active file id is, I guess: "+@this.activeFile.id)
-                    var this_file = @this.file_id; // okay, I actually don't know what I'm doing here.
+                    // console.warn("Uh, active file id is, I guess: "+$wire.$get('activeFile.id'))
+                    var file_id = $wire.$get('activeFileId');
                     $.post({
                         {{-- I want to do something like: route('api.imports.importFile', $activeFile->id) }} --}}
-                        url: "api/v1/imports/process/"+this_file, // maybe? Good a guess as any..FIXME. HARDCODED DUMB FILE
+                        url: "api/v1/imports/process/"+file_id, // maybe? Good a guess as any..FIXME. HARDCODED DUMB FILE
                         contentType: 'application/json',
                         data: JSON.stringify({
-                            'import-update': !!@this.update,
-                            'send-welcome': !!@this.send_welcome,
-                            'import-type': @this.activeFile.import_type,
-                            'run-backup': !!@this.run_backup,
+                            'import-update': !!$wire.$get('update'),
+                            'send-welcome': !!$wire.$get('send_welcome'),
+                            'import-type': $wire.$get('typeOfImport'),
+                            'run-backup': !!$wire.$get('run_backup'),
                             'column-mappings': mappings
                         }),
                         headers: {
@@ -352,31 +410,42 @@
                         }
                     }).done( function (body) {
                         // Success
-                        @this.statusType="success";
-                        @this.statusText = "{{ trans('general.success_redirecting') }}";
+                        $wire.$set('statusType', "success");
+                        $wire.$set('statusText', "{{ trans('general.success_redirecting') }}");
                         // console.dir(body)
                         window.location.href = body.messages.redirect_url;
                     }).fail( function (jqXHR, textStatus, error) {
                         // Failure
                         var body = jqXHR.responseJSON
-                        if(body.status == 'import-errors') {
-                            @this.emit('importError', body.messages);
-                            @this.import_errors = body.messages
+                        if((body) && (body.status) && body.status == 'import-errors') {
+                            $wire.$dispatch('importError', body.messages);
+                            $wire.$set('import_errors', body.messages);
 
-                            @this.statusType='error';
-                            @this.statusText = "Error";
+                            $wire.$set('statusType', 'error');
+                            $wire.$set('statusText', "Error");
+
+                        //  If Slack/notifications hits API thresholds, we *do* 500, but we never
+                        //  actually surface that info.
+                        //
+                        // A 500 on notifications doesn't mean your import failed, so this is a confusing state.
+                        //
+                        //  Ideally we'd have a message like "Your import worked, but not all
+                        // notifications could be sent".
                         } else {
-                            console.warn("Not import-errors, just regular errors")
-                            console.dir(body)
-{{--                            @this.emit('alert', body.error)--}}
-                            @this.message_type="danger"
-                            @this.message = body.error
+                            console.warn("Not import-errors, just regular errors - maybe API limits")
+                            $wire.$set('message_type', "warning");
+                            if ((body) && (error in body)) {
+                                $wire.$set('message', body.error ? body.error : "Unknown error - might just be throttling by notifications.");
+                            } else {
+                                $wire.$set('message', "{{ trans('general.importer_generic_error') }}");
+                            }
+
                         }
-                        @this.activeFile = null; //@this.set('hideDetails')
+                        $wire.$set('activeFileId', null); //$wire.$set('hideDetails')
                     });
                 })
                 return false;
             });})
 
     </script>
-@endpush
+@endscript

@@ -6,7 +6,7 @@
       "it asset"
     ],
     "website": "https://snipeitapp.com/",
-    "repository": "https://github.com/snipe/snipe-it",
+    "repository": "https://github.com/grokability/snipe-it",
     "logo": "https://pbs.twimg.com/profile_images/976748875733020672/K-HnZCCK_400x400.jpg",
     "success_url": "/setup",
     "env": {
@@ -38,7 +38,7 @@
         "description": "The maximum number of search results that can be returned at one time.",
         "value": "500"
       },
-      "MAIL_DRIVER": {
+      "MAIL_MAILER": {
         "description": "Mail driver - Generally SMTP on Heroku - https://snipe-it.readme.io/docs/configuration#required-outgoing-mail-settings",
         "value": "smtp"
       },
@@ -58,9 +58,9 @@
         "description": "SMTP Server Password",
         "value": "YOURPASSWORD"
       },
-      "MAIL_ENCRYPTION": {
-        "description": "Encryption protocol for email sending.",
-        "value": "null"
+      "MAIL_TLS_VERIFY_PEER": {
+        "description": "Ensure validity of TLS certificate on remote mail server",
+        "value": true
       },
       "MAIL_FROM_ADDR": {
         "description": "Email from address",

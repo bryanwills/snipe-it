@@ -1,16 +1,20 @@
 <?php
 
 return [
-    'about_asset_depreciations'  			=> 'Info Amortización Equipos',
-    'about_depreciations'  					=> 'Puedes configurar clases de amortización para amortizar equipos de forma lineal.',
-    'asset_depreciations'  					=> 'Amortizaciones',
-    'create'  					            => 'Crear Amortización',
-    'depreciation_name'  					=> 'Nombre Amortización',
-    'depreciation_min'                      => 'Valor mínimo de amortización',
-    'number_of_months'  					=> 'Meses',
-    'update'  					            => 'Actualizar Amortización',
+    'about_asset_depreciations'  			=> 'Sobre amortización de activos',
+    'about_depreciations'  					=> 'Usted puede configurar las depreciaciones de activos, puede depreciar activos (lineales), semestralmente con condición, o semestralmente siempre aplicado.',
+    'asset_depreciations'  					=> 'Depreciación de activos',
+    'create'  					            => 'Crear amortización',
+    'depreciation_name'  					=> 'Nombre amortización',
+    'depreciation_min'                      => 'Valor mínimo de depreciación',
+    'number_of_months'  					=> 'Número de meses',
+    'update'  					            => 'Actualizar amortización',
     'depreciation_min'                      => 'Valor mínimo después de depreciado',
     'no_depreciations_warning'               => '<strong>Advertencia: </strong>
-                      No tiene ninguna amortización configurada.
-                      Por favor, configure al menos una amortización para ver el informe de amortizaciones.',
+                      No tiene ninguna depreciación configurada.
+                      Por favor, configure al menos una depreciación para ver el informe de depreciación.',
+    'depreciation_method'                   => 'Informe de amortización',
+    'linear_depreciation'                   => 'Lineal (por defecto)',
+    'half_1'                                => 'Convención de Half-year siempre aplicada',
+    'half_2'                                => 'Convención Half-year aplicada con condición',
 ];

@@ -15,6 +15,11 @@ class CategoryPresenter extends Presenter
     {
         $layout = [
             [
+                'field'        => 'checkbox',
+                'checkbox'     => true,
+                'titleTooltip' => trans('general.select_all_none'),
+            ],
+            [
                 'field' => 'id',
                 'searchable' => false,
                 'sortable' => true,
@@ -25,6 +30,7 @@ class CategoryPresenter extends Presenter
                 'field' => 'name',
                 'searchable' => true,
                 'sortable' => true,
+                'switchable' => false,
                 'title' => trans('general.name'),
                 'visible' => true,
                 'formatter' => 'categoriesLinkFormatter',
@@ -77,18 +83,41 @@ class CategoryPresenter extends Presenter
                 'visible' => true,
                 "formatter" => 'trueFalseFormatter',
             ], [
-                'field' => 'created_at',
+                'field' => 'tag_color',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.tag_color'),
+                'visible' => false,
+                'formatter' => 'colorTagFormatter',
+            ], [
+                'field' => 'notes',
                 'searchable' => true,
                 'sortable' => true,
                 'visible' => false,
+                'title' => trans('general.notes'),
+            ], [
+                'field' => 'created_by',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.created_by'),
+                'visible' => false,
+                'formatter' => 'usersLinkObjFormatter',
+            ], [
+                'field' => 'created_at',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
                 'title' => trans('general.created_at'),
+                'visible' => false,
                 'formatter' => 'dateDisplayFormatter',
             ], [
                 'field' => 'updated_at',
-                'searchable' => true,
+                'searchable' => false,
                 'sortable' => true,
-                'visible' => false,
+                'switchable' => true,
                 'title' => trans('general.updated_at'),
+                'visible' => false,
                 'formatter' => 'dateDisplayFormatter',
             ], [
                 'field' => 'actions',
@@ -96,7 +125,8 @@ class CategoryPresenter extends Presenter
                 'sortable' => false,
                 'switchable' => false,
                 'title' => trans('table.actions'),
-		'formatter' => 'categoriesActionsFormatter',
+		        'formatter' => 'categoriesActionsFormatter',
+                'printIgnore' => true,
             ],
         ];
 
@@ -109,7 +139,11 @@ class CategoryPresenter extends Presenter
      */
     public function nameUrl()
     {
-        return (string) link_to_route('categories.show', $this->name, $this->id);
+        if (auth()->user()->can('view', ['\App\Models\Category', $this])) {
+            return (string)link_to_route('categories.show', e($this->display_name), $this->id);
+        } else {
+            return e($this->display_name);
+        }
     }
 
     /**
@@ -119,5 +153,14 @@ class CategoryPresenter extends Presenter
     public function viewUrl()
     {
         return route('categories.show', $this->id);
+    }
+
+    public function formattedNameLink() {
+
+        if (auth()->user()->can('view', ['\App\Models\Category', $this])) {
+            return ($this->tag_color ? "<i class='fa-solid fa-fw fa-square' style='color: ".e($this->tag_color)."' aria-hidden='true'></i>" : '').'<a href="'.route('categories.show', e($this->id)).'">'.e($this->name).'</a>';
+        }
+
+        return ($this->tag_color ? "<i class='fa-solid fa-fw fa-square' style='color: ".e($this->tag_color)."' aria-hidden='true'></i>" : '').e($this->name);
     }
 }

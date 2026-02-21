@@ -7,10 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ImageUploadRequest;
 use App\Models\Accessory;
 use App\Models\Company;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Redirect;
+use \Illuminate\Contracts\View\View;
+use \Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Log;
 
 /** This controller handles all actions related to Accessories for
  * the Snipe-IT Asset Management application.
@@ -26,24 +27,19 @@ class AccessoriesController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @see AccessoriesController::getDatatable() method that generates the JSON response
      * @since [v1.0]
-     * @return View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function index()
+    public function index() : View
     {
         $this->authorize('index', Accessory::class);
-
-        return view('accessories/index');
+        return view('accessories.index');
     }
 
     /**
      * Returns a view with a form to create a new Accessory.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @return View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function create()
+    public function create() : View
     {
         $this->authorize('create', Accessory::class);
         $category_type = 'accessory';
@@ -57,10 +53,8 @@ class AccessoriesController extends Controller
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @param ImageUploadRequest $request
-     * @return Redirect
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function store(ImageUploadRequest $request)
+    public function store(ImageUploadRequest $request) : RedirectResponse
     {
         $this->authorize(Accessory::class);
         
@@ -77,18 +71,36 @@ class AccessoriesController extends Controller
         $accessory->manufacturer_id         = request('manufacturer_id');
         $accessory->model_number            = request('model_number');
         $accessory->purchase_date           = request('purchase_date');
-        $accessory->purchase_cost           = Helper::ParseCurrency(request('purchase_cost'));
+        $accessory->purchase_cost           = request('purchase_cost');
         $accessory->qty                     = request('qty');
-        $accessory->user_id                 = Auth::user()->id;
+        $accessory->created_by              = auth()->id();
         $accessory->supplier_id             = request('supplier_id');
         $accessory->notes                   = request('notes');
 
-        $accessory = $request->handleImages($accessory);
+        if ($request->has('use_cloned_image')) {
+            $cloned_model_img = Accessory::select('image')->find($request->input('clone_image_from_id'));
+            if ($cloned_model_img) {
+                $new_image_name = 'clone-'.date('U').'-'.$cloned_model_img->image;
+                $new_image = 'accessories/'.$new_image_name;
+                Storage::disk('public')->copy('accessories/'.$cloned_model_img->image, $new_image);
+                $accessory->image = $new_image_name;
+            }
+
+        } else {
+            $accessory = $request->handleImages($accessory);
+        }
+
+        if($request->input('redirect_option') === 'back'){
+            session()->put(['redirect_option' => 'index']);
+        } else {
+            session()->put(['redirect_option' => $request->input('redirect_option')]);
+        }
 
         // Was the accessory created?
         if ($accessory->save()) {
             // Redirect to the new accessory  page
-            return redirect()->route('accessories.index')->with('success', trans('admin/accessories/message.create.success'));
+            return Helper::getRedirectOption($request, $accessory->id, 'Accessories')
+                ->with('success', trans('admin/accessories/message.create.success'));
         }
 
         return redirect()->back()->withInput()->withErrors($accessory->getErrors());
@@ -99,20 +111,11 @@ class AccessoriesController extends Controller
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @param  int $accessoryId
-     * @return View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function edit($accessoryId = null)
+    public function edit(Accessory $accessory) : View | RedirectResponse
     {
-
-        if ($item = Accessory::find($accessoryId)) {
-            $this->authorize($item);
-
-            return view('accessories/edit', compact('item'))->with('category_type', 'accessory');
-        }
-
-        return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.does_not_exist'));
-
+        $this->authorize('update', Accessory::class);
+        return view('accessories.edit')->with('item', $accessory)->with('category_type', 'accessory');
     }
 
     /**
@@ -121,25 +124,19 @@ class AccessoriesController extends Controller
      * @author [J. Vinsmoke]
      * @param int $accessoryId
      * @since [v6.0]
-     * @return View
      */
-    public function getClone($accessoryId = null)
+    public function getClone(Accessory $accessory) : View | RedirectResponse
     {
 
-        $this->authorize('create', Accesory::class);
-
-        // Check if the asset exists
-        if (is_null($accessory_to_clone = Accessory::find($accessoryId))) {
-            // Redirect to the asset management page
-            return redirect()->route('accessory.index')->with('error', trans('admin/accessories/message.does_not_exist'));
-        }
-
-        $accessory = clone $accessory_to_clone;
-        $accessory->id = null;
-        $accessory->location_id = null;
+        $this->authorize('create', Accessory::class);
+        $cloned = clone $accessory;
+        $accessory_to_clone = $accessory;
+        $cloned->id = null;
+        $cloned->deleted_at = '';
 
         return view('accessories/edit')
-            ->with('item', $accessory);
+            ->with('cloned_model', $accessory_to_clone)
+            ->with('item', $cloned);
         
     }
 
@@ -149,17 +146,15 @@ class AccessoriesController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @param ImageUploadRequest $request
      * @param  int $accessoryId
-     * @return Redirect
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function update(ImageUploadRequest $request, $accessoryId = null)
+    public function update(ImageUploadRequest $request, Accessory $accessory) : RedirectResponse
     {
-        if ($accessory = Accessory::withCount('users as users_count')->find($accessoryId)) {
+        if ($accessory = Accessory::withCount('checkouts as checkouts_count')->find($accessory->id)) {
 
             $this->authorize($accessory);
 
             $validator = Validator::make($request->all(), [
-                "qty" => "required|numeric|min:$accessory->users_count"
+                "qty" => "required|numeric|min:$accessory->checkouts_count"
             ]);
 
             if ($validator->fails()) {
@@ -180,16 +175,22 @@ class AccessoriesController extends Controller
             $accessory->order_number = request('order_number');
             $accessory->model_number = request('model_number');
             $accessory->purchase_date = request('purchase_date');
-            $accessory->purchase_cost = Helper::ParseCurrency(request('purchase_cost'));
+            $accessory->purchase_cost = request('purchase_cost');
             $accessory->qty = request('qty');
             $accessory->supplier_id = request('supplier_id');
             $accessory->notes = request('notes');
 
             $accessory = $request->handleImages($accessory);
 
-            // Was the accessory updated?
+            if($request->input('redirect_option') === 'back'){
+                session()->put(['redirect_option' => 'index']);
+            } else {
+                session()->put(['redirect_option' => $request->input('redirect_option')]);
+            }
+
             if ($accessory->save()) {
-                return redirect()->route('accessories.index')->with('success', trans('admin/accessories/message.update.success'));
+                return Helper::getRedirectOption($request, $accessory->id, 'Accessories')
+                    ->with('success', trans('admin/accessories/message.update.success'));
             }
         } else {
             return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.does_not_exist'));
@@ -203,27 +204,25 @@ class AccessoriesController extends Controller
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @param  int $accessoryId
-     * @return Redirect
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function destroy($accessoryId)
+    public function destroy($accessoryId) : RedirectResponse
     {
-        if (is_null($accessory = Accessory::find($accessoryId))) {
+        if (is_null($accessory = Accessory::withCount('checkouts as checkouts_count')->find($accessoryId))) {
             return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.not_found'));
         }
 
         $this->authorize($accessory);
 
 
-        if ($accessory->hasUsers() > 0) {
-            return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.assoc_users', ['count'=> $accessory->hasUsers()]));
+        if ($accessory->checkouts_count > 0) {
+            return redirect()->route('accessories.index')->with('error', trans('admin/accessories/general.delete_disabled'));
         }
 
         if ($accessory->image) {
             try {
                 Storage::disk('public')->delete('accessories'.'/'.$accessory->image);
             } catch (\Exception $e) {
-                \Log::debug($e);
+                Log::debug($e);
             }
         }
 
@@ -241,17 +240,14 @@ class AccessoriesController extends Controller
      * @param  int $accessoryID
      * @see AccessoriesController::getDataView() method that generates the JSON response
      * @since [v1.0]
-     * @return View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function show($accessoryID = null)
+    public function show(Accessory $accessory) : View | RedirectResponse
     {
-        $accessory = Accessory::withCount('users as users_count')->find($accessoryID);
-        $this->authorize('view', $accessory);
-        if (isset($accessory->id)) {
-            return view('accessories/view', compact('accessory'));
-        }
+        $accessory->loadCount('checkouts as checkouts_count');
 
-        return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.does_not_exist', ['id' => $accessoryID]));
+        $accessory->load(['adminuser' => fn($query) => $query->withTrashed()]);
+
+        $this->authorize('view', $accessory);
+        return view('accessories.view', compact('accessory'));
     }
 }

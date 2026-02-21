@@ -32,15 +32,25 @@ Route::group([ 'prefix' => 'fields','middleware' => ['auth'] ], function () {
         [CustomFieldsetsController::class, 'associate']
     )->name('fieldsets.associate');
 
+
+
     Route::resource('fieldsets', CustomFieldsetsController::class, [
-    'parameters' => ['fieldset' => 'field_id', 'field' => 'field_id']
+        'parameters' => [
+            'fieldset' => 'fieldset',
+            'field' => 'field_id'
+        ],
+        'except' => ['show', 'view']
     ]);
 
+    Route::get(
+        'fieldsets/{fieldset}/edit',
+        [CustomFieldsetsController::class, 'show']
+    )->name('fieldsets.show');
 
 });
 
-Route::resource('fields', CustomFieldsController::class, [
-    'middleware' => ['auth'],
-    'parameters' => ['field' => 'field_id', 'fieldset' => 'fieldset_id'],
-]);
+Route::resource('fields', CustomFieldsController::class,
+    ['middleware' => ['auth'],
+        'except' => ['show', 'view']
+    ]);
 

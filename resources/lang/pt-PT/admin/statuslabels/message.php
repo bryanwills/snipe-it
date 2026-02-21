@@ -3,6 +3,7 @@
 return [
 
     'does_not_exist' => 'Etiqueta de estado não existe.',
+    'deleted_label' => 'Rótulo de estado excluído',
     'assoc_assets'	 => 'Esta etiqueta de estado está associada a pelo menos um Asset e não pode ser apagada. Atualize os seus Assets para que não sejam usados novamente como referência a estes estado e tente novamente. ',
 
     'create' => [
@@ -23,7 +24,7 @@ return [
 
     'help' => [
         'undeployable'   => 'Esses ativos não podem ser atribuídos a ninguém.',
-        'deployable'   => 'These assets can be checked out. Once they are assigned, they will assume a meta status of <i class="fas fa-circle text-blue"></i> <strong>Deployed</strong>.',
+        'deployable'   => 'Esses artigos podem ser entregues. Uma vez que entregues, eles ficarão com um estado de <i class="fas fa-circle text-blue"></i> <strong>Implementado</strong>.',
         'archived'   => 'Esses ativos não podem ser verificados, e só aparecerão na visão arquivada. Isso é útil para manter informações sobre recursos para fins orçamentários / históricos, mas mantendo-os fora da lista de ativos do dia-a-dia.',
         'pending'   => 'Esses ativos ainda não podem ser atribuídos a qualquer pessoa, muitas vezes usado para itens que estão fora de reparo, mas é esperado que retornem à circulação.',
     ],

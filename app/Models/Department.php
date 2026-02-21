@@ -3,12 +3,16 @@
 namespace App\Models;
 
 use App\Http\Traits\UniqueUndeletedTrait;
+use App\Models\Traits\CompanyableTrait;
 use App\Models\Traits\Searchable;
+use App\Presenters\Presentable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Gate;
 use Watson\Validating\ValidatingTrait;
 
 class Department extends SnipeModel
 {
+    use CompanyableTrait;
     use HasFactory;
 
     /**
@@ -20,7 +24,10 @@ class Department extends SnipeModel
      */
     protected $injectUniqueIdentifier = true;
 
-    use ValidatingTrait, UniqueUndeletedTrait;
+    protected $presenter = \App\Presenters\DepartmentPresenter::class;
+
+
+    use ValidatingTrait, UniqueUndeletedTrait, Presentable;
 
     protected $casts = [
         'manager_id'   => 'integer',
@@ -29,10 +36,13 @@ class Department extends SnipeModel
     ];
 
     protected $rules = [
-        'name'                  => 'required|max:255|is_unique_department',
-        'location_id'           => 'numeric|nullable',
-        'company_id'            => 'numeric|nullable',
-        'manager_id'            => 'numeric|nullable',
+        'name'        => 'required|max:255|is_unique_across_company_and_location:departments,name',
+        'location_id' => 'numeric|nullable|exists:locations,id',
+        'company_id'  => 'numeric|nullable|exists:companies,id',
+        'manager_id'  => 'numeric|nullable|exists:users,id',
+        'phone'       => 'string|max:255|nullable',
+        'fax'         => 'string|max:255|nullable',
+        'notes'       => 'string|max:255|nullable',
     ];
 
     /**
@@ -41,11 +51,14 @@ class Department extends SnipeModel
      * @var array
      */
     protected $fillable = [
-        'user_id',
+        'created_by',
         'name',
+        'phone',
+        'fax',
         'location_id',
         'company_id',
         'manager_id',
+        'tag_color',
         'notes',
     ];
 
@@ -56,7 +69,7 @@ class Department extends SnipeModel
      *
      * @var array
      */
-    protected $searchableAttributes = ['name', 'notes'];
+    protected $searchableAttributes = ['name', 'notes', 'phone', 'fax'];
 
     /**
      * The relations and their attributes that should be included when searching the model.
@@ -65,11 +78,18 @@ class Department extends SnipeModel
      */
     protected $searchableRelations = [];
 
+
+    public function isDeletable()
+    {
+        return Gate::allows('delete', $this) && (($this->users_count ?? $this->users()->count()) === 0);
+    }
+
+
     /**
      * Establishes the department -> company relationship
      *
      * @author A. Gianotto <snipe@snipe.net>
-     * @since [v4.0]
+     * @since  [v4.0]
      * @return \Illuminate\Database\Eloquent\Relations\Relation
      */
     public function company()
@@ -81,7 +101,7 @@ class Department extends SnipeModel
      * Establishes the department -> users relationship
      *
      * @author A. Gianotto <snipe@snipe.net>
-     * @since [v4.0]
+     * @since  [v4.0]
      * @return \Illuminate\Database\Eloquent\Relations\Relation
      */
     public function users()
@@ -93,7 +113,7 @@ class Department extends SnipeModel
      * Establishes the department -> manager relationship
      *
      * @author A. Gianotto <snipe@snipe.net>
-     * @since [v4.0]
+     * @since  [v4.0]
      * @return \Illuminate\Database\Eloquent\Relations\Relation
      */
     public function manager()
@@ -105,7 +125,7 @@ class Department extends SnipeModel
      * Establishes the department -> location relationship
      *
      * @author A. Gianotto <snipe@snipe.net>
-     * @since [v4.0]
+     * @since  [v4.0]
      * @return \Illuminate\Database\Eloquent\Relations\Relation
      */
     public function location()
@@ -116,8 +136,8 @@ class Department extends SnipeModel
     /**
      * Query builder scope to order on location name
      *
-     * @param  \Illuminate\Database\Query\Builder  $query  Query builder instance
-     * @param  text                              $order       Order
+     * @param \Illuminate\Database\Query\Builder $query Query builder instance
+     * @param text                               $order Order
      *
      * @return \Illuminate\Database\Query\Builder          Modified query builder
      */
@@ -129,13 +149,26 @@ class Department extends SnipeModel
     /**
      * Query builder scope to order on manager name
      *
-     * @param  \Illuminate\Database\Query\Builder  $query  Query builder instance
-     * @param  text                              $order       Order
+     * @param \Illuminate\Database\Query\Builder $query Query builder instance
+     * @param text                               $order Order
      *
      * @return \Illuminate\Database\Query\Builder          Modified query builder
      */
     public function scopeOrderManager($query, $order)
     {
         return $query->leftJoin('users as department_user', 'departments.manager_id', '=', 'department_user.id')->orderBy('department_user.first_name', $order)->orderBy('department_user.last_name', $order);
+    }
+
+    /**
+     * Query builder scope to order on company
+     *
+     * @param \Illuminate\Database\Query\Builder $query Query builder instance
+     * @param text                               $order Order
+     *
+     * @return \Illuminate\Database\Query\Builder          Modified query builder
+     */
+    public function scopeOrderCompany($query, $order)
+    {
+        return $query->leftJoin('companies as company_sort', 'departments.company_id', '=', 'company_sort.id')->orderBy('company_sort.name', $order);
     }
 }

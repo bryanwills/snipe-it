@@ -14,13 +14,15 @@ return array(
     'update' => array(
         'error'   => 'Kategori gagal diupdate, silahkan coba lagi',
         'success' => 'Kategori berhasil diupdate.',
-        'cannot_change_category_type'   => 'You cannot change the category type once it has been created',
+        'cannot_change_category_type'   => 'Anda tidak bisa mengubah tipe kategori jika sudah dibuat',
     ),
 
     'delete' => array(
-        'confirm'   => 'Apakah Anda yakin ingin menghapus kategori ini?',
-        'error'   => 'Ada masalah saat menghapus kategori. Silakan coba lagi.',
-        'success' => 'Kategori berhasil dihapus.'
+        'confirm'                => 'Apakah Anda yakin ingin menghapus kategori ini?',
+        'error'                  => 'Ada masalah saat menghapus kategori. Silakan coba lagi.',
+        'success'                => 'Category was deleted successfully.',
+        'bulk_success'           => 'Categories were deleted successfully.',
+        'partial_success'        => 'Category deleted successfully. See additional information below. | :count categories were deleted successfully. See additional information below.',
     )
 
 );

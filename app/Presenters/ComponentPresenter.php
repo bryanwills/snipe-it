@@ -21,6 +21,13 @@ class ComponentPresenter extends Presenter
                 'switchable' => true,
                 'title' => trans('general.id'),
                 'visible' => false,
+            ], [
+                'field' => 'name',
+                'searchable' => true,
+                'sortable' => true,
+                'title' => trans('general.name'),
+                'visible' => true,
+                'formatter' => 'componentsLinkFormatter',
             ],
             [
                 'field' => 'company',
@@ -31,14 +38,7 @@ class ComponentPresenter extends Presenter
                 'visible' => false,
                 'formatter' => 'companiesLinkObjFormatter',
             ],
-            [
-                'field' => 'name',
-                'searchable' => true,
-                'sortable' => true,
-                'title' => trans('general.name'),
-                'visible' => true,
-                'formatter' => 'componentsLinkFormatter',
-            ], [
+             [
                 'field' => 'image',
                 'searchable' => false,
                 'sortable' => true,
@@ -59,23 +59,26 @@ class ComponentPresenter extends Presenter
                 'title' => trans('general.category'),
                 'formatter' => 'categoriesLinkObjFormatter',
             ], [
-                'field' => 'qty',
-                'searchable' => false,
+                'field' => 'supplier',
+                'searchable' => true,
                 'sortable' => true,
-                'title' => trans('admin/components/general.total'),
-                'visible' => true,
+                'switchable' => true,
+                'title' => trans('general.supplier'),
+                'visible' => false,
+                'formatter' => 'suppliersLinkObjFormatter',
             ], [
-                'field' => 'remaining',
-                'searchable' => false,
-                'sortable' => false,
-                'title' => trans('admin/components/general.remaining'),
-                'visible' => true,
+                'field' => 'model_number',
+                'searchable' => true,
+                'sortable' => true,
+                'title' => trans('admin/models/table.modelnumber'),
             ], [
-                'field' => 'min_amt',
-                'searchable' => false,
-                'sortable' => false,
-                'title' => trans('general.min_amt'),
-                'visible' => true,
+                'field' => 'manufacturer',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.manufacturer'),
+                'visible' => false,
+                'formatter' => 'manufacturersLinkObjFormatter',
             ], [
                 'field' => 'location',
                 'searchable' => true,
@@ -96,13 +99,43 @@ class ComponentPresenter extends Presenter
                 'visible' => true,
                 'formatter' => 'dateDisplayFormatter',
             ], [
+                'field' => 'min_amt',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.min_amt'),
+                'visible' => true,
+                'class' => 'text-right text-padding-number-cell',
+                'formatter' => 'minAmtFormatter',
+            ], [
+                'field' => 'qty',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('admin/components/general.total'),
+                'visible' => true,
+                'class' => 'text-right text-padding-number-cell',
+                'footerFormatter' => 'qtySumFormatter',
+            ], [
+                'field' => 'remaining',
+                'searchable' => false,
+                'sortable' => false,
+                'title' => trans('admin/components/general.remaining'),
+                'visible' => true,
+                'class' => 'text-right text-padding-number-cell',
+                'footerFormatter' => 'qtySumFormatter',
+            ], [
                 'field' => 'purchase_cost',
                 'searchable' => true,
                 'sortable' => true,
-                'title' => trans('general.purchase_cost'),
+                'title' => trans('general.unit_cost'),
                 'visible' => true,
-                'footerFormatter' => 'sumFormatterQuantity',
                 'class' => 'text-right',
+            ], [
+                'field' => 'total_cost',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.total_cost'),
+                'footerFormatter' => 'sumFormatterQuantity',
+                'class' => 'text-right text-padding-number-cell',
             ], [
                 'field' => 'notes',
                 'searchable' => true,
@@ -110,6 +143,27 @@ class ComponentPresenter extends Presenter
                 'visible' => false,
                 'title' => trans('general.notes'),
                 'formatter' => 'notesFormatter',
+            ],[
+                'field' => 'created_by',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.created_by'),
+                'visible' => false,
+                'formatter' => 'usersLinkObjFormatter',
+            ],[
+                'field' => 'created_at',
+                'searchable' => false,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('general.created_at'),
+                'formatter' => 'dateDisplayFormatter',
+            ], [
+                'field' => 'updated_at',
+                'searchable' => false,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('general.updated_at'),
+                'formatter' => 'dateDisplayFormatter',
             ],
         ];
 
@@ -117,10 +171,11 @@ class ComponentPresenter extends Presenter
             'field' => 'checkincheckout',
             'searchable' => false,
             'sortable' => false,
-            'switchable' => true,
+            'switchable' => false,
             'title' => trans('general.checkin').'/'.trans('general.checkout'),
             'visible' => true,
             'formatter' => 'componentsInOutFormatter',
+            'printIgnore' => true,
         ];
 
         $layout[] = [
@@ -130,6 +185,64 @@ class ComponentPresenter extends Presenter
             'switchable' => false,
             'title' => trans('table.actions'),
             'formatter' => 'componentsActionsFormatter',
+            'printIgnore' => true,
+        ];
+
+        return json_encode($layout);
+    }
+
+    public static function checkedOut() {
+        $layout = [
+            [
+                'field' => 'id',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.id'),
+                'visible' => false,
+            ],
+            [
+                'field' => 'name',
+                'searchable' => true,
+                'sortable' => true,
+                'title' => trans('general.name'),
+                'visible' => true,
+                'formatter' => 'hardwareLinkFormatter',
+            ],
+            [
+                'field' => 'qty',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.qty'),
+                'visible' => true,
+            ],
+            [
+                'field' => 'note',
+                'searchable' => true,
+                'sortable' => true,
+                'visible' => true,
+                'title' => trans('general.notes'),
+                'formatter' => 'notesFormatter',
+            ],[
+                'field' => 'created_at',
+                'searchable' => false,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('general.created_at'),
+                'formatter' => 'dateDisplayFormatter',
+            ],
+            $layout[] = [
+                'field' => 'available_actions',
+                'searchable' => false,
+                'sortable' => false,
+                'switchable' => false,
+                'title' => trans('general.checkin').'/'.trans('general.checkout'),
+                'visible' => true,
+                'formatter' => 'componentsInOutFormatter',
+                'printIgnore' => true,
+
+            ],
         ];
 
         return json_encode($layout);
@@ -141,7 +254,11 @@ class ComponentPresenter extends Presenter
      */
     public function nameUrl()
     {
-        return (string) link_to_route('consumables.show', e($this->name), $this->id);
+        if (auth()->user()->can('view', ['\App\Models\Component', $this])) {
+            return (string)link_to_route('components.show', e($this->display_name), $this->id);
+        } else {
+            return e($this->display_name);
+        }
     }
 
     /**
@@ -150,6 +267,6 @@ class ComponentPresenter extends Presenter
      */
     public function viewUrl()
     {
-        return route('accessories.show', $this->id);
+        return route('components.show', $this->id);
     }
 }

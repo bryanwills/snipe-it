@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Traits\Searchable;
 use App\Presenters\Presentable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Gate;
 use Watson\Validating\ValidatingTrait;
 
 class Depreciation extends SnipeModel
@@ -15,8 +16,8 @@ class Depreciation extends SnipeModel
     use Presentable;
     // Declare the rules for the form validation
     protected $rules = [
-        'name' => 'required|min:3|max:255|unique:depreciations,name',
-        'months' => 'required|max:3600|integer|gt:0',
+        'name' => 'required|max:255|unique:depreciations,name',
+        'months' => 'required|max:3600|integer',
     ];
 
     /**
@@ -52,11 +53,21 @@ class Depreciation extends SnipeModel
      */
     protected $searchableRelations = [];
 
+
+    public function isDeletable()
+    {
+        return Gate::allows('delete', $this)
+            && (($this->assets_count ?? $this->assets()->count()) === 0)
+            && (($this->licenses_count ?? $this->licenses()->count()) === 0)
+            && (($this->models_count ?? $this->models()->count()) === 0)
+            && ($this->deleted_at == '');
+    }
+
     /**
      * Establishes the depreciation -> models relationship
      *
      * @author A. Gianotto <snipe@snipe.net>
-     * @since [v5.0]
+     * @since  [v5.0]
      * @return \Illuminate\Database\Eloquent\Relations\Relation
      */
     public function models()
@@ -68,11 +79,47 @@ class Depreciation extends SnipeModel
      * Establishes the depreciation -> licenses relationship
      *
      * @author A. Gianotto <snipe@snipe.net>
-     * @since [v5.0]
+     * @since  [v5.0]
      * @return \Illuminate\Database\Eloquent\Relations\Relation
      */
     public function licenses()
     {
         return $this->hasMany(\App\Models\License::class, 'depreciation_id');
+    }
+
+    /**
+     * Establishes the depreciation -> assets relationship
+     *
+     * @author A. Gianotto <snipe@snipe.net>
+     * @since  [v5.0]
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public function assets()
+    {
+        return $this->hasManyThrough(\App\Models\Asset::class, \App\Models\AssetModel::class, 'depreciation_id', 'model_id');
+    }
+
+    /**
+     * Get the user that created the depreciation
+     *
+     * @author A. Gianotto <snipe@snipe.net>
+     * @since  [v7.0.13]
+     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     */
+    public function adminuser()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
+    }
+
+
+    /**
+     * -----------------------------------------------
+     * BEGIN QUERY SCOPES
+     * -----------------------------------------------
+     **/
+
+    public function scopeOrderByCreatedBy($query, $order)
+    {
+        return $query->leftJoin('users as admin_sort', 'depreciations.created_by', '=', 'admin_sort.id')->select('depreciations.*')->orderBy('admin_sort.first_name', $order)->orderBy('admin_sort.last_name', $order);
     }
 }

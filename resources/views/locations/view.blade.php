@@ -9,381 +9,432 @@
 @parent
 @stop
 
+@section('header_right')
+    <i class="fa-regular fa-2x fa-square-caret-right pull-right" id="expand-info-panel-button" data-tooltip="true" title="{{ trans('button.show_hide_info') }}"></i>
+@endsection
+
+
 {{-- Page content --}}
 @section('content')
+    <x-container columns="2">
 
-<div class="row">
-  <div class="col-md-9">
-
-      <div class="nav-tabs-custom">
-          <ul class="nav nav-tabs hidden-print">
-
-              <li class="active">
-                  <a href="#users" data-toggle="tab">
-                        <span class="hidden-lg hidden-md">
-                            <i class="fas fa-users fa-2x"></i>
-                        </span>
-                      <span class="hidden-xs hidden-sm">
-                          {{ trans('general.users') }}
-                          {!! (($location->users) && ($location->users->count() > 0 )) ? '<badge class="badge badge-secondary">'.number_format($location->users->count()).'</badge>' : '' !!}
-
-                      </span>
-                  </a>
-              </li>
-
-              <li>
-                  <a href="#assets" data-toggle="tab">
-                    <span class="hidden-lg hidden-md">
-                        <i class="fas fa-barcode fa-2x" aria-hidden="true"></i>
-                    </span>
-                    <span class="hidden-xs hidden-sm">
-                          {{ trans('admin/locations/message.current_location') }}
-                          {!! (($location->assets) && ($location->assets()->AssetsForShow()->count() > 0 )) ? '<badge class="badge badge-secondary">'.number_format($location->assets()->AssetsForShow()->count()).'</badge>' : '' !!}
-                    </span>
-                  </a>
-              </li>
-
-
-              <li>
-                  <a href="#rtd_assets" data-toggle="tab">
-                    <span class="hidden-lg hidden-md">
-                        <i class="fas fa-barcode fa-2x" aria-hidden="true"></i>
-                    </span>
-                      <span class="hidden-xs hidden-sm">
-                          {{ trans('admin/hardware/form.default_location') }}
-                          {!! (($location->rtd_assets) && ($location->rtd_assets()->AssetsForShow()->count() > 0 )) ? '<badge class="badge badge-secondary">'.number_format($location->rtd_assets()->AssetsForShow()->count()).'</badge>' : '' !!}
-                    </span>
-                  </a>
-              </li>
-
-              <li>
-                  <a href="#assets_assigned" data-toggle="tab">
-                    <span class="hidden-lg hidden-md">
-                        <i class="fas fa-barcode fa-2x" aria-hidden="true"></i>
-                    </span>
-                      <span class="hidden-xs hidden-sm">
-                          {{ trans('admin/locations/message.assigned_assets') }}
-                          {!! (($location->rtd_assets) && ($location->assignedAssets()->AssetsForShow()->count() > 0 )) ? '<badge class="badge badge-secondary">'.number_format($location->assignedAssets()->AssetsForShow()->count()).'</badge>' : '' !!}
-                    </span>
-                  </a>
-              </li>
-
-
-              <li>
-                  <a href="#accessories" data-toggle="tab">
-                    <span class="hidden-lg hidden-md">
-                        <i class="fas fa-keyboard fa-2x" aria-hidden="true"></i>
-                    </span>
-                      <span class="hidden-xs hidden-sm">
-                          {{ trans('general.accessories') }}
-                          {!! (($location->accessories) && ($location->accessories->count() > 0 )) ? '<badge class="badge badge-secondary">'.number_format($location->accessories->count()).'</badge>' : '' !!}
-                    </span>
-                  </a>
-              </li>
-
-              <li>
-                  <a href="#consumables" data-toggle="tab">
-                    <span class="hidden-lg hidden-md">
-                        <i class="fas fa-tint fa-2x" aria-hidden="true"></i>
-                    </span>
-                      <span class="hidden-xs hidden-sm">
-                          {{ trans('general.consumables') }}
-                          {!! (($location->consumables) && ($location->consumables->count() > 0 )) ? '<badge class="badge badge-secondary">'.number_format($location->consumables->count()).'</badge>' : '' !!}
-                    </span>
-                  </a>
-              </li>
-
-              <li>
-                  <a href="#components" data-toggle="tab">
-                    <span class="hidden-lg hidden-md">
-                        <i class="fas fa-hdd fa-2x" aria-hidden="true"></i>
-                    </span>
-                      <span class="hidden-xs hidden-sm">
-                          {{ trans('general.components') }}
-                          {!! (($location->components) && ($location->components->count() > 0 )) ? '<badge class="badge badge-secondary">'.number_format($location->components->count()).'</badge>' : '' !!}
-                    </span>
-                  </a>
-              </li>
-          </ul>
-
-
-          <div class="tab-content">
-              <div class="tab-pane active" id="users">
-                    <h2 class="box-title">{{ trans('general.users') }}</h2>
-                      <div class="table table-responsive">
-                          @include('partials.users-bulk-actions')
-                          <table
-                                  data-columns="{{ \App\Presenters\UserPresenter::dataTableLayout() }}"
-                                  data-cookie-id-table="usersTable"
-                                  data-pagination="true"
-                                  data-id-table="usersTable"
-                                  data-search="true"
-                                  data-side-pagination="server"
-                                  data-show-columns="true"
-                                  data-show-export="true"
-                                  data-show-refresh="true"
-                                  data-sort-order="asc"
-                                  data-toolbar="#userBulkEditToolbar"
-                                  data-bulk-button-id="#bulkUserEditButton"
-                                  data-bulk-form-id="#usersBulkForm"
-                                  data-click-to-select="true"
-                                  id="usersTable"
-                                  class="table table-striped snipe-table"
-                                  data-url="{{route('api.users.index', ['location_id' => $location->id])}}"
-                                  data-export-options='{
-                              "fileName": "export-locations-{{ str_slug($location->name) }}-users-{{ date('Y-m-d') }}",
-                              "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                              }'>
-
-                          </table>
-                      </div><!-- /.table-responsive -->
-              </div><!-- /.tab-pane -->
-
-              <div class="tab-pane" id="assets">
-                      <h2 class="box-title">{{ trans('admin/locations/message.current_location') }}</h2>
-
-                      <div class="table table-responsive">
-                          @include('partials.asset-bulk-actions')
-                          <table
-                                  data-columns="{{ \App\Presenters\AssetPresenter::dataTableLayout() }}"
-                                  data-cookie-id-table="assetsListingTable"
-                                  data-pagination="true"
-                                  data-id-table="assetsListingTable"
-                                  data-search="true"
-                                  data-side-pagination="server"
-                                  data-show-columns="true"
-                                  data-show-export="true"
-                                  data-show-refresh="true"
-                                  data-sort-order="asc"
-                                  data-toolbar="#assetsBulkEditToolbar"
-                                  data-bulk-button-id="#bulkAssetEditButton"
-                                  data-bulk-form-id="#assetsBulkForm"
-                                  data-click-to-select="true"
-                                  id="assetsListingTable"
-                                  class="table table-striped snipe-table"
-                                  data-url="{{route('api.assets.index', ['location_id' => $location->id]) }}"
-                                  data-export-options='{
-                              "fileName": "export-locations-{{ str_slug($location->name) }}-assets-{{ date('Y-m-d') }}",
-                              "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                              }'>
-                          </table>
-
-                      </div><!-- /.table-responsive -->
-              </div><!-- /.tab-pane -->
-
-              <div class="tab-pane" id="assets_assigned">
-                  <h2 class="box-title">
-                      {{ trans('admin/locations/message.assigned_assets') }}
-                  </h2>
-
-                  <div class="table table-responsive">
-                      @include('partials.asset-bulk-actions', ['id_divname' => 'AssignedAssetsBulkEditToolbar', 'id_formname' => 'assignedAssetsBulkForm', 'id_button' => 'AssignedbulkAssetEditButton'])
-                      <table
-                              data-columns="{{ \App\Presenters\AssetPresenter::dataTableLayout() }}"
-                              data-cookie-id-table="assetsAssignedListingTable"
-                              data-pagination="true"
-                              data-id-table="assetsAssignedListingTable"
-                              data-search="true"
-                              data-side-pagination="server"
-                              data-show-columns="true"
-                              data-show-export="true"
-                              data-show-refresh="true"
-                              data-sort-order="asc"
-                              data-toolbar="#AssignedAssetsBulkEditToolbar"
-                              data-bulk-button-id="#AssignedbulkAssetEditButton"
-                              data-bulk-form-id="#assignedAssetsBulkForm"
-                              data-click-to-select="true"
-                              id="assetsListingTable"
-                              class="table table-striped snipe-table"
-                              data-url="{{route('api.assets.index', ['assigned_to' => $location->id, 'assigned_type' => \App\Models\Location::class]) }}"
-                              data-export-options='{
-                              "fileName": "export-locations-{{ str_slug($location->name) }}-assets-{{ date('Y-m-d') }}",
-                              "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                              }'>
-                      </table>
-
-                  </div><!-- /.table-responsive -->
-              </div><!-- /.tab-pane -->
-
-              <div class="tab-pane" id="rtd_assets">
-                  <h2 class="box-title">{{ trans('admin/hardware/form.default_location') }}</h2>
-
-                  <div class="table table-responsive">
-                      @include('partials.asset-bulk-actions', ['id_divname' => 'RTDassetsBulkEditToolbar', 'id_formname' => 'RTDassets', 'id_button' => 'RTDbulkAssetEditButton'])
-                      <table
-                              data-columns="{{ \App\Presenters\AssetPresenter::dataTableLayout() }}"
-                              data-cookie-id-table="RTDassetsListingTable"
-                              data-pagination="true"
-                              data-id-table="RTDassetsListingTable"
-                              data-search="true"
-                              data-side-pagination="server"
-                              data-show-columns="true"
-                              data-show-export="true"
-                              data-show-refresh="true"
-                              data-sort-order="asc"
-                              data-toolbar="#RTDassetsBulkEditToolbar"
-                              data-bulk-button-id="#RTDbulkAssetEditButton"
-                              data-bulk-form-id="#RTDassetsBulkEditToolbar"
-                              data-click-to-select="true"
-                              id="RTDassetsListingTable"
-                              class="table table-striped snipe-table"
-                              data-url="{{route('api.assets.index', ['rtd_location_id' => $location->id]) }}"
-                              data-export-options='{
-                              "fileName": "export-rtd-locations-{{ str_slug($location->name) }}-assets-{{ date('Y-m-d') }}",
-                              "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                              }'>
-                      </table>
-
-                  </div><!-- /.table-responsive -->
-              </div><!-- /.tab-pane -->
-              
-
-
-              <div class="tab-pane" id="accessories">
-                  <h2 class="box-title">{{ trans('general.accessories') }}</h2>
-                  <div class="table table-responsive">
-                      <table
-                              data-columns="{{ \App\Presenters\AccessoryPresenter::dataTableLayout() }}"
-                              data-cookie-id-table="accessoriesListingTable"
-                              data-pagination="true"
-                              data-id-table="accessoriesListingTable"
-                              data-search="true"
-                              data-side-pagination="server"
-                              data-show-columns="true"
-                              data-show-export="true"
-                              data-show-refresh="true"
-                              data-sort-order="asc"
-                              id="accessoriesListingTable"
-                              class="table table-striped snipe-table"
-                              data-url="{{route('api.accessories.index', ['location_id' => $location->id]) }}"
-                              data-export-options='{
-                              "fileName": "export-locations-{{ str_slug($location->name) }}-accessories-{{ date('Y-m-d') }}",
-                              "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                              }'>
-                      </table>
-                  </div><!-- /.table-responsive -->
-              </div><!-- /.tab-pane -->
-
-
-              <div class="tab-pane" id="consumables">
-                  <h2 class="box-title">{{ trans('general.consumables') }}</h2>
-
-                      <div class="table table-responsive">
-                          <table
-                                  data-columns="{{ \App\Presenters\ConsumablePresenter::dataTableLayout() }}"
-                                  data-cookie-id-table="consumablesListingTable"
-                                  data-pagination="true"
-                                  data-id-table="consumablesListingTable"
-                                  data-search="true"
-                                  data-side-pagination="server"
-                                  data-show-columns="true"
-                                  data-show-export="true"
-                                  data-show-refresh="true"
-                                  data-sort-order="asc"
-                                  id="consumablesListingTable"
-                                  class="table table-striped snipe-table"
-                                  data-url="{{route('api.consumables.index', ['location_id' => $location->id]) }}"
-                                  data-export-options='{
-                              "fileName": "export-locations-{{ str_slug($location->name) }}-consumables-{{ date('Y-m-d') }}",
-                              "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                              }'>
-                          </table>
-
-                      </div><!-- /.table-responsive -->
-              </div><!-- /.tab-pane -->
-
-              <div class="tab-pane" id="components">
-                  <h2 class="box-title">{{ trans('general.components') }}</h2>
-                      <div class="table table-responsive">
-
-                          <table
-                                  data-columns="{{ \App\Presenters\ComponentPresenter::dataTableLayout() }}"
-                                  data-cookie-id-table="componentsTable"
-                                  data-pagination="true"
-                                  data-id-table="componentsTable"
-                                  data-search="true"
-                                  data-side-pagination="server"
-                                  data-show-columns="true"
-                                  data-show-export="true"
-                                  data-show-refresh="true"
-                                  data-sort-order="asc"
-                                  id="componentsTable"
-                                  class="table table-striped snipe-table"
-                                  data-url="{{route('api.components.index', ['location_id' => $location->id])}}"
-                                  data-export-options='{
-                              "fileName": "export-locations-{{ str_slug($location->name) }}-components-{{ date('Y-m-d') }}",
-                              "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                              }'>
-
-                          </table>
-                      </div><!-- /.table-responsive -->
-              </div><!-- /.tab-pane -->
-
-          </div><!--/.col-md-9-->
-      </div><!--/.col-md-9-->
-  </div><!--/.col-md-9-->
-
-  <div class="col-md-3">
-
-      <div class="col-md-12">
-          <a href="{{ route('locations.edit', ['location' => $location->id]) }}" style="width: 100%;" class="btn btn-sm btn-primary pull-left">{{ trans('admin/locations/table.update') }} </a>
-      </div>
-      <div class="col-md-12" style="padding-top: 5px;">
-          <a href="{{ route('locations.print_assigned', ['locationId' => $location->id]) }}" style="width: 100%;" class="btn btn-sm btn-default pull-left">{{ trans('admin/locations/table.print_assigned') }} </a>
-      </div>
-      <div class="col-md-12" style="padding-top: 5px; padding-bottom: 20px;">
-          <a href="{{ route('locations.print_all_assigned', ['locationId' => $location->id]) }}" style="width: 100%;" class="btn btn-sm btn-default pull-left">{{ trans('admin/locations/table.print_all_assigned') }} </a>
-      </div>
-
-
-    @if ($location->image!='')
-      <div class="col-md-12 text-center" style="padding-bottom: 20px;">
-        <img src="{{ Storage::disk('public')->url('locations/'.e($location->image)) }}" class="img-responsive img-thumbnail" style="width:100%" alt="{{ $location->name }}">
-      </div>
-    @endif
-      <div class="col-md-12">
-        <ul class="list-unstyled" style="line-height: 25px; padding-bottom: 20px;">
-          @if ($location->address!='')
-            <li>{{ $location->address }}</li>
-           @endif
-            @if ($location->address2!='')
-              <li>{{ $location->address2 }}</li>
-            @endif
-            @if (($location->city!='') || ($location->state!='') || ($location->zip!=''))
-              <li>{{ $location->city }} {{ $location->state }} {{ $location->zip }}</li>
-            @endif
-            @if ($location->manager)
-              <li>{{ trans('admin/users/table.manager') }}: {!! $location->manager->present()->nameUrl() !!}</li>
-            @endif
-            @if ($location->parent)
-              <li>{{ trans('admin/locations/table.parent') }}: {!! $location->parent->present()->nameUrl() !!}</li>
-            @endif
-              @if ($location->ldap_ou)
-                  <li>{{ trans('admin/locations/table.ldap_ou') }}: {{ $location->ldap_ou }}</li>
-              @endif
-        </ul>
-
-        @if (($location->state!='') && ($location->country!='') && (config('services.google.maps_api_key')))
-          <div class="col-md-12 text-center">
-            <img src="https://maps.googleapis.com/maps/api/staticmap?markers={{ urlencode($location->address.','.$location->city.' '.$location->state.' '.$location->country.' '.$location->zip) }}&size=700x500&maptype=roadmap&key={{ config('services.google.maps_api_key') }}" class="img-thumbnail" style="width:100%" alt="Map">
-          </div>
+        @if ($location->deleted_at!='')
+            <div class="col-md-12">
+                <div class="callout callout-warning">
+                    <x-icon type="warning" />
+                    {{ trans('admin/locations/message.deleted_warning') }}
+                </div>
+            </div>
         @endif
 
-      </div>
+
+        <x-page-column class="col-md-9 main-panel">
+          <x-tabs>
+
+              <x-slot:tabnav>
+                  @can('view', \App\Models\User::class)
+                      <x-tabs.nav-item
+                              class="active"
+                              name="users"
+                              icon="fa-solid fa-house-user fa-fw"
+                              label="{{ trans('general.users') }}"
+                              count="{{ $location->users()->count() }}"
+                              tooltip="{{ trans('general.users') }}"
+                      />
+                  @endcan
+
+                  @can('view', \App\Models\Asset::class)
+
+                      <x-tabs.nav-item
+                              name="assets"
+                              icon="fa-solid fa-house-laptop fa-fw"
+                              label="{{ trans('general.assets') }}"
+                              count="{{ $location->assets()->AssetsForShow()->count() }}"
+                              tooltip="{{ trans('admin/locations/message.current_location') }}"
+                      />
+
+                      <x-tabs.nav-item
+                              name="rtd_assets"
+                              icon="fa-solid fa-house-flag fa-fw"
+                              label="{{ trans('admin/hardware/form.default_location') }}"
+                              count="{{ $location->rtd_assets()->AssetsForShow()->count() }}"
+                              tooltip="{{ trans('admin/hardware/form.default_location') }}"
+                      />
+
+                      <x-tabs.nav-item
+                              name="assets_assigned"
+                              icon="fas fa-barcode fa-fw"
+                              label="{{ trans('admin/locations/message.assigned_assets') }}"
+                              count="{{ $location->assignedAssets()->AssetsForShow()->count() }}"
+                              tooltip="{{ trans('admin/locations/message.assigned_assets') }}"
+                      />
+
+                  @endcan
+
+                  @can('view', \App\Models\Accessory::class)
+
+                      <x-tabs.nav-item
+                              name="accessories"
+                              icon="far fa-keyboard fa-fw"
+                              label="{{ trans('general.accessories') }}"
+                              count="{{ $location->accessories()->count() }}"
+                              tooltip="{{ trans('general.accessories') }}"
+                      />
+
+                      <x-tabs.nav-item
+                              name="accessories_assigned"
+                              icon="fas fa-keyboard fa-fw"
+                              label="{{ trans('general.accessories_assigned') }}"
+                              count="{{ $location->assignedAccessories()->count() }}"
+                              tooltip="{{ trans('general.accessories_assigned') }}"
+                      />
+
+                  @endcan
 
 
-		
-  </div>
+                  @can('view', \App\Models\Consumable::class)
 
-  </div>
-</div>
+                      <x-tabs.nav-item
+                              name="consumables"
+                              icon="fas fa-tint fa-fw"
+                              label="{{ trans('general.consumables') }}"
+                              count="{{ $location->consumables()->count() }}"
+                              tooltip="{{ trans('general.consumables') }}"
+                      />
+
+                  @endcan
+
+                  @can('view', \App\Models\Component::class)
+
+                      <x-tabs.nav-item
+                              name="components"
+                              icon="fas fa-hdd fa-fw"
+                              label="{{ trans('general.components') }}"
+                              count="{{ $location->components->count() }}"
+                              tooltip="{{ trans('general.components') }}"
+                      />
+
+                  @endcan
+
+                  <x-tabs.nav-item
+                          name="child_locations"
+                          icon="fa-solid fa-city fa-fw"
+                          label="{{ trans('general.child_locations') }}"
+                          count="{{ $location->children()->count() }}"
+                          tooltip="{{ trans('general.child_locations') }}"
+                  />
+
+                  <x-tabs.nav-item
+                          name="files"
+                          icon="fa-solid fa-file-contract fa-fw"
+                          label="{{ trans('general.files') }}"
+                          count="{{ $location->uploads()->count() }}"
+                          tooltip="{{ trans('general.files') }}"
+                  />
+
+                  <x-tabs.nav-item
+                          name="history"
+                          icon="fa-solid fa-clock-rotate-left fa-fw"
+                          label="{{ trans('general.history') }}"
+                          tooltip="{{ trans('general.history') }}"
+                  />
+
+                  @can('update', $location)
+                      <x-tabs.nav-item-upload />
+                  @endcan
+
+              </x-slot:tabnav>
+
+              <x-slot:tabpanes>
+
+                  <!-- start users tab pane -->
+                  @can('view', \App\Models\User::class)
+                  <x-tabs.pane name="users" class="in active">
+                      <x-slot:header>
+                          {{ trans('general.users') }}
+                      </x-slot:header>
+
+                      <x-slot:bulkactions>
+                          <x-table.bulk-users />
+                      </x-slot:bulkactions>
+
+                      <x-slot:content>
+                          <x-table
+                            show_column_search="true"
+                            show_advanced_search="true"
+                            name="users"
+                            buttons="userButtons"
+                            toolbar_id="userBulkEditToolbar"
+                            api_url="{{ route('api.users.index', ['location_id' => $location->id])}}"
+                            :presenter="\App\Presenters\UserPresenter::dataTableLayout()"
+                            export_filename="export-locations-{{ str_slug($location->name) }}-users-{{ date('Y-m-d') }}"
+                          />
+                      </x-slot:content>
+
+                  </x-tabs.pane>
+                  @endcan
+                  <!-- end users tab pane -->
+
+                  <!-- start assets tab pane -->
+                  @can('view', \App\Models\Asset::class)
+                  <x-tabs.pane name="assets">
+                      <x-slot:header>
+                          {{ trans('admin/locations/message.current_location') }}
+                      </x-slot:header>
+
+                      <x-slot:bulkactions>
+                         <x-table.bulk-assets />
+                      </x-slot:bulkactions>
+
+                      <x-slot:content>
+                          <x-table
+                              show_column_search="true"
+                              show_advanced_search="true"
+                              buttons="assetButtons"
+                              api_url="{{ route('api.assets.index', ['location_id' => $location->id]) }}"
+                              :presenter="\App\Presenters\AssetPresenter::dataTableLayout()"
+                              export_filename="export-locations-{{ str_slug($location->name) }}-assets-{{ date('Y-m-d') }}"
+                          />
+                      </x-slot:content>
+
+                  </x-tabs.pane>
+                  <!-- end assets tab pane -->
+
+
+                  <!-- start assigned assets tab pane -->
+
+
+                  <x-tabs.pane name="assets_assigned">
+                      <x-slot:header>
+                          {{ trans('admin/locations/message.assigned_assets') }}
+                      </x-slot:header>
+
+                      <x-slot:bulkactions>
+                          <x-table.bulk-assets />
+                      </x-slot:bulkactions>
+
+                      <x-slot:content>
+                          <x-table
+                                  show_column_search="true"
+                                  show_advanced_search="true"
+                                  buttons="assetButtons"
+                                  :api_url="route('api.assets.index', ['assigned_to' => $location->id, 'assigned_type' => 'App\Models\Location'])"
+                                  :presenter="\App\Presenters\AssetPresenter::dataTableLayout()"
+                                  export_filename="export-locations-{{ str_slug($location->name) }}-assets-{{ date('Y-m-d') }}"
+                          />
+                      </x-slot:content>
+                  </x-tabs.pane>
+                 <!-- end assigned assets tab pane -->
+
+
+
+                  <!-- start rtd assets tab pane -->
+                  <x-tabs.pane name="rtd_assets">
+                      <x-slot:header>
+                          {{ trans('admin/hardware/form.default_location') }}
+                      </x-slot:header>
+
+                      <x-slot:bulkactions>
+                          <x-table.bulk-assets />
+                      </x-slot:bulkactions>
+
+                      <x-slot:content>
+                          <x-table
+                            buttons="assetButtons"
+                            api_url="{{ route('api.assets.index', ['rtd_location_id' => $location->id]) }}"
+                            :presenter="\App\Presenters\AssetPresenter::dataTableLayout()"
+                            export_filename="export-rtd-locations-{{ str_slug($location->name) }}-assets-{{ date('Y-m-d') }}"
+                          />
+                      </x-slot:content>
+
+                  </x-tabs.pane>
+                  @endcan
+                  <!-- end rtd assets tab pane -->
+
+
+                  <!-- start accessories tab pane -->
+                  @can('view', \App\Models\Accessory::class)
+                  <x-tabs.pane name="accessories">
+                      <x-slot:header>
+                          {{ trans('general.accessories') }}
+                      </x-slot:header>
+
+                      <x-slot:content>
+                          <x-table
+                            name="accessories"
+                            buttons="accessoryButtons"
+                            api_url="{{ route('api.accessories.index', ['location_id' => $location->id]) }}"
+                            :presenter="\App\Presenters\AccessoryPresenter::dataTableLayout()"
+                            export_filename="export-locations-{{ str_slug($location->name) }}-accessories-{{ date('Y-m-d') }}"
+                          />
+                      </x-slot:content>
+
+                  </x-tabs.pane>
+                  <!-- end accessories tab pane -->
+
+                  <!-- start assigned accessories tab pane -->
+                  <x-tabs.pane name="accessories_assigned">
+                      <x-slot:header>
+                          {{ trans('general.accessories_assigned') }}
+                      </x-slot:header>
+
+                      <x-slot:content>
+                          <x-table
+                                  name="accessoriesAssigned"
+                                  buttons="accessoryButtons"
+                                  api_url="{{ route('api.locations.assigned_accessories', ['location' => $location]) }}"
+                                  :presenter="\App\Presenters\AccessoryPresenter::dataTableLayout()"
+                                  export_filename="export-locations-{{ str_slug($location->name) }}-accessories-{{ date('Y-m-d') }}"
+                          />
+                      </x-slot:content>
+
+                  </x-tabs.pane>
+                  @endcan
+                  <!-- end assigned accessories tab pane -->
+
+
+                  <!-- start consumables tab pane -->
+                  @can('view', \App\Models\Consumable::class)
+                  <x-tabs.pane name="consumables">
+                      <x-slot:header>
+                          {{ trans('general.consumables') }}
+                      </x-slot:header>
+
+                      <x-slot:content>
+                          <x-table
+                                  name="consumables"
+                                  buttons="consumableButtons"
+                                  api_url="{{ route('api.consumables.index', ['location_id' => $location->id]) }}"
+                                  :presenter="\App\Presenters\ConsumablePresenter::dataTableLayout()"
+                                  export_filename="export-locations-{{ str_slug($location->name) }}-consumables-{{ date('Y-m-d') }}"
+                          />
+                      </x-slot:content>
+
+                  </x-tabs.pane>
+                  @endcan
+                  <!-- end consumables tab pane -->
+
+                  <!-- start components tab pane -->
+                  @can('view', \App\Models\Component::class)
+                  <x-tabs.pane name="components">
+                      <x-slot:header>
+                          {{ trans('general.components') }}
+                      </x-slot:header>
+                      <x-slot:content>
+                          <x-table
+                                  name="components"
+                                  buttons="componentButtons"
+                                  api_url="{{ route('api.components.index', ['location_id' => $location->id]) }}"
+                                  :presenter="\App\Presenters\ComponentPresenter::dataTableLayout()"
+                                  export_filename="export-locations-{{ str_slug($location->name) }}-consumables-{{ date('Y-m-d') }}"
+                          />
+                      </x-slot:content>
+                  </x-tabs.pane>
+                  @endcan
+                  <!-- end components tab pane -->
+
+                  <!-- start child locations tab pane -->
+                  <x-tabs.pane name="child_locations">
+                      <x-slot:header>
+                          {{ trans('general.child_locations') }}
+                      </x-slot:header>
+                      <x-slot:content>
+                          <x-table
+                                  name="childrenListingTable"
+                                  buttons="locationButtons"
+                                  api_url="{{ route('api.locations.index', ['parent_id' => $location->id]) }}"
+                                  :presenter="\App\Presenters\LocationPresenter::dataTableLayout()"
+                                  export_filename="export-children-locations-{{ str_slug($location->name) }}-{{ date('Y-m-d') }}"
+                          />
+                      </x-slot:content>
+                  </x-tabs.pane>
+                  <!-- end components tab pane -->
+
+
+                  <!-- start files tab pane -->
+                  <x-tabs.pane name="files">
+                      <x-slot:header>
+                          {{ trans('general.files') }}
+                      </x-slot:header>
+                      <x-slot:content>
+                          <x-filestable object_type="locations" :object="$location" />
+                      </x-slot:content>
+                  </x-tabs.pane>
+                  <!-- end files tab pane -->
+
+                  <!-- start history tab pane -->
+                  <x-tabs.pane name="history">
+                      <x-slot:header>
+                          {{ trans('general.history') }}
+                      </x-slot:header>
+                      <x-slot:content>
+                          <x-table
+                                  name="locationHistory"
+                                  api_url="{{ route('api.activity.index', ['item_id' => $location->id, 'item_type' => 'location']) }}"
+                                  :presenter="\App\Presenters\HistoryPresenter::dataTableLayout()"
+                                  export_filename="export-locations-history-{{ str_slug($location->name) }}-{{ date('Y-m-d') }}"
+                          />
+                      </x-slot:content>
+                  </x-tabs.pane>
+                  <!-- end history tab pane -->
+
+              </x-slot:tabpanes>
+      </x-tabs>
+
+        </x-page-column>
+        <x-page-column class="col-md-3">
+
+            <x-box>
+                <x-box.info-panel :infoPanelObj="$location" img_path="{{ app('locations_upload_url') }}">
+
+                    <x-slot:before_list>
+
+                        <x-button.wide-edit :item="$location" :route="route('locations.edit', $location->id)" />
+                        <x-button.wide-restore :item="$location" :route="route('locations.restore', ['location' => $location->id])" />
+
+                        @if ($location->deleted_at=='')
+
+                            <a href="{{ route('locations.print_assigned', ['locationId' => $location->id]) }}" class="btn btn-block btn-sm btn-theme btn-social hidden-print">
+                                <x-icon type="print" />
+                                {{ trans('admin/locations/table.print_inventory') }}
+                            </a>
+
+                            <a href="{{ route('locations.print_all_assigned', ['locationId' => $location->id]) }}" class="btn btn-block btn-sm btn-theme btn-social hidden-print">
+                                <x-icon type="print" />
+                                {{ trans('admin/locations/table.print_all_assigned') }}
+                            </a>
+                        @endif
+
+                        <x-button.wide-delete :item="$location" />
+
+
+                    </x-slot:before_list>
+
+
+                @if ($location->ldap_ou)
+                        <x-info-element icon_type="ldap">
+                            {{ $location->ldap_ou }}
+                        </x-info-element>
+                    @endif
+
+
+                </x-box.info-panel>
+            </x-box>
+
+        </x-page-column>
+    </x-container>
 
 @stop
 
-@section('moar_scripts')
+@can('update', Location::class)
+    @section('moar_scripts')
+       @include ('modals.upload-file', ['item_type' => 'locations', 'item_id' => $location->id])
+    @endsection
+@endcan
+
 @include ('partials.bootstrap-table', [
-    'exportFile' => 'locations-export',
-    'search' => true
- ])
+'exportFile' => 'locations-export',
+'search' => true
+])
 
-@stop
+

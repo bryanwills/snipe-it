@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Transformers\GroupsTransformer;
 use App\Models\Group;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 
 class GroupsController extends Controller
@@ -16,16 +17,14 @@ class GroupsController extends Controller
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
-     * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index(Request $request) : JsonResponse | array
     {
         $this->authorize('superadmin');
 
         $this->authorize('view', Group::class);
-        $allowed_columns = ['id', 'name', 'created_at', 'users_count'];
 
-        $groups = Group::select('id', 'name', 'permissions', 'created_at', 'updated_at')->withCount('users as users_count');
+        $groups = Group::select(['id', 'name', 'permissions', 'notes', 'created_at', 'updated_at', 'created_by'])->with('adminuser')->withCount('users as users_count');
 
         if ($request->filled('search')) {
             $groups = $groups->TextSearch($request->input('search'));
@@ -35,16 +34,30 @@ class GroupsController extends Controller
             $groups->where('name', '=', $request->input('name'));
         }
 
-        // Set the offset to the API call's offset, unless the offset is higher than the actual count of items in which
-        // case we override with the actual count, so we should return 0 items.
-        $offset = (($groups) && ($request->get('offset') > $groups->count())) ? $groups->count() : $request->get('offset', 0);
 
-        // Check to make sure the limit is not higher than the max allowed
-        ((config('app.max_results') >= $request->input('limit')) && ($request->filled('limit'))) ? $limit = $request->input('limit') : $limit = config('app.max_results');
-
+        $offset = ($request->input('offset') > $groups->count()) ? $groups->count() : app('api_offset_value');
+        $limit = app('api_limit_value');
         $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
-        $sort = in_array($request->input('sort'), $allowed_columns) ? $request->input('sort') : 'created_at';
-        $groups->orderBy($sort, $order);
+
+        switch ($request->input('sort')) {
+            case 'created_by':
+                $groups = $groups->OrderByCreatedBy($order);
+                break;
+            default:
+                // This array is what determines which fields should be allowed to be sorted on ON the table itself.
+                // These must match a column on the consumables table directly.
+                $allowed_columns = [
+                    'id',
+                    'name',
+                    'created_at',
+                    'updated_at',
+                    'users_count',
+                ];
+
+                $sort = in_array($request->input('sort'), $allowed_columns) ? $request->input('sort') : 'created_at';
+                $groups = $groups->orderBy($sort, $order);
+                break;
+        }
 
         $total = $groups->count();
         $groups = $groups->skip($offset)->take($limit)->get();
@@ -58,18 +71,22 @@ class GroupsController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request) : JsonResponse
     {
         $this->authorize('superadmin');
         $group = new Group;
+        // Get all the available permissions
+        $permissions = json_encode(config('permissions'));
+        $groupPermissions = Helper::selectedPermissionsArray($permissions, $permissions);
 
         $group->name = $request->input('name');
-        $group->permissions = $request->input('permissions'); // Todo - some JSON validation stuff here
+        $group->created_by = auth()->id();
+        $group->notes = $request->input('notes');
+        $group->permissions = json_encode($request->input('permissions', $groupPermissions));
 
         if ($group->save()) {
-            return response()->json(Helper::formatStandardApiResponse('success', $group, trans('admin/groups/message.create.success')));
+            return response()->json(Helper::formatStandardApiResponse('success', (new GroupsTransformer)->transformGroup($group), trans('admin/groups/message.success.create')));
         }
 
         return response()->json(Helper::formatStandardApiResponse('error', null, $group->getErrors()));
@@ -81,13 +98,11 @@ class GroupsController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
      * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($id) : array
     {
         $this->authorize('superadmin');
         $group = Group::findOrFail($id);
-
         return (new GroupsTransformer)->transformGroup($group);
     }
 
@@ -98,18 +113,18 @@ class GroupsController extends Controller
      * @since [v4.0]
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id) : JsonResponse
     {
         $this->authorize('superadmin');
         $group = Group::findOrFail($id);
 
         $group->name = $request->input('name');
+        $group->notes = $request->input('notes');
         $group->permissions = $request->input('permissions'); // Todo - some JSON validation stuff here
 
         if ($group->save()) {
-            return response()->json(Helper::formatStandardApiResponse('success', $group, trans('admin/groups/message.update.success')));
+            return response()->json(Helper::formatStandardApiResponse('success', (new GroupsTransformer)->transformGroup($group), trans('admin/groups/message.success.update')));
         }
 
         return response()->json(Helper::formatStandardApiResponse('error', null, $group->getErrors()));
@@ -121,9 +136,8 @@ class GroupsController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v4.0]
      * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($id) : JsonResponse
     {
         $this->authorize('superadmin');
         $group = Group::findOrFail($id);
