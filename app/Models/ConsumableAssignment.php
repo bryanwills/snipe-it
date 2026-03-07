@@ -2,13 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Traits\CompanyableTrait;
 use Illuminate\Database\Eloquent\Model;
+use Watson\Validating\ValidatingTrait;
 
 class ConsumableAssignment extends Model
 {
     use CompanyableTrait;
+    use ValidatingTrait;
 
     protected $table = 'consumables_users';
+
+    public $rules = [
+        'assigned_to'        => 'required|exists:users,id',
+    ];
 
     public function consumable()
     {
@@ -20,8 +27,8 @@ class ConsumableAssignment extends Model
         return $this->belongsTo(\App\Models\User::class, 'assigned_to');
     }
 
-    public function admin()
+    public function adminuser()
     {
-        return $this->belongsTo(\App\Models\User::class, 'user_id');
+        return $this->belongsTo(\App\Models\User::class, 'created_by')->withTrashed();
     }
 }

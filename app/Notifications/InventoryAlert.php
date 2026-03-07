@@ -2,10 +2,13 @@
 
 namespace App\Notifications;
 
+use AllowDynamicProperties;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Symfony\Component\Mime\Email;
 
+#[AllowDynamicProperties]
 class InventoryAlert extends Notification
 {
     use Queueable;
@@ -22,7 +25,7 @@ class InventoryAlert extends Notification
     public function __construct($params, $threshold)
     {
         $this->items = $params;
-        $this->threshold = $threshold;
+        $this->threshold = $threshold ?? 0;
     }
 
     /**
@@ -32,9 +35,8 @@ class InventoryAlert extends Notification
      */
     public function via()
     {
-        $notifyBy = ['mail'];
+       return (!empty($this->items) && $this->threshold !== null) ? ['mail'] : [];
 
-        return $notifyBy;
     }
 
     /**
@@ -51,7 +53,12 @@ class InventoryAlert extends Notification
                 'threshold'  => $this->threshold,
             ]
         )
-            ->subject(trans('mail.Low_Inventory_Report'));
+            ->subject('⚠️ '.trans('mail.Low_Inventory_Report'))
+            ->withSymfonyMessage(function (Email $message) {
+                $message->getHeaders()->addTextHeader(
+                    'X-System-Sender', 'Snipe-IT'
+                );
+            });
 
         return $message;
     }

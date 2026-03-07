@@ -3,11 +3,15 @@
 return array(
     'asset_categories' 					=> 'Categorias de Ativos',
     'category_name'  					=> 'Nome da Categoria',
-    'checkin_email'                     => 'Enviar email para o usuário no check-in / check-out.',
+    'email_to_user_upon_checkin' => 'Send email to user upon checkin.',
+    'email_to_user_upon_checkin_and_checkout' => 'Send email to user upon checkin/checkout.',
+    'email_to_initiator'                => 'Envie um e-mail para você quando o usuário aceitar ou recusar o pagamento.',
     'checkin_email_notification'        => 'Este usuário receberá um email no checkin / checkout.',
     'clone'                             => 'Clonar Categoria',
     'create'  							=> 'Criar Categoria',
     'edit'                              => 'Editar Categoria',
+    'email_will_be_sent_due_to_global_eula' => 'Será enviado um e-mail para o usuário na finalização da compra, porque o EULA global está sendo usado.',
+    'email_will_be_sent_due_to_category_eula' => 'An email will be sent to the user upon checkout because a EULA is set for this category.',
     'eula_text'							=> 'EULA da Categoria',
     'eula_text_help'					=> 'Este campo lhe permite personalizar seus EULAs para tipos específicos de bens. Se você apenas tem um EULA para todos os seus bens, você pode selecionar a caixa abaixo para usar o padrão primário.',
     'name'                              => 'Nome da Categoria',
@@ -19,5 +23,9 @@ return array(
     'use_default_eula'					=> 'Em vez disso, use o <a href="#" data-toggle="modal" data-target="#eulaModal">EULA padrão primário</a>.',
     'use_default_eula_disabled'			=> '<del>Em vez disso, use o EULA padrão primário.</del> Nenhum EULA padrão primário foi definido. Adicione um nas Configurações.',
     'use_default_eula_column'			=> 'Usar padrão EULA',
+    'import_require_acceptance'         => 'Requerer Aceitação',
+    'import_checkin_email'              => 'Enviar e-mail de Checkin',
+    'import_eula_text'                  => 'Texto do EULA',
+    'import_category_type'              => 'Tipo de Categoria',
 
 );

@@ -7,38 +7,53 @@ return [
         'success'               => 'Parámetros actualizados correctamente.',
     ],
     'backup' => [
-        'delete_confirm'        => 'Está seguro que desea eliminar este archivo de respaldo? Esta acción no puede ser revertida. ',
+        'delete_confirm'        => '¿Está seguro de que desea eliminar este archivo de respaldo? Esta acción no puede se puede deshacer. ',
         'file_deleted'          => 'El archivo de respaldo fue eliminado satisfactoriamente. ',
-        'generated'             => 'Un nuevo archivo de respaldo fue creado satisfactoriamente.',
-        'file_not_found'        => 'El archivo de respaldo no se ha encontrado en el servidor.',
-        'restore_warning'       => 'Yes, restore it. I acknowledge that this will overwrite any existing data currently in the database. This will also log out all of your existing users (including you).',
-        'restore_confirm'       => 'Are you sure you wish to restore your database from :filename?'
+        'generated'             => 'Se ha creado correctamente un nuevo archivo de copia de seguridad.',
+        'file_not_found'        => 'Ese archivo de copia de seguridad no se pudo encontrar en el servidor.',
+        'restore_warning'       => 'Sí, restaurarlo. Reconozco que esto sobrescribirá cualquier dato existente actualmente en la base de datos. Esto también cerrará la sesión de todos sus usuarios existentes (incluido usted).',
+        'restore_confirm'       => '¿Está seguro que desea restaurar su base de datos desde :filename?'
+    ],
+    'restore' => [
+        'success'               => 'Se ha restaurado la copia de seguridad de su sistema. Por favor, vuelva a iniciar sesión.'
     ],
     'purge' => [
         'error'     => 'Ha ocurrido un error mientras se realizaba el purgado. ',
-        'validation_failed'     => 'Su confirmación de purga es incorrecta. Por favor, escriba la palabra "Borrar" en el cuadro de confirmación.',
+        'validation_failed'     => 'Su confirmación de purga es incorrecta. Por favor, escriba la palabra "DELETE" en el cuadro de confirmación.',
         'success'               => 'Registros eliminados correctamente purgados.',
     ],
     'mail' => [
-        'sending' => 'Sending Test Email...',
-        'success' => 'Mail sent!',
-        'error' => 'Mail could not be sent.',
-        'additional' => 'No additional error message provided. Check your mail settings and your app log.'
+        'sending' => 'Enviando correo electrónico de prueba...',
+        'success' => '¡Correo enviado!',
+        'error' => 'El correo no pudo ser enviado.',
+        'additional' => 'No se proporciona ningún mensaje de error adicional. Compruebe la configuración de su correo y el registro de errores de la aplicación.'
     ],
     'ldap' => [
-        'testing' => 'Testing LDAP Connection, Binding & Query ...',
-        '500' => '500 Server Error. Please check your server logs for more information.',
-        'error' => 'Something went wrong :(',
-        'sync_success' => 'A sample of 10 users returned from the LDAP server based on your settings:',
-        'testing_authentication' => 'Testing LDAP Authentication...',
-        'authentication_success' => 'User authenticated against LDAP successfully!'
+        'testing' => 'Probando conexión LDAP, Binding & Query ...',
+        '500' => 'Error 500 del servidor. Por favor, compruebe los registros de error de su servidor para más información.',
+        'error' => 'Algo salió mal :(',
+        'sync_success' => 'Una muestra de 10 usuarios devueltos desde el servidor LDAP basado en su configuración:',
+        'testing_authentication' => 'Probando autenticación LDAP...',
+        'authentication_success' => 'Usuario autenticado contra LDAP con éxito!'
     ],
-    'slack' => [
-        'sending' => 'Sending Slack test message...',
-        'success_pt1' => 'Success! Check the ',
-        'success_pt2' => ' channel for your test message, and be sure to click SAVE below to store your settings.',
-        '500' => '500 Server Error.',
-        'error' => 'Something went wrong. Slack responded with: :error_message',
-        'error_misc' => 'Something went wrong. :( ',
-    ]
+    'labels' => [
+        'null_template' => 'Label template not found. Please select a template.',
+        ],
+    'webhook' => [
+        'sending' => 'Enviando mensaje de prueba de :app...',
+        'success' => '¡Su integración :webhook_name funciona!',
+        'success_pt1' => '¡Éxito! Compruebe el ',
+        'success_pt2' => ' para su mensaje de prueba, y asegúrese de hacer clic en GUARDAR abajo para guardar su configuración.',
+        '500' => 'Error 500 del servidor.',
+        'error' => 'Algo salió mal. :app respondió con: :error_message',
+        'error_redirect' => 'ERROR: 301/302 :endpoint devuelve una redirección. Por razones de seguridad, no seguimos redirecciones. Por favor, utilice el punto final actual.',
+        'error_misc' => 'Algo salió mal. :( ',
+        'webhook_fail' => ' Notificación de webhook fallida: Compruebe que la URL sigue siendo válida.',
+        'webhook_channel_not_found' => ' canal webhook no encontrado.',
+        'ms_teams_deprecation' => 'The selected Microsoft Teams webhook URL will be deprecated Dec 31st, 2025. Please use a workflow URL. Microsoft\'s documentation on creating a workflow can be found <a href="https://support.microsoft.com/en-us/office/create-incoming-webhooks-with-workflows-for-microsoft-teams-8ae491c7-0394-4861-ba59-055e33f75498" target="_blank"> here.</a>',
+    ],
+    'location_scoping' => [
+        'not_saved' => 'Your settings were not saved.',
+        'mismatch' => 'There is 1 item in the database that need your attention before you can enable location scoping.|There are :count items in the database that need your attention before you can enable location scoping.',
+    ],
 ];

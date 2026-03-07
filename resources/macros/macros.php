@@ -4,27 +4,6 @@
 */
 
 /**
- * Locale macro
- * Generates the dropdown menu of available languages
- */
-Form::macro('locales', function ($name = 'locale', $selected = null, $class = null, $id = null) {
-
-    $idclause = (!is_null($id)) ? $id : '';
-
-    $select = '<select name="'.$name.'" class="'.$class.'" style="min-width:350px"'.$idclause.' aria-label="'.$name.'" data-placeholder="'.trans('localizations.select_language').'">';
-    $select .= '<option value=""  role="option">'.trans('localizations.select_language').'</option>';
-
-    // Pull the autoglossonym array from the localizations translation file
-    foreach (trans('localizations.languages') as $abbr => $locale) {
-        $select .= '<option value="'.$abbr.'"'.(($selected == $abbr) ? ' selected="selected" role="option" aria-selected="true"' : ' aria-selected="false"').'>'.$locale.'</option> ';
-    }
-
-    $select .= '</select>';
-
-    return $select;
-});
-
-/**
  * Country macro
  * Generates the dropdown menu of countries for the profile form
  */
@@ -32,76 +11,27 @@ Form::macro('countries', function ($name = 'country', $selected = null, $class =
 
     $idclause = (!is_null($id)) ? $id : '';
 
-    $select = '<select name="'.$name.'" class="'.$class.'" style="min-width:350px"'.$idclause.' aria-label="'.$name.'" data-placeholder="'.trans('localizations.select_country').'">';
+    // Pull the autoglossonym array from the localizations translation file
+    $countries_array = trans('localizations.countries');
+
+    $select = '<select name="'.$name.'" class="'.$class.'" style="width:100%" '.$idclause.' aria-label="'.$name.'" data-placeholder="'.trans('localizations.select_country').'" data-allow-clear="true" data-tags="true">';
     $select .= '<option value=""  role="option">'.trans('localizations.select_country').'</option>';
 
-    // Pull the autoglossonym array from the localizations translation file
-    foreach (trans('localizations.countries') as $abbr => $country) {
-        $select .= '<option value="'.strtoupper($abbr).'"'.(strtoupper($selected) == strtoupper($abbr) ? ' selected="selected" role="option" aria-selected="true"' : ' aria-selected="false"').'>'.$country.'</option> ';
+    foreach ($countries_array as $abbr => $country) {
+
+        // We have to handle it this way to handle deprecation warnings since you can't strtoupper on null
+        if ($abbr!='') {
+            $abbr = strtoupper($abbr);
+        }
+
+        // Loop through the countries configured in the localization file
+        $select .= '<option value="' . $abbr . '" role="option" ' . (($selected == $abbr) ? ' selected="selected" aria-selected="true"' : ' aria-selected="false"') . '>' . $country . '</option> ';
+
     }
 
-    $select .= '</select>';
-
-    return $select;
-});
-
-Form::macro('date_display_format', function ($name = 'date_display_format', $selected = null, $class = null) {
-    $formats = [
-        'Y-m-d',
-        'D M d, Y',
-        'M j, Y',
-        'd M, Y',
-        'm/d/Y',
-        'n/d/y',
-        'd/m/Y',
-        'd.m.Y',
-        'Y.m.d.',
-    ];
-
-    foreach ($formats as $format) {
-        $date_display_formats[$format] = Carbon::parse(date('Y').'-'.date('m').'-25')->format($format);
-    }
-    $select = '<select name="'.$name.'" class="'.$class.'" style="min-width:250px" aria-label="'.$name.'">';
-    foreach ($date_display_formats as $format => $date_display_format) {
-        $select .= '<option value="'.$format.'"'.($selected == $format ? ' selected="selected" role="option" aria-selected="true"' : ' aria-selected="false"').'">'.$date_display_format.'</option> ';
-    }
-
-    $select .= '</select>';
-
-    return $select;
-});
-
-Form::macro('time_display_format', function ($name = 'time_display_format', $selected = null, $class = null) {
-    $formats = [
-        'g:iA',
-        'h:iA',
-        'H:i',
-    ];
-
-    foreach ($formats as $format) {
-        $time_display_formats[$format] = Carbon::now()->format($format);
-    }
-    $select = '<select name="'.$name.'" class="'.$class.'" style="min-width:150px" aria-label="'.$name.'">';
-    foreach ($time_display_formats as $format => $time_display_format) {
-        $select .= '<option value="'.$format.'"'.($selected == $format ? ' selected="selected" role="option" aria-selected="true"' : ' aria-selected="false"').'>'.$time_display_format.'</option> ';
-    }
-
-    $select .= '</select>';
-
-    return $select;
-});
-
-Form::macro('digit_separator', function ($name = 'digit_separator', $selected = null, $class = null) {
-    $formats = [
-        '1,234.56',
-        '1.234,56',
-    ];
-
-    foreach ($formats as $format) {
-    }
-    $select = '<select name="'.$name.'" class="'.$class.'" style="min-width:120px">';
-    foreach ($formats as $format_inner) {
-        $select .= '<option value="'.$format_inner.'"'.($selected == $format_inner ? ' selected="selected"' : '').'>'.$format_inner.'</option> ';
+    // If the country value doesn't exist in the array, add it as a new option and select it so we don't drop that data
+    if (!array_key_exists($selected, $countries_array)) {
+        $select .= '<option value="' . e($selected) . '" selected="selected" role="option" aria-selected="true">' . e($selected) .' *</option> ';
     }
 
     $select .= '</select>';
@@ -158,116 +88,23 @@ Form::macro('barcode_types', function ($name = 'barcode_type', $selected = null,
 
 Form::macro('username_format', function ($name = 'username_format', $selected = null, $class = null) {
     $formats = [
-        'firstname.lastname' => trans('general.firstname_lastname_format'),
-        'firstname' => trans('general.first_name_format'),
-        'filastname' => trans('general.filastname_format'),
-        'lastnamefirstinitial' => trans('general.lastnamefirstinitial_format'),
-        'firstname_lastname' => trans('general.firstname_lastname_underscore_format'),
-        'firstinitial.lastname' => trans('general.firstinitial.lastname'),
-        'lastname_firstinitial' => trans('general.lastname_firstinitial'),
-        'firstnamelastname' => trans('general.firstnamelastname'),
-        'firstnamelastinitial' => trans('general.firstnamelastinitial'),
+        'firstname.lastname' => trans('admin/settings/general.username_formats.firstname_lastname_format'),
+        'firstname' => trans('admin/settings/general.username_formats.first_name_format'),
+        'lastname' => trans('admin/settings/general.username_formats.last_name_format'),
+        'filastname' => trans('admin/settings/general.username_formats.filastname_format'),
+        'lastnamefirstinitial' => trans('admin/settings/general.username_formats.lastnamefirstinitial_format'),
+        'firstname_lastname' => trans('admin/settings/general.username_formats.firstname_lastname_underscore_format'),
+        'firstinitial.lastname' => trans('admin/settings/general.username_formats.firstinitial_lastname'),
+        'lastname_firstinitial' => trans('admin/settings/general.username_formats.lastname_firstinitial'),
+        'lastname.firstinitial' => trans('admin/settings/general.username_formats.lastname_dot_firstinitial_format'),
+        'firstnamelastname' => trans('admin/settings/general.username_formats.firstnamelastname'),
+        'firstnamelastinitial' => trans('admin/settings/general.username_formats.firstnamelastinitial'),
+        'lastname.firstname' => trans('admin/settings/general.username_formats.lastnamefirstname'),
     ];
 
     $select = '<select name="'.$name.'" class="'.$class.'" style="width: 100%" aria-label="'.$name.'">';
     foreach ($formats as $format => $label) {
         $select .= '<option value="'.$format.'"'.($selected == $format ? ' selected="selected" role="option" aria-selected="true"' : ' aria-selected="false"').'>'.$label.'</option> '."\n";
-    }
-
-    $select .= '</select>';
-
-    return $select;
-});
-
-Form::macro('two_factor_options', function ($name = 'two_factor_enabled', $selected = null, $class = null) {
-    $formats = [
-        '' => trans('admin/settings/general.two_factor_disabled'),
-        '1' => trans('admin/settings/general.two_factor_optional'),
-        '2' => trans('admin/settings/general.two_factor_required'),
-
-    ];
-
-    $select = '<select name="'.$name.'" class="'.$class.'" aria-label="'.$name.'">';
-    foreach ($formats as $format => $label) {
-        $select .= '<option value="'.$format.'"'.($selected == $format ? ' selected="selected" role="option" aria-selected="true"' : ' aria-selected="false"').'>'.$label.'</option> '."\n";
-    }
-
-    $select .= '</select>';
-
-    return $select;
-});
-
-Form::macro('customfield_elements', function ($name = 'customfield_elements', $selected = null, $class = null) {
-    $formats = [
-        'text' => 'Text Box',
-        'listbox' => 'List Box',
-        'textarea' => 'Textarea (multi-line) ',
-        'checkbox' => 'Checkbox',
-        'radio' => 'Radio Buttons',
-    ];
-
-    $select = '<select name="'.$name.'" class="'.$class.'" style="width: 100%" aria-label="'.$name.'">';
-    foreach ($formats as $format => $label) {
-        $select .= '<option value="'.$format.'"'.($selected == $format ? ' selected="selected" role="option" aria-selected="true"' : ' aria-selected="false"').'>'.$label.'</option> '."\n";
-    }
-
-    $select .= '</select>';
-
-    return $select;
-});
-
-Form::macro('skin', function ($name = 'skin', $selected = null, $class = null) {
-    $formats = [
-        'blue' => 'Default Blue',
-        'blue-dark' => 'Blue (Dark Mode)',
-        'green' => 'Green Dark',
-        'green-dark' => 'Green (Dark Mode)',
-        'red' => 'Red Dark',
-        'red-dark' => 'Red (Dark Mode)',
-        'orange' => 'Orange Dark',
-        'orange-dark' => 'Orange (Dark Mode)',
-        'black' => 'Black',
-        'black-dark' => 'Black (Dark Mode)',
-        'purple' => 'Purple',
-        'purple-dark' => 'Purple (Dark Mode)',
-        'yellow' => 'Yellow',
-        'yellow-dark' => 'Yellow (Dark Mode)',
-        'contrast' => 'High Contrast',
-    ];
-
-    $select = '<select name="'.$name.'" class="'.$class.'" style="width: 250px" aria-label="'.$name.'">';
-    foreach ($formats as $format => $label) {
-        $select .= '<option value="'.$format.'"'.($selected == $format ? ' selected="selected" role="option" aria-selected="true"' : ' aria-selected="false"').'>'.$label.'</option> '."\n";
-    }
-
-    $select .= '</select>';
-
-    return $select;
-});
-
-Form::macro('user_skin', function ($name = 'skin', $selected = null, $class = null) {
-    $formats = [
-        '' => 'Site Default',
-        'blue' => 'Default Blue',
-        'blue-dark' => 'Blue (Dark Mode)',
-        'green' => 'Green Dark',
-        'green-dark' => 'Green (Dark Mode)',
-        'red' => 'Red Dark',
-        'red-dark' => 'Red (Dark Mode)',
-        'orange' => 'Orange Dark',
-        'orange-dark' => 'Orange (Dark Mode)',
-        'black' => 'Black',
-        'black-dark' => 'Black (Dark Mode)',
-        'purple' => 'Purple',
-        'purple-dark' => 'Purple (Dark Mode)',
-        'yellow' => 'Yellow',
-        'yellow-dark' => 'Yellow (Dark Mode)',
-        'contrast' => 'High Contrast',
-    ];
-
-    $select = '<select name="'.$name.'" class="'.$class.'" style="width: 250px">';
-    foreach ($formats as $format => $label) {
-        $select .= '<option value="'.$format.'"'.($selected == $format ? ' selected="selected"' : '').'>'.$label.'</option> '."\n";
     }
 
     $select .= '</select>';

@@ -30,13 +30,17 @@ class StatuslabelsTransformer
             'default_label' => ($statuslabel->default_label == '1') ? true : false,
             'assets_count' => (int) $statuslabel->assets_count,
             'notes' => e($statuslabel->notes),
+            'created_by' => ($statuslabel->adminuser) ? [
+                'id' => (int) $statuslabel->adminuser->id,
+                'name'=> e($statuslabel->adminuser->display_name),
+            ] : null,
             'created_at' => Helper::getFormattedDateObject($statuslabel->created_at, 'datetime'),
             'updated_at' => Helper::getFormattedDateObject($statuslabel->updated_at, 'datetime'),
         ];
 
         $permissions_array['available_actions'] = [
             'update' => Gate::allows('update', Statuslabel::class) ? true : false,
-            'delete' => (Gate::allows('delete', Statuslabel::class) && ($statuslabel->assets_count == 0)) ? true : false,
+            'delete' => (Gate::allows('delete', Statuslabel::class) && ($statuslabel->isDeletable())) ? true : false,
         ];
         $array += $permissions_array;
 

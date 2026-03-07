@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Helpers\Helper;
 use App\Models\AssetModel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Input;
-use Illuminate\Support\Facades\Redirect;
+use Illuminate\Http\RedirectResponse;
+use \Illuminate\Contracts\View\View;
 
 class BulkAssetModelsController extends Controller
 {
@@ -16,9 +16,8 @@ class BulkAssetModelsController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v1.7]
      * @param Request $request
-     * @return \Illuminate\Contracts\View\View
      */
-    public function edit(Request $request)
+    public function edit(Request $request) : View | RedirectResponse
     {
         $models_raw_array = $request->input('ids');
 
@@ -61,9 +60,8 @@ class BulkAssetModelsController extends Controller
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v1.7]
      * @param Request $request
-     * @return \Illuminate\Contracts\View\View
      */
-    public function update(Request $request)
+    public function update(Request $request): View | RedirectResponse
     {
         $this->authorize('update', AssetModel::class);
       
@@ -73,26 +71,36 @@ class BulkAssetModelsController extends Controller
         if (($request->filled('manufacturer_id') && ($request->input('manufacturer_id') != 'NC'))) {
             $update_array['manufacturer_id'] = $request->input('manufacturer_id');
         }
+        
         if (($request->filled('category_id') && ($request->input('category_id') != 'NC'))) {
             $update_array['category_id'] = $request->input('category_id');
         }
+
         if ($request->input('fieldset_id') != 'NC') {
             $update_array['fieldset_id'] = $request->input('fieldset_id');
         }
+
         if ($request->input('depreciation_id') != 'NC') {
             $update_array['depreciation_id'] = $request->input('depreciation_id');
         }
 
-        if ($request->filled('requestable') != '') {
+        if ($request->input('requestable') != '') {
             $update_array['requestable'] = $request->input('requestable');
         }
 
+        if ($request->filled('min_amt')) {
+            $update_array['min_amt'] = $request->input('min_amt');
+        }
+
+        if ($request->filled('require_serial')) {
+            $update_array['require_serial'] = $request->input('require_serial');
+        }
 
         if (count($update_array) > 0) {
             AssetModel::whereIn('id', $models_raw_array)->update($update_array);
 
             return redirect()->route('models.index')
-                ->with('success', trans('admin/models/message.bulkedit.success'));
+                ->with('success', trans_choice('admin/models/message.bulkedit.success', count($models_raw_array), ['model_count' => count($models_raw_array)]));
         }
 
         return redirect()->route('models.index')
@@ -105,9 +113,8 @@ class BulkAssetModelsController extends Controller
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
      * @since [v1.0]
-     * @return Redirect
      */
-    public function destroy(Request $request)
+    public function destroy(Request $request) : RedirectResponse
     {
         $this->authorize('delete', AssetModel::class);
       

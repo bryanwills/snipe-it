@@ -1,11 +1,12 @@
 <?php
 
 return array(
-    'checkout'                          => 'Salida de Consumible al Usuario',
-    'consumable_name'                   => 'Nombre del Consumible',
-    'create'                            => 'Crear Consumible',
+    'checkout'                          => 'Asignar consumible a usuario',
+    'consumable_name'                   => 'Nombre del consumible',
+    'create'                            => 'Crear consumible',
     'item_no'                           => 'Artículo No.',
     'remaining' 			            => 'Restante',
     'total' 			                => 'Total',
     'update'                            => 'Actualizar Consumible',
+    'inventory_warning'                 => 'El inventario de este consumible está por debajo de la cantidad mínima de :min_count',
 );

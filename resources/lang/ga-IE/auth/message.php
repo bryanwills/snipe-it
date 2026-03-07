@@ -6,14 +6,14 @@ return array(
     'account_not_found'      => 'Tá an t-ainm úsáideora nó an focal faire mícheart.',
     'account_not_activated'  => 'Níl an cuntas úsáideora seo curtha i ngníomh.',
     'account_suspended'      => 'Tá an cuntas úsáideora seo ar fionraí.',
-    'account_banned'         => 'Tá toirmeasc ar an gcuntas úsáideora seo.',
-    'throttle'               => 'Too many failed login attempts. Please try again in :minutes minutes.',
 
     'two_factor' => array(
         'already_enrolled'      => 'Your device is already enrolled.',
-        'success'               => 'You have successfully logged in.',
+        'success'               => 'Rinne tú logáil isteach go rathúil.',
         'code_required'         => 'Two-factor code is required.',
         'invalid_code'          => 'Two-factor code is invalid.',
+        'enter_two_factor_code' => 'Please enter your two-factor authentication code.',
+        'please_enroll'         => 'Please enroll a device in two-factor authentication.',
     ),
 
     'signin' => array(

@@ -2,9 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Suppliers\DestroySupplierAction;
+use App\Exceptions\ItemStillHasAccessories;
+use App\Exceptions\ItemStillHasComponents;
+use App\Exceptions\ItemStillHasConsumables;
+use App\Exceptions\ItemStillHasMaintenances;
+use App\Exceptions\ItemStillHasAssets;
+use App\Exceptions\ItemStillHasLicenses;
 use App\Http\Requests\ImageUploadRequest;
 use App\Models\Supplier;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\RedirectResponse;
+use \Illuminate\Contracts\View\View;
+use Illuminate\Support\MessageBag;
 
 /**
  * This controller handles all actions related to Suppliers for
@@ -20,25 +29,19 @@ class SuppliersController extends Controller
      * @return \Illuminate\Contracts\View\View
      * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function index()
+    public function index() : View
     {
-        // Grab all the suppliers
         $this->authorize('view', Supplier::class);
-
-        // Show the page
         return view('suppliers/index');
     }
 
     /**
      * Supplier create.
      *
-     * @return \Illuminate\Contracts\View\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function create()
+    public function create() : View
     {
         $this->authorize('create', Supplier::class);
-
         return view('suppliers/edit')->with('item', new Supplier);
     }
 
@@ -46,10 +49,8 @@ class SuppliersController extends Controller
      * Supplier create form processing.
      *
      * @param ImageUploadRequest $request
-     * @return \Illuminate\Http\RedirectResponse
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function store(ImageUploadRequest $request)
+    public function store(ImageUploadRequest $request) : RedirectResponse
     {
         $this->authorize('create', Supplier::class);
         // Create a new supplier
@@ -66,9 +67,10 @@ class SuppliersController extends Controller
         $supplier->phone = request('phone');
         $supplier->fax = request('fax');
         $supplier->email = request('email');
+        $supplier->tag_color  = $request->input('tag_color');
         $supplier->notes = request('notes');
         $supplier->url = $supplier->addhttp(request('url'));
-        $supplier->user_id = Auth::id();
+        $supplier->created_by = auth()->id();
         $supplier = $request->handleImages($supplier);
 
         if ($supplier->save()) {
@@ -82,38 +84,21 @@ class SuppliersController extends Controller
      * Supplier update.
      *
      * @param  int $supplierId
-     * @return \Illuminate\Contracts\View\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function edit($supplierId = null)
+    public function edit(Supplier $supplier) : View | RedirectResponse
     {
         $this->authorize('update', Supplier::class);
-        // Check if the supplier exists
-        if (is_null($item = Supplier::find($supplierId))) {
-            // Redirect to the supplier  page
-            return redirect()->route('suppliers.index')->with('error', trans('admin/suppliers/message.does_not_exist'));
-        }
-
-        // Show the page
-        return view('suppliers/edit', compact('item'));
+        return view('suppliers/edit')->with('item',  $supplier);
     }
 
     /**
      * Supplier update form processing page.
      *
      * @param  int $supplierId
-     * @return \Illuminate\Http\RedirectResponse
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function update($supplierId, ImageUploadRequest $request)
+    public function update(ImageUploadRequest $request, Supplier $supplier) : RedirectResponse
     {
         $this->authorize('update', Supplier::class);
-        // Check if the supplier exists
-        if (is_null($supplier = Supplier::find($supplierId))) {
-            // Redirect to the supplier  page
-            return redirect()->route('suppliers.index')->with('error', trans('admin/suppliers/message.does_not_exist'));
-        }
-
         // Save the  data
         $supplier->name = request('name');
         $supplier->address = request('address');
@@ -127,6 +112,7 @@ class SuppliersController extends Controller
         $supplier->fax = request('fax');
         $supplier->email = request('email');
         $supplier->url = $supplier->addhttp(request('url'));
+        $supplier->tag_color  = $request->input('tag_color');
         $supplier->notes = request('notes');
         $supplier = $request->handleImages($supplier);
 
@@ -141,51 +127,53 @@ class SuppliersController extends Controller
      * Delete the given supplier.
      *
      * @param  int $supplierId
-     * @return \Illuminate\Http\RedirectResponse
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function destroy($supplierId)
+    public function destroy(Supplier $supplier): RedirectResponse
     {
         $this->authorize('delete', Supplier::class);
-        if (is_null($supplier = Supplier::with('asset_maintenances', 'assets', 'licenses')->withCount('asset_maintenances as asset_maintenances_count', 'assets as assets_count', 'licenses as licenses_count')->find($supplierId))) {
-            return redirect()->route('suppliers.index')->with('error', trans('admin/suppliers/message.not_found'));
+        try {
+            DestroySupplierAction::run(supplier: $supplier);
+        } catch (ItemStillHasAssets $e) {
+            return redirect()->route('suppliers.index')->with('error', trans('general.bulk_delete_associations.assoc_assets', [
+                'asset_count' => (int) $supplier->assets_count, 'item' => trans('general.supplier')
+            ]));
+        } catch (ItemStillHasMaintenances $e) {
+            return redirect()->route('suppliers.index')->with('error', trans('general.bulk_delete_associations.assoc_maintenances', [
+                'asset_maintenances_count' => $supplier->asset_maintenances_count, 'item' => trans('general.supplier')
+            ]));
+        } catch (ItemStillHasLicenses $e) {
+            return redirect()->route('suppliers.index')->with('error', trans('general.bulk_delete_associations.assoc_licenses', [
+                'licenses_count' => (int) $supplier->licenses_count, 'item' => trans('general.supplier')
+            ]));
+        } catch (ItemStillHasAccessories $e) {
+            return redirect()->route('suppliers.index')->with('error', trans('general.bulk_delete_associations.assoc_accessories', [
+                'accessories_count' => (int) $supplier->accessories_count, 'item' => trans('general.supplier')
+            ]));
+        } catch (ItemStillHasConsumables $e) {
+            return redirect()->route('suppliers.index')->with('error', trans('general.bulk_delete_associations.assoc_consumables', [
+                'consumables_count' => (int) $supplier->consumables_count, 'item' => trans('general.supplier')
+            ]));
+        } catch (ItemStillHasComponents $e) {
+            return redirect()->route('suppliers.index')->with('error', trans('general.bulk_delete_associations.assoc_components', [
+                'components_count' => (int) $supplier->components_count, 'item' => trans('general.supplier')
+            ]));
+        } catch (\Exception $e) {
+            report($e);
+            return redirect()->route('suppliers.index')->with('error', trans('admin/suppliers/message.delete.error'));
         }
 
-        if ($supplier->assets_count > 0) {
-            return redirect()->route('suppliers.index')->with('error', trans('admin/suppliers/message.delete.assoc_assets', ['asset_count' => (int) $supplier->assets_count]));
-        }
-
-        if ($supplier->asset_maintenances_count > 0) {
-            return redirect()->route('suppliers.index')->with('error', trans('admin/suppliers/message.delete.assoc_maintenances', ['asset_maintenances_count' => $supplier->asset_maintenances_count]));
-        }
-
-        if ($supplier->licenses_count > 0) {
-            return redirect()->route('suppliers.index')->with('error', trans('admin/suppliers/message.delete.assoc_licenses', ['licenses_count' => (int) $supplier->licenses_count]));
-        }
-
-        $supplier->delete();
-
-        return redirect()->route('suppliers.index')->with('success',
-            trans('admin/suppliers/message.delete.success')
-        );
+        return redirect()->route('suppliers.index')->with('success', trans('admin/suppliers/message.delete.success'));
     }
 
     /**
      *  Get the asset information to present to the supplier view page
      *
      * @param null $supplierId
-     * @return \Illuminate\Contracts\View\View
      * @internal param int $assetId
      */
-    public function show($supplierId = null)
+    public function show(Supplier $supplier) : View | RedirectResponse
     {
         $this->authorize('view', Supplier::class);
-        $supplier = Supplier::find($supplierId);
-
-        if (isset($supplier->id)) {
-            return view('suppliers/view', compact('supplier'));
-        }
-
-        return redirect()->route('suppliers.index')->with('error', trans('admin/suppliers/message.does_not_exist'));
+        return view('suppliers/view', compact('supplier'));
     }
 }

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\AssetModel;
+use App\Models\CustomField;
 use App\Models\CustomFieldset;
 use App\Models\Depreciation;
 use App\Models\Manufacturer;
@@ -27,11 +28,12 @@ class AssetModelFactory extends Factory
     public function definition()
     {
         return [
-            'user_id' => User::factory()->superuser(),
-            'name' => $this->faker->catchPhrase(),
             'category_id' => Category::factory(),
+            'created_by' => User::factory()->superuser(),
             'model_number' => $this->faker->creditCardNumber(),
+            'name' => $this->faker->catchPhrase(),
             'notes' => 'Created by demo seeder',
+            'require_serial' => 0,
 
         ];
     }
@@ -426,6 +428,33 @@ class AssetModelFactory extends Factory
                     return Depreciation::where('name', 'Display Depreciation')->first() ?? Depreciation::factory()->display();
                 },
                 'image' => 'ultrasharp.jpg',
+            ];
+        });
+    }
+
+    public function hasEncryptedCustomField(CustomField $field = null)
+    {
+        return $this->state(function () use ($field) {
+            return [
+                'fieldset_id' => CustomFieldset::factory()->hasEncryptedCustomField($field),
+            ];
+        });
+    }
+
+    public function hasMultipleCustomFields(array $fields = null)
+    {
+        return $this->state(function () use ($fields) {
+            return [
+                'fieldset_id' => CustomFieldset::factory()->hasMultipleCustomFields($fields),
+            ];
+        });
+    }
+
+    public function doesNotRequireAcceptance()
+    {
+        return $this->state(function () {
+            return [
+                'category_id' => Category::factory()->doesNotRequireAcceptance(),
             ];
         });
     }

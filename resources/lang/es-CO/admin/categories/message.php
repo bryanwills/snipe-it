@@ -3,24 +3,26 @@
 return array(
 
     'does_not_exist' => 'La categoría no existe.',
-    'assoc_models'	 => 'Esta categoría está actualmente asociada con al menos un modelo y no puede ser eliminada. Por favor actualiza tus modelos para no referenciar más esta categoría e inténtalo de nuevo. ',
-    'assoc_items'	 => 'Esta categoría está actualmente asociada con al menos un :asset_type y no puede ser eliminada. Por favor actualiza tus :asset_type para no referenciar más esta categoría e inténtalo de nuevo. ',
+    'assoc_models'	 => 'Esta categoría está asociada actualmente con al menos un modelo y no puede ser eliminada. Actualice los modelos para que ya no hagan referencia a esta categoría e inténtelo de nuevo. ',
+    'assoc_items'	 => 'Esta categoría está asociada actualmente con al menos un: asset_type y no puede ser eliminada. Actualice su :asset_type para que ya no haga referencia a esta categoría e inténtelo de nuevo. ',
 
     'create' => array(
-        'error'   => 'La categoría no fue creada, por favor inténtalo de nuevo.',
-        'success' => 'Categoría creada con éxito.'
+        'error'   => 'La categoría no fue creada, por favor inténtelo de nuevo.',
+        'success' => 'Categoría creada exitosamente.'
     ),
 
     'update' => array(
-        'error'   => 'La categoría no se actualizó, por favor, inténtalo de nuevo',
-        'success' => 'Categoría actualizada con éxito.',
-        'cannot_change_category_type'   => 'You cannot change the category type once it has been created',
+        'error'   => 'La categoría no se actualizó, por favor, inténtelo de nuevo',
+        'success' => 'Categoría actualizada exitosamente.',
+        'cannot_change_category_type'   => 'No puede cambiar el tipo de categoría una vez que se ha creado',
     ),
 
     'delete' => array(
-        'confirm'   => '¿Estás seguro de que deseas eliminar esta categoría?',
-        'error'   => 'Hubo un problema eliminando la categoría. Por favor, inténtalo de nuevo.',
-        'success' => 'La categoría fue eliminada con éxito.'
+        'confirm'                => '¿Está seguro de que desea eliminar esta categoría?',
+        'error'                  => 'Hubo un problema eliminando la categoría. Inténtelo de nuevo.',
+        'success'                => 'Categoría eliminada correctamente.',
+        'bulk_success'           => 'Categorías eliminadas correctamente.',
+        'partial_success'        => 'Categoría eliminada correctamente. Ver información adicional a continuación. | :count categorías eliminadas correctamente. Ver información adicional a continuación.',
     )
 
 );

@@ -2,10 +2,10 @@
 
 return array(
 
-    'id'                        => 'CARNÉ DE IDENTIDAD',
-    'name'                      => 'Nombre de Departamento',
-    'manager'                   => 'Gerente',
+    'id'                        => 'ID',
+    'name'                      => 'Nombre del departamento',
+    'manager'                   => 'Supervisor',
     'location'                  => 'Ubicación',
     'create'                    => 'Crear departamento',
-    'update'                    => 'Departamento de actualización',
+    'update'                    => 'Actualizar departamento',
     );

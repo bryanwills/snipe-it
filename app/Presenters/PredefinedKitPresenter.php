@@ -27,6 +27,29 @@ class PredefinedKitPresenter extends Presenter
                 'sortable' => true,
                 'title' => trans('general.name'),
                 'formatter' => 'kitsLinkFormatter',
+            ], [
+                'field' => 'created_by',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.created_by'),
+                'visible' => false,
+                'formatter' => 'usersLinkObjFormatter',
+            ], [
+                'field' => 'created_at',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.created_at'),
+                'visible' => false,
+                'formatter' => 'dateDisplayFormatter',
+            ], [
+                'field' => 'updated_at',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.updated_at'),
+                'visible' => false,
+                'formatter' => 'dateDisplayFormatter',
             ],
         ];
 
@@ -38,6 +61,7 @@ class PredefinedKitPresenter extends Presenter
             'title' => trans('general.checkin').'/'.trans('general.checkout'),
             'visible' => true,
             'formatter' => 'kitsInOutFormatter',
+            'printIgnore' => true,
         ];
 
         $layout[] = [
@@ -47,6 +71,7 @@ class PredefinedKitPresenter extends Presenter
             'switchable' => false,
             'title' => trans('table.actions'),
             'formatter' => 'kitsActionsFormatter',
+            'printIgnore' => true,
         ];
 
         return json_encode($layout);
@@ -98,6 +123,7 @@ class PredefinedKitPresenter extends Presenter
                 'switchable' => false,
                 'title' => trans('table.actions'),
                 'formatter' => 'kits_modelsActionsFormatter',
+                'printIgnore' => true,
             ],
         ];
 
@@ -150,6 +176,7 @@ class PredefinedKitPresenter extends Presenter
                 'switchable' => false,
                 'title' => trans('table.actions'),
                 'formatter' => 'kits_licensesActionsFormatter',
+                'printIgnore' => true,
             ],
         ];
 
@@ -202,6 +229,7 @@ class PredefinedKitPresenter extends Presenter
                 'switchable' => false,
                 'title' => trans('table.actions'),
                 'formatter' => 'kits_accessoriesActionsFormatter',
+                'printIgnore' => true,
             ],
         ];
 
@@ -254,6 +282,7 @@ class PredefinedKitPresenter extends Presenter
                 'switchable' => false,
                 'title' => trans('table.actions'),
                 'formatter' => 'kits_consumablesActionsFormatter',
+                'printIgnore' => true,
             ],
         ];
 
@@ -266,7 +295,12 @@ class PredefinedKitPresenter extends Presenter
      */
     public function nameUrl()
     {
-        return (string) link_to_route('kits.show', $this->name, $this->id);
+        if (auth()->user()->can('view', ['\App\Models\PredefinedKit', $this])) {
+            return (string)link_to_route('kits.show', e($this->display_name), $this->id);
+        } else {
+            return e($this->display_name);
+        }
+
     }
 
     /**

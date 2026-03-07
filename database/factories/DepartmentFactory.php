@@ -24,9 +24,11 @@ class DepartmentFactory extends Factory
     public function definition()
     {
         return [
-            'name' => $this->faker->word() . ' Department',
-            'user_id' => User::factory()->superuser(),
+            'created_by' => User::factory()->superuser(),
             'location_id' => Location::factory(),
+            'name' => $this->faker->unique()->word() . ' Department',
+            'notes'   => 'Created by DB seeder',
+            'tag_color' => $this->faker->hexColor(),
         ];
     }
 

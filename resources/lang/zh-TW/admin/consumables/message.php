@@ -2,6 +2,7 @@
 
 return array(
 
+    'invalid_category_type' => 'The category must be a consumable category.',
     'does_not_exist' => '耗材不存在。',
 
     'create' => array(
@@ -23,7 +24,8 @@ return array(
      'checkout' => array(
         'error'   		=> '耗材領取失敗，請重試。',
         'success' 		=> '耗材領取成功。',
-        'user_does_not_exist' => '使用者不正確。請再試一次。'
+        'user_does_not_exist' => '使用者不正確。請再試一次。',
+         'unavailable'      => '借出的耗材不足。請檢查剩餘數量。',
     ),
 
     'checkin' => array(

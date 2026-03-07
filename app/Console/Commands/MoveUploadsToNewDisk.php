@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class MoveUploadsToNewDisk extends Command
 {
@@ -74,7 +75,7 @@ class MoveUploadsToNewDisk extends Command
                     $new_url = Storage::disk('public')->url('uploads/'.$public_type.'/'.$filename, $filename);
                     $this->info($type_count.'. PUBLIC: '.$filename.' was copied to '.$new_url);
                 } catch (\Exception $e) {
-                    \Log::debug($e);
+                    Log::debug($e);
                     $this->error($e);
                 }
             }
@@ -95,7 +96,7 @@ class MoveUploadsToNewDisk extends Command
         $private_uploads['assets'] = glob('storage/private_uploads/assets'."/*.*");
         $private_uploads['signatures'] = glob('storage/private_uploads/signatures'."/*.*");
         $private_uploads['audits'] = glob('storage/private_uploads/audits'."/*.*");
-        $private_uploads['assetmodels'] = glob('storage/private_uploads/assetmodels'."/*.*");
+        $private_uploads['assetmodels'] = glob('storage/private_uploads/models'."/*.*");
         $private_uploads['imports'] = glob('storage/private_uploads/imports'."/*.*");
         $private_uploads['licenses'] = glob('storage/private_uploads/licenses'."/*.*");
         $private_uploads['users'] = glob('storage/private_uploads/users'."/*.*");
@@ -112,11 +113,11 @@ class MoveUploadsToNewDisk extends Command
                     $filename = basename($private_upload[$x]);
 
                     try {
-                        Storage::put($private_type . '/' . $filename, file_get_contents($private_upload[$i]));
+                        Storage::put($private_type . '/' . $filename, file_get_contents($private_upload[$x]));
                         $new_url = Storage::url($private_type . '/' . $filename, $filename);
                         $this->info($type_count . '. PRIVATE: ' . $filename . ' was copied to ' . $new_url);
                     } catch (\Exception $e) {
-                        \Log::debug($e);
+                        Log::debug($e);
                         $this->error($e);
                     }
                 }
@@ -140,7 +141,7 @@ class MoveUploadsToNewDisk extends Command
                                 unlink($filename);
                                 $public_delete_count++;
                             } catch (\Exception $e) {
-                                \Log::debug($e);
+                                Log::debug($e);
                                 $this->error($e);
                             }
                         }
@@ -153,7 +154,7 @@ class MoveUploadsToNewDisk extends Command
                                 unlink($filename);
                                 $private_delete_count++;
                             } catch (\Exception $e) {
-                                \Log::debug($e);
+                                Log::debug($e);
                                 $this->error($e);
                             }
                         }

@@ -49,23 +49,24 @@ class ResetDemoSettings extends Command
         $settings->logo = 'snipe-logo.png';
         $settings->alert_email = 'service@snipe-it.io';
         $settings->login_note = 'Use `admin` / `password` to login to the demo.';
-        $settings->header_color = null;
-        $settings->barcode_type = 'QRCODE';
+        $settings->header_color = '#3c8dbc';
+        $settings->link_dark_color = '#5fa4cc';
+        $settings->link_light_color = '#296282;';
+        $settings->label2_2d_type = 'QRCODE';
         $settings->default_currency = 'USD';
         $settings->brand = 2;
         $settings->ldap_enabled = 0;
         $settings->full_multiple_companies_support = 0;
-        $settings->alt_barcode = 'C128';
-        $settings->skin = '';
+        $settings->label2_1d_type = 'C128';
         $settings->email_domain = 'snipeitapp.com';
         $settings->email_format = 'filastname';
         $settings->username_format = 'filastname';
         $settings->date_display_format = 'D M d, Y';
         $settings->time_display_format = 'g:iA';
         $settings->thumbnail_max_h = '30';
-        $settings->locale = 'en';
+        $settings->locale = 'en-US';
         $settings->version_footer = 'on';
-        $settings->support_footer = null;
+        $settings->support_footer = 'on';
         $settings->saml_enabled = '0';
         $settings->saml_sp_x509cert = null;
         $settings->saml_idp_metadata = null;
@@ -73,12 +74,15 @@ class ResetDemoSettings extends Command
         $settings->saml_forcelogin = '0';
         $settings->saml_slo = null;
         $settings->saml_custom_settings = null;
+        $settings->default_avatar = 'default.png';
 
 
         $settings->save();
 
         if ($user = User::where('username', '=', 'admin')->first()) {
-            $user->locale = 'en';
+            $user->locale = 'en-US';
+            $user->enable_confetti = 1;
+            $user->enable_sounds = 1;
             $user->save();
         }
 

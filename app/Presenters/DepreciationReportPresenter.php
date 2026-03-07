@@ -34,6 +34,7 @@ class DepreciationReportPresenter extends Presenter
                 "field" => "name",
                 "searchable" => true,
                 "sortable" => true,
+                'switchable' => false,
                 "title" => trans('admin/hardware/form.name'),
                 "visible" => false,
             ], [
@@ -139,7 +140,7 @@ class DepreciationReportPresenter extends Presenter
             ], [
                 "field" => "book_value",
                 "searchable" => true,
-                "sortable" => true,
+                "sortable" => false,
                 "visible" => true,
                 "title" => trans('admin/hardware/table.book_value'),
                 "footerFormatter" => 'sumFormatter',
@@ -179,7 +180,11 @@ class DepreciationReportPresenter extends Presenter
      */
     public function nameUrl()
     {
-        return (string) link_to_route('hardware.show', e($this->name), $this->id);
+        if (auth()->user()->can('view', ['\App\Models\Depreciation', $this])) {
+            return (string)link_to_route('depreciations.show', e($this->display_name), $this->id);
+        } else {
+            return e($this->display_name);
+        }
     }
 
     public function modelUrl()
@@ -393,6 +398,6 @@ class DepreciationReportPresenter extends Presenter
 
     public function glyph()
     {
-        return '<i class="fas fa-barcode" aria-hidden="true"></i>';
+        return '<x-icon type="reports" class="text-orange" />';
     }
 }

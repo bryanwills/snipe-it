@@ -3,11 +3,15 @@
 return array(
     'asset_categories' 					=> 'Catagóirí Sócmhainne',
     'category_name'  					=> 'Ainm Chatagóir',
-    'checkin_email'                     => 'Send email to user on checkin/checkout.',
+    'email_to_user_upon_checkin' => 'Send email to user upon checkin.',
+    'email_to_user_upon_checkin_and_checkout' => 'Send email to user upon checkin/checkout.',
+    'email_to_initiator'                => 'Send email to you when user accepts or declines checkout.',
     'checkin_email_notification'        => 'This user will be sent an email on checkin/checkout.',
     'clone'                             => 'Catagóir Clón',
     'create'  							=> 'Cruthaigh Catagóir',
     'edit'                              => 'Cuir Catagóir',
+    'email_will_be_sent_due_to_global_eula' => 'An email will be sent to the user upon checkout because the global EULA is being used.',
+    'email_will_be_sent_due_to_category_eula' => 'An email will be sent to the user upon checkout because a EULA is set for this category.',
     'eula_text'							=> 'Catagóir EULA',
     'eula_text_help'					=> 'Ceadaíonn an réimse seo duit do chuid EULA a shaincheapadh le haghaidh cineálacha sonracha sócmhainní. Mura bhfuil EULA amháin agat ar do chuid sócmhainní go léir, is féidir leat an bosca thíos a sheiceáil chun an réamhshocraithe a úsáid.',
     'name'                              => 'Ainm Chatagóir',
@@ -19,5 +23,9 @@ return array(
     'use_default_eula'					=> 'Bain úsáid as an réamhshocraithe <a href="#" data-toggle="modal" data-target="#eulaModal"> réamhshocrú EULA</a> ina ionad.',
     'use_default_eula_disabled'			=> '<del>Cuir an príomh-réamhshocraithe EULA in ionad.</del> Níl aon réamhshocraithe EULA leagtha síos. Cuir ceann amháin i Socruithe le do thoil.',
     'use_default_eula_column'			=> 'Use default EULA',
+    'import_require_acceptance'         => 'Require Acceptance',
+    'import_checkin_email'              => 'Send Checkin Email',
+    'import_eula_text'                  => 'EULA text',
+    'import_category_type'              => 'Category Type',
 
 );
