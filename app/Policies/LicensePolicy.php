@@ -22,12 +22,11 @@ class LicensePolicy extends CheckoutablePermissionsPolicy
      * something (maybe I got the product key wrong), and now I can never
      * see/edit that product key.
      *
-     * @see https://github.com/snipe/snipe-it/issues/6956
-     * @param  \App\Models\User  $user
-     * @param  \App\Models\License  $license
+     * @see https://github.com/grokability/snipe-it/issues/6956
+     *
      * @return mixed
      */
-    public function viewKeys(User $user, License $license = null)
+    public function viewKeys(User $user, ?License $license = null)
     {
         if ($user->hasAccess('licenses.keys') || $user->hasAccess('licenses.create') || $user->hasAccess('licenses.edit')) {
             return true;
@@ -39,14 +38,14 @@ class LicensePolicy extends CheckoutablePermissionsPolicy
     /**
      * Determine whether the user can access files associated with licenses.
      *
-     * @param  \App\Models\User  $user
      * @return mixed
      */
     public function files(User $user, $license = null)
     {
-        if ($user->hasAccess('licenses.files'))  {
+        if ($user->hasAccess('licenses.files')) {
             return true;
         }
+
         return false;
 
     }

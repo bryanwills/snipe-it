@@ -1,3 +1,6 @@
-<a style="padding-left: 10px; font-size: 18px;" class="text-dark-gray" data-trigger="focus" tabindex="0" role="button" data-toggle="popover" title="More Info" data-placement="right" data-html="true" data-content="{{ (isset($helpText)) ? $helpText : 'Help Info Missing'  }}">
-    <i class="far fa-life-ring" aria-hidden="true"><span class="sr-only">{{ trans('general.moreinfo') }}</span></i>
+<a style="padding-left: 5px; font-size: 15px;" class="text-dark-gray hidden-print" data-trigger="focus" tabindex="0" role="button" data-toggle="popover"  data-container="body"
+   data-template="<div class='popover help-popover' role='tooltip'><div class='arrow'></div><h3 class='popover-title'></h3><div class='popover-content popover-body'></div></div>"
+   title="{{ trans('general.more_info') }}" data-placement="right" data-html="true" data-content="{{ (isset($helpText)) ? $helpText : 'Help Info Missing'  }}">
+    <x-icon type="more-info" style="padding-top: 9px;" />
+    <span class="sr-only">{{ trans('general.moreinfo') }}</span>
 </a>

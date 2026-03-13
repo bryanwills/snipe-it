@@ -17,8 +17,8 @@ class SamlServiceProvider extends ServiceProvider
     {
         $this->app->singleton(Saml::class, Saml::class);
 
-        Route::group(['namespace'=> 'App\Http\Controllers'], function () {
-            Route::group(['prefix'=> 'saml'], function () {
+        Route::group(['namespace' => 'App\Http\Controllers'], function () {
+            Route::group(['prefix' => 'saml'], function () {
                 Route::get(
                     'metadata',
                     [
@@ -49,10 +49,6 @@ class SamlServiceProvider extends ServiceProvider
                     'uses' => 'Auth\SamlController@login', ]
             );
 
-            Route::group(['prefix' => 'admin', 'middleware' => ['web', 'auth', 'authorize:superuser']], function () {
-                Route::get('saml', ['as' => 'settings.saml.index', 'uses' => 'SettingsController@getSamlSettings']);
-                Route::post('saml', ['as' => 'settings.saml.save', 'uses' => 'SettingsController@postSamlSettings']);
-            });
         });
     }
 
@@ -61,7 +57,5 @@ class SamlServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function register()
-    {
-    }
+    public function register() {}
 }

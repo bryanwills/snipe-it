@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Kits;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ImageUploadRequest;
 use App\Models\PredefinedKit;
-use App\Models\PredefinedLicence;
-use App\Models\PredefinedModel;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /**
@@ -19,8 +20,10 @@ class PredefinedKitsController extends Controller
 {
     /**
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @return \Illuminate\Contracts\View\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
+     *
+     * @return View
+     *
+     * @throws AuthorizationException
      */
     public function index()
     {
@@ -33,8 +36,10 @@ class PredefinedKitsController extends Controller
      *  Returns a form view to create a new kit.
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @throws \Illuminate\Auth\Access\AuthorizationException
+     *
      * @return mixed
+     *
+     * @throws AuthorizationException
      */
     public function create()
     {
@@ -47,7 +52,8 @@ class PredefinedKitsController extends Controller
      * Validate and process the new Predefined Kit data.
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @return Redirect
+     *
+     * @return RedirectResponse
      */
     public function store(ImageUploadRequest $request)
     {
@@ -55,6 +61,7 @@ class PredefinedKitsController extends Controller
         // Create a new Predefined Kit
         $kit = new PredefinedKit;
         $kit->name = $request->input('name');
+        $kit->created_by = auth()->id();
 
         if (! $kit->save()) {
             return redirect()->back()->withInput()->withErrors($kit->getErrors());
@@ -71,21 +78,21 @@ class PredefinedKitsController extends Controller
      * Returns a view containing the Predefined Kit edit form.
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
+     *
      * @since [v1.0]
-     * @param int $kit_id
+     *
+     * @param  int  $kit_id
      * @return View
      */
-    public function edit($kit_id = null)
+    public function edit(PredefinedKit $kit)
     {
         $this->authorize('update', PredefinedKit::class);
-        if ($kit = PredefinedKit::find($kit_id)) {
-            return view('kits/edit')
-                ->with('item', $kit)
-                ->with('models', $kit->models)
-                ->with('licenses', $kit->licenses);
-        }
 
-        return redirect()->route('kits.index')->with('error', trans('admin/kits/general.kit_none'));
+        return view('kits/edit')
+            ->with('item', $kit)
+            ->with('models', $kit->models)
+            ->with('licenses', $kit->licenses);
+
     }
 
     /**
@@ -93,19 +100,15 @@ class PredefinedKitsController extends Controller
      * Predefined Kit form based on the kit ID passed.
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
+     *
      * @since [v1.0]
-     * @param int $kit_id
-     * @return Redirect
+     *
+     * @param  int  $kit_id
+     * @return RedirectResponse
      */
-    public function update(ImageUploadRequest $request, $kit_id = null)
+    public function update(ImageUploadRequest $request, PredefinedKit $kit)
     {
         $this->authorize('update', PredefinedKit::class);
-        // Check if the kit exists
-        if (is_null($kit = PredefinedKit::find($kit_id))) {
-            // Redirect to the kits management page
-            return redirect()->route('kits.index')->with('error', trans('admin/kits/general.kit_none'));
-        }
-
         $kit->name = $request->input('name');
 
         if ($kit->save()) {
@@ -120,9 +123,11 @@ class PredefinedKitsController extends Controller
      * Also delete all contained helping items
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
+     *
      * @since [v1.0]
-     * @param int $kit_id
-     * @return Redirect
+     *
+     * @param  int  $kit_id
+     * @return RedirectResponse
      */
     public function destroy($kit_id)
     {
@@ -148,20 +153,23 @@ class PredefinedKitsController extends Controller
      * Get the kit information to present to the kit view page
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
+     *
      * @since [v1.0]
-     * @param int $modelId
+     *
+     * @param  int  $modelId
      * @return View
      */
-    public function show($kit_id = null)
+    public function show(PredefinedKit $kit)
     {
-        return $this->edit($kit_id);
+        return $this->edit($kit);
     }
 
     /**
      * Returns a view containing the Predefined Kit edit form.
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @param int $kit_id
+     *
+     * @param  int  $kit_id
      * @return View
      */
     public function editModel($kit_id, $model_id)
@@ -183,7 +191,8 @@ class PredefinedKitsController extends Controller
      * Get the kit information to present to the kit view page
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @param int $modelId
+     *
+     * @param  int  $modelId
      * @return View
      */
     public function updateModel(Request $request, $kit_id, $model_id)
@@ -213,7 +222,8 @@ class PredefinedKitsController extends Controller
      * Remove the model from set
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @param int $modelId
+     *
+     * @param  int  $modelId
      * @return View
      */
     public function detachModel($kit_id, $model_id)
@@ -235,8 +245,9 @@ class PredefinedKitsController extends Controller
      * Returns a view containing attached license edit form.
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @param int $kit_id
-     * @param int $license_id
+     *
+     * @param  int  $kit_id
+     * @param  int  $license_id
      * @return View
      */
     public function editLicense($kit_id, $license_id)
@@ -260,8 +271,9 @@ class PredefinedKitsController extends Controller
      * Update attached licese
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @param int $kit_id
-     * @param int $license_id
+     *
+     * @param  int  $kit_id
+     * @param  int  $license_id
      * @return View
      */
     public function updateLicense(Request $request, $kit_id, $license_id)
@@ -291,8 +303,9 @@ class PredefinedKitsController extends Controller
      * Remove the license from set
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @param int $kit_id
-     * @param int $license_id
+     *
+     * @param  int  $kit_id
+     * @param  int  $license_id
      * @return View
      */
     public function detachLicense($kit_id, $license_id)
@@ -314,8 +327,9 @@ class PredefinedKitsController extends Controller
      * Returns a view containing attached accessory edit form.
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @param int $kit_id
-     * @param int $accessoryId
+     *
+     * @param  int  $kit_id
+     * @param  int  $accessoryId
      * @return View
      */
     public function editAccessory($kit_id, $accessory_id)
@@ -339,8 +353,9 @@ class PredefinedKitsController extends Controller
      * Update attached accessory
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @param int $kit_id
-     * @param int $accessory_id
+     *
+     * @param  int  $kit_id
+     * @param  int  $accessory_id
      * @return View
      */
     public function updateAccessory(Request $request, $kit_id, $accessory_id)
@@ -370,7 +385,8 @@ class PredefinedKitsController extends Controller
      * Remove the accessory from set
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @param int $accessory_id
+     *
+     * @param  int  $accessory_id
      * @return View
      */
     public function detachAccessory($kit_id, $accessory_id)
@@ -392,8 +408,9 @@ class PredefinedKitsController extends Controller
      * Returns a view containing attached consumable edit form.
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @param int $kit_id
-     * @param int $consumable_id
+     *
+     * @param  int  $kit_id
+     * @param  int  $consumable_id
      * @return View
      */
     public function editConsumable($kit_id, $consumable_id)
@@ -417,8 +434,9 @@ class PredefinedKitsController extends Controller
      * Update attached consumable
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @param int $kit_id
-     * @param int $consumableId
+     *
+     * @param  int  $kit_id
+     * @param  int  $consumableId
      * @return View
      */
     public function updateConsumable(Request $request, $kit_id, $consumable_id)
@@ -448,7 +466,8 @@ class PredefinedKitsController extends Controller
      * Remove the consumable from set
      *
      * @author [D. Minaev] [<dmitriy.minaev.v@gmail.com>]
-     * @param int $consumable_id
+     *
+     * @param  int  $consumable_id
      * @return View
      */
     public function detachConsumable($kit_id, $consumable_id)

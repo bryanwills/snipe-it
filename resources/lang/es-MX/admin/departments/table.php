@@ -1,11 +1,11 @@
 <?php
 
-return array(
+return [
 
-    'id'                        => 'CARNÉ DE IDENTIDAD',
-    'name'                      => 'Nombre de Departamento',
-    'manager'                   => 'Gerente',
-    'location'                  => 'Ubicación',
-    'create'                    => 'Crear departamento',
-    'update'                    => 'Departamento de actualización',
-    );
+    'id' => 'ID',
+    'name' => 'Nombre del departamento',
+    'manager' => 'Supervisor',
+    'location' => 'Ubicación',
+    'create' => 'Crear departamento',
+    'update' => 'Actualizar departamento',
+];

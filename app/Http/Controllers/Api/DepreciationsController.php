@@ -6,6 +6,7 @@ use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Http\Transformers\DepreciationsTransformer;
 use App\Models\Depreciation;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class DepreciationsController extends Controller
@@ -14,30 +15,49 @@ class DepreciationsController extends Controller
      * Display a listing of the resource.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @since [v4.0]
-     * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse|array
     {
         $this->authorize('view', Depreciation::class);
-        $allowed_columns = ['id','name','months','depreciation_min','created_at'];
+        $allowed_columns = [
+            'id',
+            'name',
+            'months',
+            'depreciation_min',
+            'depreciation_type',
+            'created_at',
+            'assets_count',
+            'models_count',
+            'licenses_count',
+        ];
 
-        $depreciations = Depreciation::select('id','name','months','depreciation_min','user_id','created_at','updated_at');
+        $depreciations = Depreciation::select('id', 'name', 'months', 'depreciation_min', 'depreciation_type', 'created_at', 'updated_at', 'created_by')
+            ->with('adminuser')
+            ->withCount('assets as assets_count')
+            ->withCount('models as models_count')
+            ->withCount('licenses as licenses_count');
 
         if ($request->filled('search')) {
             $depreciations = $depreciations->TextSearch($request->input('search'));
         }
 
-        // Set the offset to the API call's offset, unless the offset is higher than the actual count of items in which
-        // case we override with the actual count, so we should return 0 items.
-        $offset = (($depreciations) && ($request->get('offset') > $depreciations->count())) ? $depreciations->count() : $request->get('offset', 0);
-
-        // Check to make sure the limit is not higher than the max allowed
-        ((config('app.max_results') >= $request->input('limit')) && ($request->filled('limit'))) ? $limit = $request->input('limit') : $limit = config('app.max_results');
-
+        // Make sure the offset and limit are actually integers and do not exceed system limits
+        $offset = ($request->input('offset') > $depreciations->count()) ? $depreciations->count() : app('api_offset_value');
+        $limit = app('api_limit_value');
         $order = $request->input('order') === 'asc' ? 'asc' : 'desc';
-        $sort = in_array($request->input('sort'), $allowed_columns) ? $request->input('sort') : 'created_at';
-        $depreciations->orderBy($sort, $order);
+        $sort_override = $request->input('sort');
+        $column_sort = in_array($sort_override, $allowed_columns) ? $sort_override : 'created_at';
+
+        switch ($sort_override) {
+            case 'created_by':
+                $depreciations = $depreciations->OrderByCreatedBy($order);
+                break;
+            default:
+                $depreciations = $depreciations->orderBy($column_sort, $order);
+                break;
+        }
 
         $total = $depreciations->count();
         $depreciations = $depreciations->skip($offset)->take($limit)->get();
@@ -49,11 +69,10 @@ class DepreciationsController extends Controller
      * Store a newly created resource in storage.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @since [v4.0]
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $this->authorize('create', Depreciation::class);
         $depreciation = new Depreciation;
@@ -70,11 +89,12 @@ class DepreciationsController extends Controller
      * Display the specified resource.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @since [v4.0]
+     *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($id): JsonResponse|array
     {
         $this->authorize('view', Depreciation::class);
         $depreciation = Depreciation::findOrFail($id);
@@ -86,12 +106,12 @@ class DepreciationsController extends Controller
      * Update the specified resource in storage.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @since [v4.0]
-     * @param  \Illuminate\Http\Request  $request
+     *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): JsonResponse
     {
         $this->authorize('update', Depreciation::class);
         $depreciation = Depreciation::findOrFail($id);
@@ -108,11 +128,12 @@ class DepreciationsController extends Controller
      * Remove the specified resource from storage.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @since [v4.0]
+     *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $this->authorize('delete', Depreciation::class);
         $depreciation = Depreciation::withCount('models as models_count')->findOrFail($id);

@@ -1,22 +1,22 @@
 <?php
 
-return array(
+return [
 
-    'asset'             => 'Equipo',
-    'checkin'           => 'Quita',
-    'create'            => 'Nueva Licencia',
-    'expiration'        => 'Fecha de vencimiento',
-    'license_key'       => 'Clave de producto',
-    'maintained'        => 'Mantenido',
-    'name'              => 'Aplicación',
-    'no_depreciation'   => 'No Amortizar',
-    'purchase_order'    => 'Número de orden de compra',
-    'reassignable'      => 'Reasignable',
-    'remaining_seats'   => 'Posiciones Restantes',
-    'seats'             => 'Instalaciones',
-    'termination_date'  => 'Fecha de Fin',
-    'to_email'          => 'Registrado a Email',
-    'to_name'           => 'Registrado a Nombre',
-    'update'            => 'Actualizar Licencia',
-    'checkout_help'     => 'Puedes asignar la licencia a un equipo a a un usuario. Puedes seleccionarlos a ambos, pero el dueño de la licencia debe ser el mismo usuario al que asignes el equipo.'
-);
+    'asset' => 'Activo',
+    'checkin' => 'Ingresar',
+    'create' => 'Crear licencia',
+    'expiration' => 'Fecha de vencimiento',
+    'license_key' => 'Clave del producto',
+    'maintained' => 'Tiene mantenimiento',
+    'name' => 'Nombre del software',
+    'no_depreciation' => 'No depreciar',
+    'purchase_order' => 'Número de orden de compra',
+    'reassignable' => 'Reasignable',
+    'remaining_seats' => 'Disponibles',
+    'seats' => 'Total de licencias',
+    'termination_date' => 'Fecha de finalización',
+    'to_email' => 'Correo electrónico asociado a la licencia',
+    'to_name' => 'Licenciado a',
+    'update' => 'Actualizar licencia',
+    'checkout_help' => 'Debe asignar una licencia a un activo de hardware o a una persona. Puede seleccionar ambos, pero el propietario del activo debe coincidir con la persona a la que está asignado el activo.',
+];
