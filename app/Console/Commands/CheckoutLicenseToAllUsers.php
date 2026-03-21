@@ -3,10 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\License;
-use App\Models\LicenseSeat;
 use App\Models\User;
 use Illuminate\Console\Command;
-use Illuminate\Database\Eloquent\Model;
 
 class CheckoutLicenseToAllUsers extends Command
 {
@@ -56,7 +54,7 @@ class CheckoutLicenseToAllUsers extends Command
             return false;
         }
 
-        $users = User::whereNull('deleted_at')->where('autoassign_licenses', '==', 1)->with('licenses')->get();
+        $users = User::whereNull('deleted_at')->where('autoassign_licenses', '=', 1)->with('licenses')->get();
 
         if ($users->count() > $license->getAvailSeatsCountAttribute()) {
             $this->info('You do not have enough free seats to complete this task, so we will check out as many as we can. ');
@@ -75,6 +73,7 @@ class CheckoutLicenseToAllUsers extends Command
 
             if ($user->licenses->where('id', '=', $license_id)->count()) {
                 $this->info($user->username.' already has this license checked out to them. Skipping... ');
+
                 continue;
             }
 

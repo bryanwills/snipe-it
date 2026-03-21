@@ -2,10 +2,7 @@
 
 namespace App\Presenters;
 
-use App\Helpers\Helper;
 use App\Models\Setting;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -15,6 +12,7 @@ class UserPresenter extends Presenter
 {
     /**
      * Json Column Layout for bootstrap table
+     *
      * @return string
      */
     public static function dataTableLayout()
@@ -23,6 +21,9 @@ class UserPresenter extends Presenter
             [
                 'field' => 'checkbox',
                 'checkbox' => true,
+                'titleTooltip' => trans('general.select_all_none'),
+                'printIgnore' => true,
+                'class' => 'hidden-print',
             ],
             [
                 'field' => 'id',
@@ -33,13 +34,53 @@ class UserPresenter extends Presenter
                 'visible' => false,
             ],
             [
+                'field' => 'username',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => false,
+                'title' => trans('admin/users/table.username'),
+                'visible' => true,
+                'formatter' => 'usernameRoleLinkFormatter',
+            ],
+            [
                 'field' => 'avatar',
                 'searchable' => false,
                 'sortable' => false,
                 'switchable' => true,
-                'title' => 'Avatar',
+                'title' => trans('general.importer.avatar'),
                 'visible' => false,
                 'formatter' => 'imageFormatter',
+            ],
+            [
+                'field' => 'name',
+                'searchable' => true,
+                'sortable' => true,
+                'title' => trans('admin/users/table.name'),
+                'visible' => true,
+                'formatter' => 'usersLinkFormatter',
+            ], [
+                'field' => 'first_name',
+                'searchable' => true,
+                'sortable' => true,
+                'title' => trans('general.first_name'),
+                'visible' => false,
+                'formatter' => 'usersLinkFormatter',
+            ], [
+                'field' => 'last_name',
+                'searchable' => true,
+                'sortable' => true,
+                'title' => trans('general.last_name'),
+                'visible' => false,
+                'formatter' => 'usersLinkFormatter',
+            ],
+            [
+                'field' => 'display_name',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/users/table.display_name'),
+                'visible' => false,
+                'formatter' => 'usersLinkFormatter',
             ],
             [
                 'field' => 'company',
@@ -51,30 +92,12 @@ class UserPresenter extends Presenter
                 'formatter' => 'companiesLinkObjFormatter',
             ],
             [
-                'field' => 'name',
+                'field' => 'employee_num',
                 'searchable' => true,
                 'sortable' => true,
-                'title' => trans('admin/users/table.name'),
-                'visible' => true,
-                'formatter' => 'usersLinkFormatter',
-            ],
-
-            [
-                'field' => 'first_name',
-                'searchable' => true,
-                'sortable' => true,
-                'title' => trans('general.first_name'),
+                'switchable' => true,
+                'title' => trans('general.employee_number'),
                 'visible' => false,
-                'formatter' => 'usersLinkFormatter',
-            ],
-
-            [
-                'field' => 'last_name',
-                'searchable' => true,
-                'sortable' => true,
-                'title' => trans('general.last_name'),
-                'visible' => false,
-                'formatter' => 'usersLinkFormatter',
             ],
             [
                 'field' => 'jobtitle',
@@ -118,8 +141,26 @@ class UserPresenter extends Presenter
                 'sortable' => true,
                 'switchable' => true,
                 'title' => trans('admin/users/table.phone'),
-                'visible' => true,
-                'formatter'    => 'phoneFormatter',
+                'visible' => false,
+                'formatter' => 'phoneFormatter',
+            ],
+            [
+                'field' => 'mobile',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/users/table.mobile'),
+                'visible' => false,
+                'formatter' => 'mobileFormatter',
+            ],
+            [
+                'field' => 'website',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.website'),
+                'visible' => false,
+                'formatter' => 'externalLinkFormatter',
             ],
             [
                 'field' => 'address',
@@ -161,21 +202,13 @@ class UserPresenter extends Presenter
                 'title' => trans('general.zip'),
                 'visible' => false,
             ],
+
             [
-                'field' => 'username',
+                'field' => 'locale',
                 'searchable' => true,
                 'sortable' => true,
                 'switchable' => true,
-                'title' => trans('admin/users/table.username'),
-                'visible' => true,
-                'formatter' => 'usersLinkFormatter',
-            ],
-            [
-                'field' => 'employee_num',
-                'searchable' => true,
-                'sortable' => true,
-                'switchable' => true,
-                'title' => trans('general.employee_number'),
+                'title' => trans('general.language'),
                 'visible' => false,
             ],
             [
@@ -186,6 +219,15 @@ class UserPresenter extends Presenter
                 'title' => trans('general.department'),
                 'visible' => true,
                 'formatter' => 'departmentsLinkObjFormatter',
+            ],
+            [
+                'field' => 'department_manager',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('admin/users/general.department_manager'),
+                'visible' => false,
+                'formatter' => 'usersLinkObjFormatter',
             ],
             [
                 'field' => 'location',
@@ -201,7 +243,7 @@ class UserPresenter extends Presenter
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/users/table.manager'),
-                'visible' => true,
+                'visible' => false,
                 'formatter' => 'usersLinkObjFormatter',
             ],
             [
@@ -211,8 +253,9 @@ class UserPresenter extends Presenter
                 'switchable' => true,
                 'escape' => true,
                 'class' => 'css-barcode',
-                'title' => 'Assets',
+                'title' => trans('general.assets'),
                 'visible' => true,
+                'formatter' => 'linkNumberToUserAssetsFormatter',
             ],
             [
                 'field' => 'licenses_count',
@@ -220,8 +263,9 @@ class UserPresenter extends Presenter
                 'sortable' => true,
                 'switchable' => true,
                 'class' => 'css-license',
-                'title' => 'License',
+                'title' => trans('general.licenses'),
                 'visible' => true,
+                'formatter' => 'linkNumberToUserLicensesFormatter',
             ],
             [
                 'field' => 'consumables_count',
@@ -229,8 +273,9 @@ class UserPresenter extends Presenter
                 'sortable' => true,
                 'switchable' => true,
                 'class' => 'css-consumable',
-                'title' => 'Consumables',
+                'title' => trans('general.consumables'),
                 'visible' => true,
+                'formatter' => 'linkNumberToUserConsumablesFormatter',
             ],
             [
                 'field' => 'accessories_count',
@@ -238,8 +283,29 @@ class UserPresenter extends Presenter
                 'sortable' => true,
                 'switchable' => true,
                 'class' => 'css-accessory',
-                'title' => 'Accessories',
+                'title' => trans('general.accessories'),
                 'visible' => true,
+                'formatter' => 'linkNumberToUserAccessoriesFormatter',
+            ],
+            [
+                'field' => 'manages_users_count',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'class' => 'css-users',
+                'title' => trans('admin/users/table.managed_users'),
+                'visible' => true,
+                'formatter' => 'linkNumberToUserManagedUsersFormatter',
+            ],
+            [
+                'field' => 'manages_locations_count',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'class' => 'css-location',
+                'title' => trans('admin/users/table.managed_locations'),
+                'visible' => true,
+                'formatter' => 'linkNumberToUserManagedLocationsFormatter',
             ],
             [
                 'field' => 'notes',
@@ -295,6 +361,15 @@ class UserPresenter extends Presenter
                 'formatter' => 'trueFalseFormatter',
             ],
             [
+                'field' => 'autoassign_licenses',
+                'searchable' => false,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.autoassign_licenses'),
+                'visible' => false,
+                'formatter' => 'trueFalseFormatter',
+            ],
+            [
                 'field' => 'created_by',
                 'searchable' => false,
                 'sortable' => true,
@@ -308,6 +383,14 @@ class UserPresenter extends Presenter
                 'sortable' => true,
                 'switchable' => true,
                 'title' => trans('general.created_at'),
+                'visible' => false,
+                'formatter' => 'dateDisplayFormatter',
+            ], [
+                'field' => 'updated_at',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.updated_at'),
                 'visible' => false,
                 'formatter' => 'dateDisplayFormatter',
             ],
@@ -346,6 +429,8 @@ class UserPresenter extends Presenter
                 'title' => trans('table.actions'),
                 'visible' => true,
                 'formatter' => 'usersActionsFormatter',
+                'printIgnore' => true,
+                'class' => 'hidden-print',
             ],
         ];
 
@@ -367,20 +452,23 @@ class UserPresenter extends Presenter
      *
      * @return string
      */
-    public function fullName()
-    {
-        return html_entity_decode($this->first_name.' '.$this->last_name, ENT_QUOTES | ENT_XML1, 'UTF-8');
-    }
+    //    public function fullName()
+    //    {
+    //        if ($this->display_name) {
+    //            return 'kjdfh'.html_entity_decode($this->display_name, ENT_QUOTES | ENT_XML1, 'UTF-8');
+    //        }
+    //        return 'roieuoe'.html_entity_decode($this->first_name.' '.$this->last_name, ENT_QUOTES | ENT_XML1, 'UTF-8');
+    //    }
 
-    /**
-     * Standard accessor.
-     * @TODO Remove presenter::fullName() entirely?
-     * @return string
-     */
-    public function name()
-    {
-        return $this->fullName();
-    }
+    //    /**
+    //     * Standard accessor.
+    //     * @TODO Remove presenter::fullName() entirely?
+    //     * @return string
+    //     */
+    //    public function name()
+    //    {
+    //        return $this->fullName();
+    //    }
 
     /**
      * Returns the user Gravatar image url.
@@ -389,15 +477,37 @@ class UserPresenter extends Presenter
      */
     public function gravatar()
     {
+
+        // User's specific avatar
         if ($this->avatar) {
+
+            // Check if it's a google avatar or some external avatar
+            if ($this->isAvatarExternal()) {
+                return $this->avatar;
+            }
+
+            // Otherwise assume it's an uploaded image
             return Storage::disk('public')->url('avatars/'.e($this->avatar));
         }
 
-        if (Setting::getSettings()->load_remote == '1') {
+        // If the default is system default
+        if (Setting::getSettings()->default_avatar == 'default.png') {
+            return Storage::disk('public')->url('default.png');
+        }
+
+        // If there is a custom default avatar
+        if (Setting::getSettings()->default_avatar != '') {
+            return Storage::disk('public')->url('avatars/'.e(Setting::getSettings()->default_avatar));
+        }
+
+        // If there is no default and no custom avatar, check for gravatar
+        if ((Setting::getSettings()->load_remote == '1') && (Setting::getSettings()->default_avatar == '')) {
+
             if ($this->model->gravatar != '') {
                 $gravatar = md5(strtolower(trim($this->model->gravatar)));
 
                 return '//gravatar.com/avatar/'.$gravatar;
+
             } elseif ($this->email != '') {
                 $gravatar = md5(strtolower(trim($this->email)));
 
@@ -405,21 +515,27 @@ class UserPresenter extends Presenter
             }
         }
 
-        // Set a fun, gender-neutral default icon
-        return url('/').'/img/default-sm.png';
+        return false;
     }
 
     /**
      * Formatted url for use in tables.
+     *
      * @return string
      */
     public function nameUrl()
     {
-        return (string) link_to_route('users.show', $this->fullName(), $this->id);
+        if (auth()->user()->can('view', ['\App\Models\User', $this])) {
+            return '<a href="'.route('users.show', $this->id).'">'.e($this->display_name).'</a>';
+        } else {
+            return e($this->display_name);
+        }
+
     }
 
     /**
      * Url to view this item.
+     *
      * @return string
      */
     public function viewUrl()
@@ -429,6 +545,16 @@ class UserPresenter extends Presenter
 
     public function glyph()
     {
-        return '<i class="fas fa-user" aria-hidden="true"></i>';
+        return '<x-icon type="user"/>';
+    }
+
+    public function formattedNameLink()
+    {
+
+        if (auth()->user()->can('view', ['\App\Models\User', $this])) {
+            return '<a href="'.route('users.show', e($this->id)).'" class="'.(($this->deleted_at != '') ? 'deleted' : '').'">'.e($this->display_name).'</a>';
+        }
+
+        return '<span class="'.(($this->deleted_at != '') ? 'deleted' : '').'">'.e($this->display_name).'</span>';
     }
 }

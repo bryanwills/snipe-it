@@ -1,10 +1,11 @@
 <?php
 
-return array(
+return [
 
-    'actions'	 	=> 'Actions',
-    'action' 		=> 'Action',
-    'by'      		=> 'By',
-    'item' 			=> 'Item',
+    'actions' => 'ක්‍රියාවන්',
+    'action' => 'ක්‍රියාව',
+    'by' => 'By',
+    'item' => 'අයිතමය',
+    'no_matching_records' => 'ගැළපෙන වාර්තා හමු නොවීය',
 
-);
+];

@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Asset;
 use App\Models\User;
 
 class AssetPolicy extends CheckoutablePermissionsPolicy
@@ -11,12 +12,12 @@ class AssetPolicy extends CheckoutablePermissionsPolicy
         return 'assets';
     }
 
-    public function viewRequestable(User $user, Asset $asset = null)
+    public function viewRequestable(User $user, ?Asset $asset = null)
     {
         return $user->hasAccess('assets.view.requestable');
     }
 
-    public function audit(User $user, Asset $asset = null)
+    public function audit(User $user, ?Asset $asset = null)
     {
         return $user->hasAccess('assets.audit');
     }

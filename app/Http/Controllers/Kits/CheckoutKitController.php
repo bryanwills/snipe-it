@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Kits;
 
 use App\Http\Controllers\CheckInOutRequest;
 use App\Http\Controllers\Controller;
-use App\Models\PredefinedKit;
 use App\Models\Asset;
-use App\Models\PredefinedLicence;
-use App\Models\PredefinedModel;
+use App\Models\PredefinedKit;
 use App\Models\User;
 use App\Services\PredefinedKitCheckoutService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
@@ -22,6 +22,7 @@ use Illuminate\Support\Arr;
 class CheckoutKitController extends Controller
 {
     public $kitService;
+
     use CheckInOutRequest;
 
     public function __construct(PredefinedKitCheckoutService $kitService)
@@ -33,13 +34,12 @@ class CheckoutKitController extends Controller
      * Show Bulk Checkout Page
      *
      * @author [D. Minaev.] [<dmitriy.minaev.v@gmail.com>]
+     *
      * @return View View to checkout
      */
-    public function showCheckout($kit_id)
+    public function showCheckout(PredefinedKit $kit)
     {
         $this->authorize('checkout', Asset::class);
-
-        $kit = PredefinedKit::findOrFail($kit_id);
 
         return view('kits/checkout')->with('kit', $kit);
     }
@@ -48,24 +48,25 @@ class CheckoutKitController extends Controller
      * Validate and process the new Predefined Kit data.
      *
      * @author [D. Minaev.] [<dmitriy.minaev.v@gmail.com>]
-     * @return Redirect
+     *
+     * @return RedirectResponse
      */
     public function store(Request $request, $kit_id)
     {
-        $user_id = e($request->get('user_id'));
+        $user_id = e($request->input('user_id'));
         if (is_null($user = User::find($user_id))) {
             return redirect()->back()->with('error', trans('admin/users/message.user_not_found'));
         }
 
-        $kit = new PredefinedKit();
+        $kit = new PredefinedKit;
         $kit->id = $kit_id;
 
         $checkout_result = $this->kitService->checkout($request, $kit, $user);
         if (Arr::has($checkout_result, 'errors') && count($checkout_result['errors']) > 0) {
-            return redirect()->back()->with('error', trans('general.checkout_error'))->with('error_messages', $checkout_result['errors']);
+            return redirect()->back()->with('error', trans('admin/kits/general.checkout_error'))->with('error_messages', $checkout_result['errors']);
         }
 
-        return redirect()->back()->with('success', trans('general.checkout_success'))
+        return redirect()->back()->with('success', trans('admin/kits/general.checkout_success'))
             ->with('assets', Arr::get($checkout_result, 'assets', null))
             ->with('accessories', Arr::get($checkout_result, 'accessories', null))
             ->with('consumables', Arr::get($checkout_result, 'consumables', null));

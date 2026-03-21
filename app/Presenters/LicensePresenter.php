@@ -9,6 +9,7 @@ class LicensePresenter extends Presenter
 {
     /**
      * Json Column Layout for bootstrap table
+     *
      * @return string
      */
     public static function dataTableLayout()
@@ -21,6 +22,13 @@ class LicensePresenter extends Presenter
                 'switchable' => true,
                 'title' => trans('general.id'),
                 'visible' => false,
+            ],  [
+                'field' => 'name',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => false,
+                'title' => trans('general.name'),
+                'formatter' => 'licensesLinkFormatter',
             ], [
                 'field' => 'company',
                 'searchable' => true,
@@ -30,17 +38,11 @@ class LicensePresenter extends Presenter
                 'visible' => false,
                 'formatter' => 'companiesLinkObjFormatter',
             ], [
-                'field' => 'name',
-                'searchable' => true,
-                'sortable' => true,
-                'title' => trans('admin/licenses/table.title'),
-                'formatter' => 'licensesLinkFormatter',
-            ], [
                 'field' => 'product_key',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/licenses/form.license_key'),
-                'formatter' => 'licensesLinkFormatter',
+                'formatter' => 'licenseKeyFormatter',
             ], [
                 'field' => 'expiration_date',
                 'searchable' => true,
@@ -48,10 +50,18 @@ class LicensePresenter extends Presenter
                 'title' => trans('admin/licenses/form.expiration'),
                 'formatter' => 'dateDisplayFormatter',
             ], [
+                'field' => 'termination_date',
+                'searchable' => true,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('admin/licenses/form.termination_date'),
+                'formatter' => 'dateDisplayFormatter',
+            ], [
                 'field' => 'license_email',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/licenses/form.to_email'),
+                'formatter' => 'emailFormatter',
             ], [
                 'field' => 'license_name',
                 'searchable' => true,
@@ -79,30 +89,33 @@ class LicensePresenter extends Presenter
                 'sortable' => true,
                 'title' => trans('general.manufacturer'),
                 'formatter' => 'manufacturersLinkObjFormatter',
+            ],  [
+                'field' => 'min_amt',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('mail.min_QTY'),
+                'formatter' => 'minAmtFormatter',
+                'class' => 'text-right text-padding-number-cell',
             ], [
                 'field' => 'seats',
                 'searchable' => false,
                 'sortable' => true,
                 'title' => trans('admin/accessories/general.total'),
+                'class' => 'text-right text-padding-number-cell',
+                'footerFormatter' => 'qtySumFormatter',
             ], [
                 'field' => 'free_seats_count',
                 'searchable' => false,
                 'sortable' => true,
                 'title' => trans('admin/accessories/general.remaining'),
+                'class' => 'text-right text-padding-number-cell',
+                'footerFormatter' => 'qtySumFormatter',
             ], [
                 'field' => 'purchase_date',
                 'searchable' => true,
                 'sortable' => true,
                 'visible' => false,
                 'title' => trans('general.purchase_date'),
-                'formatter' => 'dateDisplayFormatter',
-            ],
-            [
-                'field' => 'termination_date',
-                'searchable' => true,
-                'sortable' => true,
-                'visible' => false,
-                'title' => trans('admin/licenses/form.termination_date'),
                 'formatter' => 'dateDisplayFormatter',
             ],
             [
@@ -151,6 +164,28 @@ class LicensePresenter extends Presenter
                 'visible' => false,
                 'title' => trans('general.order_number'),
             ], [
+                'field' => 'created_by',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.created_by'),
+                'visible' => false,
+                'formatter' => 'usersLinkObjFormatter',
+            ], [
+                'field' => 'created_at',
+                'searchable' => false,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('general.created_at'),
+                'formatter' => 'dateDisplayFormatter',
+            ], [
+                'field' => 'updated_at',
+                'searchable' => false,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('general.updated_at'),
+                'formatter' => 'dateDisplayFormatter',
+            ],
+            [
                 'field' => 'notes',
                 'searchable' => true,
                 'sortable' => true,
@@ -164,10 +199,11 @@ class LicensePresenter extends Presenter
             'field' => 'checkincheckout',
             'searchable' => false,
             'sortable' => false,
-            'switchable' => true,
+            'switchable' => false,
             'title' => trans('general.checkin').'/'.trans('general.checkout'),
             'visible' => true,
-            'formatter' => 'licensesInOutFormatter',
+            'formatter' => 'licenseInOutFormatter',
+            'printIgnore' => true,
         ];
 
         $layout[] = [
@@ -177,6 +213,8 @@ class LicensePresenter extends Presenter
             'switchable' => false,
             'title' => trans('table.actions'),
             'formatter' => 'licensesActionsFormatter',
+            'printIgnore' => true,
+            'class' => 'hidden-print',
         ];
 
         return json_encode($layout);
@@ -184,6 +222,7 @@ class LicensePresenter extends Presenter
 
     /**
      * Json Column Layout for bootstrap table
+     *
      * @return string
      */
     public static function dataTableLayoutSeats()
@@ -196,15 +235,6 @@ class LicensePresenter extends Presenter
                 'switchable' => true,
                 'title' => trans('general.id'),
                 'visible' => false,
-           ],
-           [
-                'field' => 'name',
-                'searchable' => false,
-                'sortable' => false,
-                'sorter'   => 'numericOnly',
-                'switchable' => true,
-                'title' => trans('admin/licenses/general.seat'),
-                'visible' => true,
             ], [
                 'field' => 'assigned_user',
                 'searchable' => false,
@@ -214,15 +244,32 @@ class LicensePresenter extends Presenter
                 'visible' => true,
                 'formatter' => 'usersLinkObjFormatter',
             ], [
-                'field' => 'department',
+                'field' => 'assigned_user.email',
                 'searchable' => false,
-                'sortable' => true,
+                'sortable' => false,
+                'switchable' => true,
+                'title' => trans('admin/users/table.email'),
+                'visible' => true,
+                'formatter' => 'emailFormatter',
+            ],
+            [
+                'field' => 'assigned_user.company',
+                'searchable' => false,
+                'sortable' => false,
+                'switchable' => true,
+                'title' => trans('general.company'),
+                'visible' => true,
+                'formatter' => 'companiesLinkObjFormatter',
+            ],
+            [
+                'field' => 'assigned_user.department',
+                'searchable' => false,
+                'sortable' => false,
                 'switchable' => true,
                 'title' => trans('general.department'),
                 'visible' => false,
                 'formatter' => 'departmentNameLinkFormatter',
-            ],
-            [
+            ], [
                 'field' => 'assigned_asset',
                 'searchable' => false,
                 'sortable' => false,
@@ -240,13 +287,31 @@ class LicensePresenter extends Presenter
                 'formatter' => 'locationsLinkObjFormatter',
             ],
             [
+                'field' => 'updated_at',
+                'searchable' => false,
+                'sortable' => true,
+                'visible' => false,
+                'title' => trans('general.updated_at'),
+                'formatter' => 'dateDisplayFormatter',
+            ],
+            [
+                'field' => 'notes',
+                'searchable' => false,
+                'sortable' => false,
+                'visible' => false,
+                'title' => trans('general.notes'),
+                'formatter' => 'notesFormatter',
+            ],
+            [
                 'field' => 'checkincheckout',
                 'searchable' => false,
                 'sortable' => false,
-                'switchable' => true,
+                'switchable' => false,
                 'title' => trans('general.checkin').'/'.trans('general.checkout'),
                 'visible' => true,
                 'formatter' => 'licenseSeatInOutFormatter',
+                'printIgnore' => true,
+                'class' => 'hidden-print',
             ],
         ];
 
@@ -255,15 +320,22 @@ class LicensePresenter extends Presenter
 
     /**
      * Link to this licenses Name
+     *
      * @return string
      */
     public function nameUrl()
     {
-        return (string) link_to_route('licenses.show', $this->name, $this->id);
+        if (auth()->user()->can('view', ['\App\Models\License', $this])) {
+            return '<a href="'.route('licenses.show', $this->id).'">'.e($this->display_name).'</a>';
+        } else {
+            return e($this->display_name);
+        }
+
     }
 
     /**
      * Link to this licenses Name
+     *
      * @return string
      */
     public function fullName()
@@ -272,16 +344,8 @@ class LicensePresenter extends Presenter
     }
 
     /**
-     * Link to this licenses serial
-     * @return string
-     */
-    public function serialUrl()
-    {
-        return (string) link_to('/licenses/'.$this->id, mb_strimwidth($this->serial, 0, 50, '...'));
-    }
-
-    /**
      * Url to view this item.
+     *
      * @return string
      */
     public function viewUrl()

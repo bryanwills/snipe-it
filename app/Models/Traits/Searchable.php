@@ -5,6 +5,7 @@ namespace App\Models\Traits;
 use App\Models\Asset;
 use App\Models\CustomField;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * This trait allows for cleaner searching of models,
@@ -17,9 +18,9 @@ trait Searchable
     /**
      * Performs a search on the model, using the provided search terms
      *
-     * @param  \Illuminate\Database\Eloquent\Builder $query The query to start the search on
-     * @param  string $search
-     * @return \Illuminate\Database\Eloquent\Builder A query with added "where" clauses
+     * @param  Builder  $query  The query to start the search on
+     * @param  string  $search
+     * @return Builder A query with added "where" clauses
      */
     public function scopeTextSearch($query, $search)
     {
@@ -50,8 +51,9 @@ trait Searchable
 
     /**
      * Prepares the search term, splitting and cleaning it up
-     * @param  string $search The search term
-     * @return array         An array of search terms
+     *
+     * @param  string  $search  The search term
+     * @return array An array of search terms
      */
     private function prepeareSearchTerms($search)
     {
@@ -61,8 +63,7 @@ trait Searchable
     /**
      * Searches the models attributes for the search terms
      *
-     * @param  Illuminate\Database\Eloquent\Builder $query
-     * @param  array  $terms
+     * @param  Illuminate\Database\Eloquent\Builder  $query
      * @return Illuminate\Database\Eloquent\Builder
      */
     private function searchAttributes(Builder $query, array $terms)
@@ -76,7 +77,7 @@ trait Searchable
                 /**
                  * Making sure to only search in date columns if the search term consists of characters that can make up a MySQL timestamp!
                  *
-                 * @see https://github.com/snipe/snipe-it/issues/4590
+                 * @see https://github.com/grokability/snipe-it/issues/4590
                  */
                 if (! preg_match('/^[0-9 :-]++$/', $term) && in_array($column, $this->getDates())) {
                     continue;
@@ -86,12 +87,13 @@ trait Searchable
                  * We need to form the query properly, starting with a "where",
                  * otherwise the generated select is wrong.
                  *
-                 * @todo  This does the job, but is inelegant and fragile
+                 * @todo This does the job, but is inelegant and fragile
                  */
                 if (! $firstConditionAdded) {
                     $query = $query->where($table.'.'.$column, 'LIKE', '%'.$term.'%');
 
                     $firstConditionAdded = true;
+
                     continue;
                 }
 
@@ -105,8 +107,7 @@ trait Searchable
     /**
      * Searches the models custom fields for the search terms
      *
-     * @param  Illuminate\Database\Eloquent\Builder $query
-     * @param  array  $terms
+     * @param  Illuminate\Database\Eloquent\Builder  $query
      * @return Illuminate\Database\Eloquent\Builder
      */
     private function searchCustomFields(Builder $query, array $terms)
@@ -133,40 +134,50 @@ trait Searchable
     /**
      * Searches the models relations for the search terms
      *
-     * @param  Illuminate\Database\Eloquent\Builder $query
-     * @param  array  $terms
+     * @param  Illuminate\Database\Eloquent\Builder  $query
      * @return Illuminate\Database\Eloquent\Builder
      */
     private function searchRelations(Builder $query, array $terms)
     {
         foreach ($this->getSearchableRelations() as $relation => $columns) {
-            $query = $query->orWhereHas($relation, function ($query) use ($relation, $columns, $terms) {
-                $table = $this->getRelationTable($relation);
+            $query = $query->orWhereHas(
+                $relation, function ($query) use ($relation, $columns, $terms) {
+                    $table = $this->getRelationTable($relation);
 
-                /**
-                 * We need to form the query properly, starting with a "where",
-                 * otherwise the generated nested select is wrong.
-                 *
-                 * @todo  This does the job, but is inelegant and fragile
-                 */
-                $firstConditionAdded = false;
+                    /**
+                     * We need to form the query properly, starting with a "where",
+                     * otherwise the generated nested select is wrong.
+                     *
+                     * @todo This does the job, but is inelegant and fragile
+                     */
+                    $firstConditionAdded = false;
 
-                foreach ($columns as $column) {
-                    foreach ($terms as $term) {
-                        if (! $firstConditionAdded) {
-                            $query->where($table.'.'.$column, 'LIKE', '%'.$term.'%');
-                            $firstConditionAdded = true;
-                            continue;
+                    foreach ($columns as $column) {
+                        foreach ($terms as $term) {
+                            if (! $firstConditionAdded) {
+                                $query->where($table.'.'.$column, 'LIKE', '%'.$term.'%');
+                                $firstConditionAdded = true;
+
+                                continue;
+                            }
+
+                            $query->orWhere($table.'.'.$column, 'LIKE', '%'.$term.'%');
                         }
-
-                        $query->orWhere($table.'.'.$column, 'LIKE', '%'.$term.'%');
+                    }
+                    // I put this here because I only want to add the concat one time in the end of the user relation search
+                    if (($relation == 'adminuser') || ($relation == 'user')) {
+                        $query->orWhereRaw(
+                            $this->buildMultipleColumnSearch(
+                                [
+                                    'users.first_name',
+                                    'users.last_name',
+                                ]
+                            ),
+                            ["%{$term}%"]
+                        );
                     }
                 }
-                // I put this here because I only want to add the concat one time in the end of the user relation search
-                if($relation == 'user') {
-                    $query->orWhereRaw('CONCAT (users.first_name, " ", users.last_name) LIKE ?', ["%{$term}%"]);
-                }
-            });
+            );
         }
 
         return $query;
@@ -177,8 +188,8 @@ trait Searchable
      *
      * This is a noop in this trait, but can be overridden in the implementing model, to allow more advanced searches
      *
-     * @param  Illuminate\Database\Eloquent\Builder $query
-     * @param  array  $terms The search terms
+     * @param  Illuminate\Database\Eloquent\Builder  $query
+     * @param  array  $terms  The search terms
      * @return Illuminate\Database\Eloquent\Builder
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
@@ -216,8 +227,8 @@ trait Searchable
      * So "category" would get the table name for the Category model,
      * "model.manufacturer" would get the tablename for the Manufacturer model.
      *
-     * @param  string $relation
-     * @return string            The table name
+     * @param  string  $relation
+     * @return string The table name
      */
     private function getRelationTable($relation)
     {
@@ -256,5 +267,36 @@ trait Searchable
         }
 
         return $related->getTable();
+    }
+
+    /**
+     * Builds a search string for either MySQL or sqlite by separating the provided columns with a space.
+     *
+     * @param  array  $columns  Columns to include in search string.
+     */
+    private function buildMultipleColumnSearch(array $columns): string
+    {
+        $mappedColumns = collect($columns)->map(fn ($column) => DB::getTablePrefix().$column)->toArray();
+
+        $driver = config('database.connections.'.config('database.default').'.driver');
+
+        if ($driver === 'sqlite') {
+            return implode("||' '||", $mappedColumns).' LIKE ?';
+        }
+
+        // Default to MySQL's concatenation method
+        return 'CONCAT('.implode('," ",', $mappedColumns).') LIKE ?';
+    }
+
+    /**
+     * Search a string across multiple columns separated with a space.
+     *
+     * @param  Builder  $query
+     * @param  array  $columns  - Columns to include in search string.
+     * @return Builder
+     */
+    public function scopeOrWhereMultipleColumns($query, array $columns, $term)
+    {
+        return $query->orWhereRaw($this->buildMultipleColumnSearch($columns), ["%{$term}%"]);
     }
 }
