@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Accessories;
 
 use App\Events\CheckoutableCheckedIn;
+use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\Accessory;
-use App\Models\User;
+use App\Models\AccessoryCheckout;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AccessoryCheckinController extends Controller
@@ -16,63 +18,73 @@ class AccessoryCheckinController extends Controller
      * Check the accessory back into inventory
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @param Request $request
-     * @param int $accessoryUserId
-     * @param string $backto
-     * @return View
-     * @internal param int $accessoryId
-     * @throws \Illuminate\Auth\Access\AuthorizationException
+     *
+     * @param  Request  $request
+     * @param  int  $accessoryUserId
+     * @param  string  $backto
      */
-    public function create($accessoryUserId = null, $backto = null)
+    public function create($accessoryUserId = null, $backto = null): View|RedirectResponse
     {
-        // Check if the accessory exists
-        if (is_null($accessory_user = DB::table('accessories_users')->find($accessoryUserId))) {
-            // Redirect to the accessory management page with error
+        if (is_null($accessory_user = DB::table('accessories_checkout')->find($accessoryUserId))) {
             return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.not_found'));
         }
 
         $accessory = Accessory::find($accessory_user->accessory_id);
         $this->authorize('checkin', $accessory);
 
-        return view('accessories/checkin', compact('accessory'))->with('backto', $backto);
+        // based on what the accessory is checked out to the target redirect option will be displayed accordingly.
+        $target_option = match ($accessory_user->assigned_type) {
+            'App\Models\Asset' => trans('admin/hardware/form.redirect_to_type', ['type' => trans('general.asset')]),
+            'App\Models\Location' => trans('admin/hardware/form.redirect_to_type', ['type' => trans('general.location')]),
+            default => trans('admin/hardware/form.redirect_to_type', ['type' => trans('general.user')]),
+        };
+
+        return view('accessories/checkin', compact('accessory', 'target_option'))->with('backto', $backto);
+
     }
 
     /**
      * Check in the item so that it can be checked out again to someone else
      *
      * @uses Accessory::checkin_email() to determine if an email can and should be sent
+     *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @param null $accessoryUserId
-     * @param string $backto
-     * @return Redirect
-     * @throws \Illuminate\Auth\Access\AuthorizationException
-     * @internal param int $accessoryId
+     *
+     * @param  null  $accessoryCheckoutId
+     * @param  string  $backto
      */
-    public function store(Request $request, $accessoryUserId = null, $backto = null)
+    public function store(Request $request, $accessoryCheckoutId = null, $backto = null): RedirectResponse
     {
-        // Check if the accessory exists
-        if (is_null($accessory_user = DB::table('accessories_users')->find($accessoryUserId))) {
-            // Redirect to the accessory management page with error
+        if (is_null($accessory_checkout = AccessoryCheckout::find($accessoryCheckoutId))) {
             return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.does_not_exist'));
         }
 
-        $accessory = Accessory::find($accessory_user->accessory_id);
-
+        $accessory = Accessory::find($accessory_checkout->accessory_id);
         $this->authorize('checkin', $accessory);
 
-        $checkin_at = date('Y-m-d');
+        session()->put('checkedInFrom', $accessory_checkout->assigned_to);
+        session()->put('checkout_to_type', match ($accessory_checkout->assigned_type) {
+            'App\Models\User' => 'user',
+            'App\Models\Location' => 'location',
+            'App\Models\Asset' => 'asset',
+        });
+
+        $checkin_hours = date('H:i:s');
+        $checkin_at = date('Y-m-d H:i:s');
         if ($request->filled('checkin_at')) {
-            $checkin_at = $request->input('checkin_at');
+            $checkin_at = $request->input('checkin_at').' '.$checkin_hours;
         }
 
         // Was the accessory updated?
-        if (DB::table('accessories_users')->where('id', '=', $accessory_user->id)->delete()) {
-            $return_to = e($accessory_user->assigned_to);
+        if ($accessory_checkout->delete()) {
+            event(new CheckoutableCheckedIn($accessory, $accessory_checkout->assignedTo, auth()->user(), $request->input('note'), $checkin_at));
 
-            event(new CheckoutableCheckedIn($accessory, User::find($return_to), Auth::user(), $request->input('note'), $checkin_at));
+            session()->put(['redirect_option' => $request->input('redirect_option')]);
 
-            return redirect()->route('accessories.show', $accessory->id)->with('success', trans('admin/accessories/message.checkin.success'));
+            return Helper::getRedirectOption($request, $accessory->id, 'Accessories')
+                ->with('success', trans('admin/accessories/message.checkin.success'));
         }
+
         // Redirect to the accessory management page with error
         return redirect()->route('accessories.index')->with('error', trans('admin/accessories/message.checkin.error'));
     }

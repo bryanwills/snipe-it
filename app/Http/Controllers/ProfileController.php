@@ -3,18 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ImageUploadRequest;
+use App\Models\Actionlog;
 use App\Models\Asset;
 use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\CurrentInventory;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Image;
-use Redirect;
-use View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * This controller handles all actions related to User Profiles for
@@ -28,12 +30,13 @@ class ProfileController extends Controller
      * Returns a view with the user's profile form for editing
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @since [v1.0]
-     * @return \Illuminate\Contracts\View\View
      */
-    public function getIndex()
+    public function getIndex(): View
     {
-        $user = Auth::user();
+
+        $user = auth()->user();
 
         return view('account/profile', compact('user'));
     }
@@ -42,22 +45,28 @@ class ProfileController extends Controller
      * Validates and stores the user's update data.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @since [v1.0]
-     * @return \Illuminate\Http\RedirectResponse
      */
-    public function postIndex(ImageUploadRequest $request)
+    public function postIndex(ImageUploadRequest $request): RedirectResponse
     {
-        $user = Auth::user();
-        $user->first_name = $request->input('first_name');
-        $user->last_name = $request->input('last_name');
-        $user->website = $request->input('website');
-        $user->gravatar = $request->input('gravatar');
-        $user->skin = $request->input('skin');
-        $user->phone = $request->input('phone');
 
-        if (! config('app.lock_passwords')) {
-            $user->locale = $request->input('locale', 'en');
+        $user = auth()->user();
+
+        if ((Gate::allows('self.profile')) && (! config('app.lock_passwords'))) {
+            $user->first_name = $request->input('first_name');
+            $user->last_name = $request->input('last_name');
+            $user->website = $request->input('website');
+            $user->gravatar = $request->input('gravatar');
+            $user->phone = $request->input('phone');
         }
+
+        $user->enable_sounds = $request->input('enable_sounds', false);
+        $user->enable_confetti = $request->input('enable_confetti', false);
+        $user->link_light_color = $request->input('link_light_color', '#296282');
+        $user->link_dark_color = $request->input('link_dark_color', '#296282');
+        $user->nav_link_color = $request->input('nav_link_color', '#FFFFFF');
+        $user->locale = $request->input('locale');
 
         if ((Gate::allows('self.two_factor')) && ((Setting::getSettings()->two_factor_enabled == '1') && (! config('app.lock_passwords')))) {
             $user->two_factor_optin = $request->input('two_factor_optin', '0');
@@ -70,14 +79,12 @@ class ProfileController extends Controller
         // Handle the avatar upload and/or delete if necessary
         app('\App\Http\Requests\ImageUploadRequest')->handleImages($user, 600, 'avatar', 'avatars', 'avatar');
 
-
         if ($user->save()) {
-            return redirect()->route('profile')->with('success', 'Account successfully updated');
+            return redirect()->route('profile')->with('success', trans('account/general.profile_updated'));
         }
 
         return redirect()->back()->withInput()->withErrors($user->getErrors());
     }
-
 
     /**
      * Returns a page with the API token generation interface.
@@ -86,14 +93,13 @@ class ProfileController extends Controller
      * in the routes file if you want to be able to cache the routes.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @since [v4.0]
-     * @return View
      */
-    public function api()
+    public function api(): View
     {
-
         // Make sure the self.api permission has been granted
-        if (!Gate::allows('self.api')) {
+        if (! Gate::allows('self.api')) {
             abort(403);
         }
 
@@ -102,45 +108,46 @@ class ProfileController extends Controller
 
     /**
      * User change email page.
-     *
-     * @return View
      */
-    public function password()
+    public function password(): View|RedirectResponse
     {
-        $user = Auth::user();
-        
+
+        $user = auth()->user();
+        if ($user->ldap_import == '1') {
+            return redirect()->route('account')->with('error', trans('admin/users/message.error.password_ldap'));
+        }
+
         return view('account/change-password', compact('user'));
     }
 
     /**
      * Users change password form processing page.
-     *
-     * @return Redirect
      */
-    public function passwordSave(Request $request)
+    public function passwordSave(Request $request): RedirectResponse
     {
         if (config('app.lock_passwords')) {
             return redirect()->route('account.password.index')->with('error', trans('admin/users/table.lock_passwords'));
         }
 
-        $user = Auth::user();
+        $user = auth()->user();
         if ($user->ldap_import == '1') {
-            return redirect()->route('account.password.index')->with('error', trans('admin/users/message.error.password_ldap'));
+            return redirect()->route('account')->with('error', trans('admin/users/message.error.password_ldap'));
         }
 
         $rules = [
-            'current_password'     => 'required',
-            'password'         => Setting::passwordComplexityRulesSaving('store').'|confirmed',
+            'current_password' => 'required',
+            'password' => Setting::passwordComplexityRulesSaving('store').'|confirmed',
         ];
 
         $validator = \Validator::make($request->all(), $rules);
+
         $validator->after(function ($validator) use ($request, $user) {
             if (! Hash::check($request->input('current_password'), $user->password)) {
                 $validator->errors()->add('current_password', trans('validation.custom.hashed_pass'));
             }
 
             // This checks to make sure that the user's password isn't the same as their username,
-            // email address, first name or last name (see https://github.com/snipe/snipe-it/issues/8661)
+            // email address, first name or last name (see https://github.com/grokability/snipe-it/issues/8661)
             // While this is handled via SaveUserRequest form request in other places, we have to do this manually
             // here because we don't have the username, etc form fields available in the profile password change
             // form.
@@ -159,16 +166,19 @@ class ProfileController extends Controller
         });
 
         if (! $validator->fails()) {
+
             $user->password = Hash::make($request->input('password'));
-            $user->save();
+            // We have to use saveQuietly here because for some reason this method was calling the User Oserver twice :(
+            $user->saveQuietly();
 
             // Log the user out of other devices
             Auth::logoutOtherDevices($request->input('password'));
-            return redirect()->route('account.password.index')->with('success', 'Password updated!');
+
+            return redirect()->route('account')->with('success', trans('passwords.password_change'));
 
         }
-        return redirect()->back()->withInput()->withErrors($validator);
 
+        return redirect()->back()->withInput()->withErrors($validator);
 
     }
 
@@ -180,10 +190,10 @@ class ProfileController extends Controller
      * resources/views/layouts/default.blade.php
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @since [v4.0]
-     * @return View
      */
-    public function getMenuState(Request $request)
+    public function getMenuState(Request $request): void
     {
         if ($request->input('state') == 'open') {
             $request->session()->put('menu_state', 'open');
@@ -192,24 +202,23 @@ class ProfileController extends Controller
         }
     }
 
-
     /**
      * Print inventory
      *
      * @author A. Gianotto
+     *
      * @since [v6.0.12]
-     * @return Illuminate\View\View
      */
-    public function printInventory()
+    public function printInventory(): View
     {
-        $show_user = Auth::user();
+        $show_users = User::where('id', auth()->user()->id)->get();
 
         return view('users/print')
-            ->with('assets', Auth::user()->assets)
-            ->with('licenses', $show_user->licenses()->get())
-            ->with('accessories', $show_user->accessories()->get())
-            ->with('consumables', $show_user->consumables()->get())
-            ->with('show_user', $show_user)
+            ->with('assets', auth()->user()->assets())
+            ->with('licenses', auth()->user()->licenses()->get())
+            ->with('accessories', auth()->user()->accessories()->get())
+            ->with('consumables', auth()->user()->consumables()->get())
+            ->with('users', $show_users)
             ->with('settings', Setting::getSettings());
     }
 
@@ -217,21 +226,51 @@ class ProfileController extends Controller
      * Emails user a list of assigned assets
      *
      * @author A. Gianotto
+     *
      * @since [v6.0.12]
-     * @return \Illuminate\Http\RedirectResponse
      */
-    public function emailAssetList()
+    public function emailAssetList(): RedirectResponse
     {
 
-        if (!$user = User::find(Auth::user()->id)) {
+        if (! $user = User::find(auth()->id())) {
             return redirect()->back()
-                ->with('error', trans('admin/users/message.user_not_found', ['id' => $id]));
+                ->with('error', trans('admin/users/message.user_not_found', ['id' => auth()->id()]));
         }
         if (empty($user->email)) {
             return redirect()->back()->with('error', trans('admin/users/message.user_has_no_email'));
         }
 
-        $user->notify((new CurrentInventory($user)));
+        try {
+            $user->notify((new CurrentInventory($user)));
+        } catch (\Exception $e) {
+            \Log::error($e);
+        }
+
         return redirect()->back()->with('success', trans('admin/users/general.user_notified'));
+    }
+
+    public function getStoredEula($filename): Response|BinaryFileResponse|RedirectResponse
+    {
+
+        $logentry = Actionlog::where('filename', $filename)->first();
+
+        // Make sure the user has permission to view this file
+        // Also allow if the user (manager) able to view both users and assets
+        $allowed_to_view_users_assets = Gate::allows('view', User::class) && Gate::allows('view', Asset::class);
+
+        if (auth()->id() != $logentry->target_id && ! $allowed_to_view_users_assets) {
+            return redirect()->route('account')->with('error', trans('general.generic_model_not_found', ['model' => 'file']));
+        }
+
+        if (config('filesystems.default') == 's3_private') {
+            return redirect()->away(Storage::disk('s3_private')->temporaryUrl('private_uploads/eula-pdfs/'.$filename, now()->addMinutes(5)));
+        }
+
+        if (Storage::exists('private_uploads/eula-pdfs/'.$filename)) {
+            return response()->download(config('app.private_uploads').'/eula-pdfs/'.$filename);
+        }
+
+        return redirect()->back()->with('error', trans('general.file_does_not_exist'));
+
     }
 }

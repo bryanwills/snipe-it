@@ -21,13 +21,16 @@ class ConsumableImporter extends ItemImporter
      * Create a consumable if a duplicate does not exist
      *
      * @author Daniel Melzter
-     * @param  array $row CSV Row Being parsed.
+     *
+     * @param  array  $row  CSV Row Being parsed.
+     *
      * @since 3.0
      */
     public function createConsumableIfNotExists($row)
     {
-        $consumable = Consumable::where('name', $this->item['name'])->first();
+        $consumable = Consumable::where('name', trim($this->item['name']))->first();
         if ($consumable) {
+
             if (! $this->updating) {
                 $this->log('A matching Consumable '.$this->item['name'].' already exists.  ');
 
@@ -39,16 +42,15 @@ class ConsumableImporter extends ItemImporter
 
             return;
         }
+
         $this->log('No matching consumable, creating one');
-        $consumable = new Consumable();
-        $this->item['model_number'] = $this->findCsvMatch($row, 'model_number');
-        $this->item['item_no'] = $this->findCsvMatch($row, 'item_number');
-        $this->item['min_amt'] = $this->findCsvMatch($row, "min_amt");
+        $consumable = new Consumable;
+        $consumable->created_by = auth()->id();
         $consumable->fill($this->sanitizeItemForStoring($consumable));
-        //FIXME: this disables model validation.  Need to find a way to avoid double-logs without breaking everything.
-        $consumable->unsetEventDispatcher();
+
+        // This sets an attribute on the Loggable trait for the action log
+        $consumable->setImported(true);
         if ($consumable->save()) {
-            $consumable->logCreate('Imported using CSV Importer');
             $this->log('Consumable '.$this->item['name'].' was created');
 
             return;
