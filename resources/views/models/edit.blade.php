@@ -9,20 +9,41 @@
 
 {{-- Page content --}}
 @section('inputFields')
-
 @include ('partials.forms.edit.name', ['translated_name' => trans('admin/models/table.name'), 'required' => 'true'])
 @include ('partials.forms.edit.category-select', ['translated_name' => trans('admin/categories/general.category_name'), 'fieldname' => 'category_id', 'required' => 'true', 'category_type' => 'asset'])
 @include ('partials.forms.edit.manufacturer-select', ['translated_name' => trans('general.manufacturer'), 'fieldname' => 'manufacturer_id'])
 @include ('partials.forms.edit.model_number')
 @include ('partials.forms.edit.depreciation')
+@include ('partials.forms.edit.minimum_quantity')
 
+<!-- require serial boolean -->
+<div class="form-group">
+    <label for="require_serial" class="col-md-3 control-label">
+        {{ trans('admin/hardware/general.require_serial') }}
+    </label>
+
+    <div class="col-md-9">
+        <div class="form-inline" style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" name="require_serial" value="1" @checked(old('require_serial', $item->require_serial)) id="require_serial" aria-label="require_serial" />
+            <a
+                    href="#"
+                    data-tooltip="true"
+                    title="{{ trans('admin/hardware/general.require_serial_help') }}"
+                    style="display: inline-flex; align-items: center;"
+            >
+                <x-icon type="info-circle" />
+                <span class="sr-only">{{ trans('admin/hardware/general.require_serial_help') }}</span>
+            </a>
+        </div>
+    </div>
+</div>
 <!-- EOL -->
 
 <div class="form-group {{ $errors->has('eol') ? ' has-error' : '' }}">
     <label for="eol" class="col-md-3 control-label">{{ trans('general.eol') }}</label>
-    <div class="col-md-2">
+    <div class="col-md-3 col-sm-4 col-xs-7">
         <div class="input-group">
-            <input class="col-md-1 form-control" type="text" name="eol" id="eol" value="{{ Request::old('eol', isset($item->eol)) ? $item->eol : ''  }}" />
+            <input class="form-control" type="text" name="eol" id="eol" value="{{ old('eol', isset($item->eol)) ? $item->eol : ''  }}" />
             <span class="input-group-addon">
                 {{ trans('general.months') }}
             </span>
@@ -34,30 +55,12 @@
 </div>
 
 <!-- Custom Fieldset -->
-@livewire('custom-field-set-default-values-for-model',["model_id" => $item->id])
+<!-- If $item->id is null we are cloning the model and we need the $model_id variable -->
+@livewire('custom-field-set-default-values-for-model', ["model_id" => $item->id ?? $model_id ?? null])
 
 @include ('partials.forms.edit.notes')
 @include ('partials.forms.edit.requestable', ['requestable_text' => trans('admin/models/general.requestable')])
+@include ('partials.forms.edit.image-upload', ['image_path' => app('models_upload_path')])
 
-<!-- Image -->
-@if (($item->image) && ($item->image!=''))
-    <div class="form-group{{ $errors->has('image_delete') ? ' has-error' : '' }}">
-        <div class="col-md-9 col-md-offset-3">
-            <label for="image_delete">
-                {{ Form::checkbox('image_delete', '1', old('image_delete'), ['class'=>'minimal','aria-label'=>'image_delete']) }}
-                {{ trans('general.image_delete') }}
-                {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-            </label>
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="col-md-9 col-md-offset-3">
-            <img src="{{ Storage::disk('public')->url(app('models_upload_path').e($item->image)) }}" class="img-responsive">
-            {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-        </div>
-    </div>
-@endif
-
-@include ('partials.forms.edit.image-upload')
 
 @stop

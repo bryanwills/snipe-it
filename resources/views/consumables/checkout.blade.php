@@ -12,7 +12,7 @@
 <div class="row">
   <div class="col-md-9">
 
-    <form class="form-horizontal" method="post" action="" autocomplete="off">
+    <form class="form-horizontal" id="checkout_form" method="post" action="" autocomplete="off">
       <!-- CSRF Token -->
       <input type="hidden" name="_token" value="{{ csrf_token() }}" />
 
@@ -37,11 +37,52 @@
           </div>
           @endif
 
+          @if ($consumable->company)
+              <!-- accessory name -->
+              <div class="form-group">
+                  <label class="col-sm-3 control-label">{{ trans('general.company') }}</label>
+                  <div class="col-md-6">
+                      <p class="form-control-static">{!! $consumable->company->present()->formattedNameLink  !!}</p>
+                  </div>
+              </div>
+          @endif
+
+
+          @if ($consumable->category)
+              <!-- category name -->
+              <div class="form-group">
+                  <label class="col-sm-3 control-label">{{ trans('general.category') }}</label>
+                  <div class="col-md-6">
+                      <p class="form-control-static">{!! $consumable->category->present()->formattedNameLink  !!}</p>
+                  </div>
+              </div>
+          @endif
+
+
+          <!-- total -->
+          <div class="form-group">
+              <label class="col-sm-3 control-label">{{  trans('admin/components/general.total') }}</label>
+              <div class="col-md-6">
+                  <p class="form-control-static">{{ $consumable->qty }}</p>
+              </div>
+          </div>
+
+          <!-- remaining -->
+          <div class="form-group">
+              <label class="col-sm-3 control-label">{{  trans('admin/components/general.remaining') }}</label>
+              <div class="col-md-6">
+                  <p class="form-control-static">{{ $consumable->numRemaining() }}</p>
+              </div>
+          </div>
+
+
+
+
           <!-- User -->
             @include ('partials.forms.edit.user-select', ['translated_name' => trans('general.select_user'), 'fieldname' => 'assigned_to', 'required'=> 'true'])
 
 
-            @if ($consumable->requireAcceptance() || $consumable->getEula() || ($snipeSettings->webhook_endpoint!=''))
+            @if ($consumable->requireAcceptance() || (string) $snipeSettings->require_accept_signature === '1' || $consumable->getEula() || ($snipeSettings->webhook_endpoint!=''))
               <div class="form-group notification-callout">
                 <div class="col-md-8 col-md-offset-3">
                   <div class="callout callout-info">
@@ -58,14 +99,45 @@
                         <br>
                     @endif
 
+                    @if (($consumable->category) && ($consumable->category->checkin_email))
+                      <i class="far fa-envelope"></i>
+                      {{ trans('admin/categories/general.checkin_email_notification') }}
+                      <br>
+                    @endif
+
                     @if ($snipeSettings->webhook_endpoint!='')
                         <i class="fab fa-slack"></i>
                         {{ trans('general.webhook_msg_note') }}
                     @endif
                   </div>
                 </div>
+
+                <!-- Sign in place checkbox -->
+                @if ($consumable->requireAcceptance() || (string) $snipeSettings->require_accept_signature === '1')
+                <div id="sign_in_place_div" class="col-md-7 col-md-offset-3">
+                  <label class="form-control">
+                    <input type="checkbox" value="1" name="sign_in_place" @checked(old('sign_in_place', session('sign_in_place', false))) aria-label="sign_in_place">
+                    {{ trans('general.sign_in_place') }}
+                  </label>
+                  <p class="help-block">
+                    {{ trans('general.sign_in_place_help') }}
+                  </p>
+                </div>
+                @endif
               </div>
             @endif
+
+          <!-- Checkout QTY -->
+          <div class="form-group {{ $errors->has('qty') ? 'error' : '' }} ">
+              <label for="qty" class="col-md-3 control-label">{{ trans('general.qty') }}</label>
+              <div class="col-md-7 col-sm-12 required">
+                  <div class="col-md-2" style="padding-left:0px">
+                    <input class="form-control" type="number" name="checkout_qty" id="checkout_qty" value="1" min="1" max="{{$consumable->numRemaining()}}" maxlength="999999"  />
+                  </div>
+              </div>
+              {!! $errors->first('qty', '<div class="col-md-8 col-md-offset-3"><span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span></div>') !!}
+          </div>
+          
           <!-- Note -->
           <div class="form-group {{ $errors->has('note') ? 'error' : '' }}">
             <label for="note" class="col-md-3 control-label">{{ trans('admin/hardware/form.notes') }}</label>
@@ -75,10 +147,14 @@
             </div>
           </div>
         </div> <!-- .box-body -->
-        <div class="box-footer">
-          <a class="btn btn-link" href="{{ route('consumables.show', ['consumable'=> $consumable->id]) }}">{{ trans('button.cancel') }}</a>
-          <button type="submit" class="btn btn-primary pull-right"><i class="fas fa-check icon-white" aria-hidden="true"></i> {{ trans('general.checkout') }}</button>
-       </div>
+            <x-redirect_submit_options
+                    index_route="consumables.index"
+                    :button_label="trans('general.checkout')"
+                    :options="[
+                                'index' => trans('admin/hardware/form.redirect_to_all', ['type' => trans('general.consumables')]),
+                                'item' => trans('admin/hardware/form.redirect_to_type', ['type' => trans('general.consumable')]),
+                                'target' => trans('admin/hardware/form.redirect_to_checked_out_to'),
+                                ]"/>
       </div>
     </form>
 
