@@ -9,6 +9,7 @@ class DepreciationPresenter extends Presenter
 {
     /**
      * Json Column Layout for bootstrap table
+     *
      * @return string
      */
     public static function dataTableLayout()
@@ -25,6 +26,7 @@ class DepreciationPresenter extends Presenter
                 'field' => 'name',
                 'searchable' => true,
                 'sortable' => true,
+                'switchable' => false,
                 'title' => trans('general.name'),
                 'visible' => true,
                 'formatter' => 'depreciationsLinkFormatter',
@@ -34,18 +36,60 @@ class DepreciationPresenter extends Presenter
                 'field' => 'months',
                 'searchable' => true,
                 'sortable' => true,
-                'title' =>  trans('admin/depreciations/table.term'),
+                'title' => trans('admin/depreciations/table.term'),
                 'visible' => true,
             ],
 
             [
-                "field" => 'depreciation_min',
-                "searchable" => false,
-                "sortable" => true,
-                "title" => trans('admin/depreciations/table.depreciation_min'),
-                "visible" => true,
+                'field' => 'depreciation_min',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('admin/depreciations/table.depreciation_min'),
+                'visible' => true,
             ],
             [
+                'field' => 'assets_count',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.assets'),
+                'visible' => true,
+            ],
+            [
+                'field' => 'models_count',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.asset_models'),
+                'visible' => true,
+            ], [
+                'field' => 'licenses_count',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.licenses'),
+                'visible' => true,
+            ], [
+                'field' => 'created_by',
+                'searchable' => false,
+                'sortable' => true,
+                'title' => trans('general.created_by'),
+                'visible' => false,
+                'formatter' => 'usersLinkObjFormatter',
+            ], [
+                'field' => 'created_at',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.created_at'),
+                'visible' => false,
+                'formatter' => 'dateDisplayFormatter',
+            ], [
+                'field' => 'updated_at',
+                'searchable' => true,
+                'sortable' => true,
+                'switchable' => true,
+                'title' => trans('general.updated_at'),
+                'visible' => false,
+                'formatter' => 'dateDisplayFormatter',
+            ], [
                 'field' => 'actions',
                 'searchable' => false,
                 'sortable' => false,
@@ -53,9 +97,25 @@ class DepreciationPresenter extends Presenter
                 'title' => trans('table.actions'),
                 'visible' => true,
                 'formatter' => 'depreciationsActionsFormatter',
+                'printIgnore' => true,
+                'class' => 'hidden-print',
             ],
         ];
 
         return json_encode($layout);
+    }
+
+    public function formattedNameLink()
+    {
+        return ($this->tag_color ? "<i class='fa-solid fa-fw fa-square' style='color: ".e($this->tag_color)."' aria-hidden='true'></i> " : '').e($this->display_name);
+    }
+
+    public function nameUrl()
+    {
+        if (auth()->user()->can('view', ['\App\Models\Depreciation', $this])) {
+            return '<a href="'.route('depreciations.show', $this->id).'">'.e($this->display_name).'</a>';
+        } else {
+            return e($this->display_name);
+        }
     }
 }

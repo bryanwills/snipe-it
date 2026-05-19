@@ -1,10 +1,11 @@
 <?php
 
-return array(
+return [
 
-    'actions'	 	=> 'Acciones',
-    'action' 		=> 'Acción',
-    'by'      		=> 'Por',
-    'item' 			=> 'Item',
+    'actions' => 'Acciones',
+    'action' => 'Acción',
+    'by' => 'Por',
+    'item' => 'Elemento',
+    'no_matching_records' => 'No se encontraron registros que coincidan',
 
-);
+];
