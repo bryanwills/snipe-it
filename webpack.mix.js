@@ -1,4 +1,5 @@
 const mix = require("laravel-mix");
+const fs = require("node:fs");
 
 // This generates a file called app.css, which we use
 // later on to build all.css
@@ -17,9 +18,6 @@ mix
       "./node_modules/bootstrap/dist/css/bootstrap.css",
       "./node_modules/@fortawesome/fontawesome-free/css/all.css",
       "./public/css/build/AdminLTE.css",
-      "./node_modules/jquery-ui-bundle/jquery-ui.css",
-      "./node_modules/admin-lte/plugins/iCheck/minimal/blue.css",
-      "./node_modules/icheck/skins/minimal/minimal.css",
       "./node_modules/bootstrap-datepicker/dist/css/bootstrap-datepicker.standalone.css",
       "./node_modules/bootstrap-colorpicker/dist/css/bootstrap-colorpicker.css",
       "./node_modules/blueimp-file-upload/css/jquery.fileupload.css",
@@ -34,13 +32,6 @@ mix
   )
   .version();
 
-mix.copy(
-  [
-    "./node_modules/icheck/skins/minimal/blue.png",
-    "./node_modules/icheck/skins/minimal/blue@2x.png",
-  ],
-  "./public/css"
-);
 
 /**
  * Copy, minify and version signature-pad.css
@@ -50,99 +41,47 @@ mix
   .minify("./public/css/dist/signature-pad.css");
 
 /**
- * Copy, minify and version signature-pad.css
+ * Copy and version select2
+ */
+mix
+    .copy("./node_modules/select2/dist/js/i18n", "./public/js/select2/i18n")
+
+/**
+ * Copy and version fontawesome
  */
 mix
     .copy("./node_modules/@fortawesome/fontawesome-free/webfonts", "./public/css/webfonts")
+
+/**
+ * Copy BS tables js file
+ */
+mix
+    .copy( './node_modules/bootstrap-table/dist/bootstrap-table-locale-all.min.js', 'public/js/dist' )
+    .copy( './node_modules/bootstrap-table/dist/locale/bootstrap-table-en-US.min.js', 'public/js/dist' )
+
+/**
+ * Copy Chart.js file (it's big, and used in only one place)
+ */
+mix
+    .copy('./node_modules/chart.js/dist/Chart.min.js', 'public/js/dist')
 
 // Combine main SnipeIT JS files
 mix
   .js(
     [
-      "./resources/assets/js/vue.js", // require()s vue, and require()s bootstrap.js
-      "./resources/assets/js/snipeit.js", //this is the actual Snipe-IT JS
+        "./resources/assets/js/snipeit.js",
       "./resources/assets/js/snipeit_modals.js",
+      "./node_modules/canvas-confetti/dist/confetti.browser.js",
+        // The general direction we have been going is to pull these via require() directly
+        // But this runs in only one place, is only 24k, and doesn't break the sourcemaps
+        // (and it needs to run in 'immediate' mode, not in 'moar_scripts'), so let's just
+        // leave it here. It *could* be moved to confetti-js.blade.php, but I don't think
+        // it helps anything if we do that.
     ],
-    "./public/js/build/app.js" //because of compiling - this does not work very well :(
-  )
-  .vue();
+      "./public/js/dist/all.js"
+  ).sourceMaps(true, 'source-map', 'source-map').version();
 
-// Convert the skins to CSS
-mix.less(
-  "./resources/assets/less/skins/skin-blue.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-blue.css"
-);
-mix.less(
-  "./resources/assets/less/skins/skin-red.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-red.css"
-);
-mix.less(
-  "./resources/assets/less/skins/skin-contrast.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-contrast.css"
-);
-mix.less(
-  "./resources/assets/less/skins/skin-green.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-green.css"
-);
-mix.less(
-  "./resources/assets/less/skins/skin-green-dark.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-green-light.css"
-);
-mix.less(
-  "./resources/assets/less/skins/skin-black.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-black.css"
-);
-mix.less(
-  "./resources/assets/less/skins/skin-black-dark.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-black-light.css"
-);
-mix.less(
-  "./resources/assets/less/skins/skin-red-dark.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-red-light.css"
-);
-mix.less(
-  "./resources/assets/less/skins/skin-purple.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-purple.css"
-);
-mix.less(
-  "./resources/assets/less/skins/skin-purple-dark.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-purple-light.css"
-);
-mix.less(
-  "./resources/assets/less/skins/skin-yellow.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-yellow.css"
-);
-mix.less(
-  "./resources/assets/less/skins/skin-yellow-dark.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-yellow-light.css"
-);
-mix.less(
-  "./resources/assets/less/skins/skin-blue-dark.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-blue-light.css"
-);
-mix.less(
-  "./resources/assets/less/skins/skin-orange-dark.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-orange-light.css"
-);
-mix.less(
-  "./resources/assets/less/skins/skin-orange.less",
-  "css/dist/skins",
-  "./public/css/dist/skins/skin-orange.css"
-);
+
 
 /**
  * Combine bootstrap table css
@@ -152,37 +91,12 @@ mix
     [
       "./node_modules/bootstrap-table/dist/bootstrap-table.css",
       "./node_modules/bootstrap-table/dist/extensions/sticky-header/bootstrap-table-sticky-header.css",
+      "./node_modules/bootstrap-table/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.css",
+     "./resources/assets/css/dragtable.css",
     ],
     "public/css/dist/bootstrap-table.css"
   )
   .version();
-
-/**
- * Combine JS
- */
-mix.combine(
-  [
-    // lots of node_modules here - should this be subsumed by require()?
-    "./node_modules/jquery/dist/jquery.js",
-    "./node_modules/select2/dist/js/select2.full.min.js",
-    "./node_modules/admin-lte/dist/js/adminlte.min.js",
-    "./node_modules/tether/dist/js/tether.js",
-    "./node_modules/jquery-ui-bundle/jquery-ui.js",
-    "./node_modules/jquery-slimscroll/jquery.slimscroll.js",
-    "./node_modules/jquery.iframe-transport/jquery.iframe-transport.js",
-    "./node_modules/blueimp-file-upload/js/jquery.fileupload.js",
-    "./node_modules/bootstrap-colorpicker/dist/js/bootstrap-colorpicker.js",
-    "./node_modules/bootstrap-datepicker/dist/js/bootstrap-datepicker.js",
-    "./node_modules/ekko-lightbox/dist/ekko-lightbox.js",
-    "./node_modules/icheck/icheck.js", //definite problem here :(
-    "./resources/assets/js/extensions/pGenerator.jquery.js",
-    "./node_modules/chart.js/dist/Chart.js",
-    "./resources/assets/js/signature_pad.js",
-    "./node_modules/jquery-form-validator/form-validator/jquery.form-validator.js", //problem?
-    "./node_modules/list.js/dist/list.js",
-  ],
-  "public/js/build/vendor.js" // this file seems OK!
-);
 
 /**
  * Combine bootstrap table js
@@ -190,10 +104,16 @@ mix.combine(
 mix
   .combine(
         [
+            "./resources/assets/js/dragtable.js",
             './node_modules/bootstrap-table/dist/bootstrap-table.js',
             './node_modules/bootstrap-table/dist/extensions/mobile/bootstrap-table-mobile.js',
             './node_modules/bootstrap-table/dist/extensions/export/bootstrap-table-export.js',
             './node_modules/bootstrap-table/dist/extensions/cookie/bootstrap-table-cookie.js',
+            './node_modules/bootstrap-table/dist/extensions/sticky-header/bootstrap-table-sticky-header.js',
+            './node_modules/bootstrap-table/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.min.js',
+            './node_modules/bootstrap-table/dist/extensions/addrbar/bootstrap-table-addrbar.js',
+            './node_modules/bootstrap-table/dist/extensions/print/bootstrap-table-print.min.js',
+            './node_modules/bootstrap-table/dist/extensions/custom-view/bootstrap-table-custom-view.js',
             './resources/assets/js/extensions/jquery.base64.js',
             './node_modules/tableexport.jquery.plugin/tableExport.min.js',
             './node_modules/tableexport.jquery.plugin/libs/jsPDF/jspdf.umd.min.js',
@@ -204,33 +124,3 @@ mix
         ],
         'public/js/dist/bootstrap-table.js'
  ).version();
-
-mix
-  .combine(
-    ["./public/js/build/vendor.js", "./public/js/build/app.js"],
-    "./public/js/dist/all.js"
-  )
-  .version();
-
-/**
- * Copy, minify and version skins
- */
-mix
-  .minify([
-    "./public/css/dist/skins/skin-green.css",
-    "./public/css/dist/skins/skin-green-dark.css",
-    "./public/css/dist/skins/skin-black.css",
-    "./public/css/dist/skins/skin-black-dark.css",
-    "./public/css/dist/skins/skin-blue.css",
-    "./public/css/dist/skins/skin-blue-dark.css",
-    "./public/css/dist/skins/skin-yellow.css",
-    "./public/css/dist/skins/skin-yellow-dark.css",
-    "./public/css/dist/skins/skin-red.css",
-    "./public/css/dist/skins/skin-red-dark.css",
-    "./public/css/dist/skins/skin-purple.css",
-    "./public/css/dist/skins/skin-purple-dark.css",
-    "./public/css/dist/skins/skin-orange.css",
-    "./public/css/dist/skins/skin-orange-dark.css",
-    "./public/css/dist/skins/skin-contrast.css",
-  ])
-  .version();

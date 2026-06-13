@@ -10,13 +10,6 @@
 @parent
 @stop
 
-@section('header_right')
-<a href="{{ URL::previous() }}" class="btn btn-primary pull-right">
-    {{ trans('general.back') }}</a>
-@stop
-
-
-
 {{-- Page content --}}
 
 @section('content')
@@ -24,7 +17,7 @@
 <!-- row -->
 <div class="row">
     <!-- col-md-8 -->
-    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 col-sm-12 col-sm-offset-0">
+    <div class="{{ isset($container_classes) ? $container_classes : 'col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 col-sm-12 col-sm-offset-0'}}">
 
         <form id="create-form" class="form-horizontal" method="post" action="{{ (isset($formAction)) ? $formAction : \Request::url()  }}" autocomplete="off" role="form" enctype="multipart/form-data">
 
@@ -45,8 +38,8 @@
                         </div>
                         @if (isset($topSubmit) && ($topSubmit=='true'))
                         <div class="col-md-3 text-right" style="padding-right: 10px;">
-                            <button type="submit" class="btn btn-primary pull-right">
-                                <i class="fas fa-check icon-white" aria-hidden="true"></i>
+                            <button type="submit" class="btn btn-success pull-right" name="submit">
+                                <x-icon type="checkmark" />
                                 {{ trans('general.save') }}
                             </button>
                         </div>
@@ -66,7 +59,11 @@
                     <!-- CSRF Token -->
                     {{ csrf_field() }}
                     @yield('inputFields')
-                    @include('partials.forms.edit.submit')
+                        <x-redirect_submit_options
+                                :index_route="$index_route ?? null"
+                                :button_label="trans('general.save')"
+                                :options="$options ?? []"
+                        />
                 </div>
 
             </div> <!-- ./box-body -->

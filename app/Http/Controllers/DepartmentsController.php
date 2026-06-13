@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ImageUploadRequest;
+use App\Models\Company;
 use App\Models\Department;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class DepartmentsController extends Controller
@@ -21,13 +24,11 @@ class DepartmentsController extends Controller
      * the content for the assets listing, which is generated in getDatatable.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @see AssetController::getDatatable() method that generates the JSON response
      * @since [v4.0]
-     * @param Request $request
-     * @return \Illuminate\Support\Facades\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $this->authorize('index', Department::class);
         $company = null;
@@ -42,20 +43,20 @@ class DepartmentsController extends Controller
      * Store a newly created resource in storage.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @since [v4.0]
-     * @param ImageUploadRequest $request
-     * @return \Illuminate\Http\Response
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function store(ImageUploadRequest $request)
+    public function store(ImageUploadRequest $request): RedirectResponse
     {
         $this->authorize('create', Department::class);
         $department = new Department;
         $department->fill($request->all());
-        $department->user_id = Auth::user()->id;
+        $department->created_by = auth()->id();
         $department->manager_id = ($request->filled('manager_id') ? $request->input('manager_id') : null);
         $department->location_id = ($request->filled('location_id') ? $request->input('location_id') : null);
-        $department->company_id = ($request->filled('company_id') ? $request->input('company_id') : null);
+        $department->company_id = ($request->filled('company_id') ? Company::getIdForCurrentUser($request->input('company_id')) : null);
+        $department->tag_color = $request->input('tag_color');
+        $department->notes = $request->input('notes');
         $department = $request->handleImages($department);
 
         if ($department->save()) {
@@ -70,34 +71,27 @@ class DepartmentsController extends Controller
      * the content for the department detail page.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @param int $id
+     *
+     * @param  int  $id
+     *
      * @since [v4.0]
-     * @return \Illuminate\Contracts\View\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function show($id)
+    public function show(Department $department): View|RedirectResponse
     {
-        $department = Department::find($id);
-
         $this->authorize('view', $department);
 
-        if (isset($department->id)) {
-            return view('departments/view', compact('department'));
-        }
-
-        return redirect()->route('departments.index')->with('error', trans('admin/departments/message.does_not_exist'));
+        return view('departments/view', compact('department'));
     }
 
     /**
      * Returns a form view used to create a new department.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @see DepartmentsController::postCreate() method that validates and stores the data
      * @since [v4.0]
-     * @return \Illuminate\Contracts\View\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function create()
+    public function create(): View
     {
         $this->authorize('create', Department::class);
 
@@ -108,17 +102,13 @@ class DepartmentsController extends Controller
      * Validates and deletes selected department.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @param int $locationId
+     *
+     * @param  int  $locationId
+     *
      * @since [v4.0]
-     * @return \Illuminate\Http\RedirectResponse
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function destroy($id)
+    public function destroy(Department $department): RedirectResponse
     {
-        if (is_null($department = Department::find($id))) {
-            return redirect()->to(route('departments.index'))->with('error', trans('admin/departments/message.not_found'));
-        }
-
         $this->authorize('delete', $department);
 
         if ($department->users->count() > 0) {
@@ -129,7 +119,7 @@ class DepartmentsController extends Controller
             try {
                 Storage::disk('public')->delete('departments'.'/'.$department->image);
             } catch (\Exception $e) {
-                \Log::debug($e);
+                Log::debug($e);
             }
         }
         $department->delete();
@@ -141,36 +131,44 @@ class DepartmentsController extends Controller
      * Makes a form view to edit Department information.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @see LocationsController::postCreate() method that validates and stores
-     * @param int $departmentId
+     *
+     * @param  int  $departmentId
+     *
      * @since [v1.0]
-     * @return \Illuminate\Contracts\View\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function edit($departmentId = null)
+    public function edit(Department $department): View|RedirectResponse
     {
-        if (is_null($item = Department::find($departmentId))) {
-            return redirect()->back()->with('error', trans('admin/locations/message.does_not_exist'));
-        }
+        $this->authorize('update', $department);
 
-        $this->authorize('update', $item);
-
-        return view('departments/edit', compact('item'));
+        return view('departments/edit')->with('item', $department);
     }
 
-    public function update(ImageUploadRequest $request, $id)
+    /**
+     * Save updated Department information.
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
+     * @see LocationsController::postCreate() method that validates and stores
+     *
+     * @param  int  $departmentId
+     *
+     * @since [v1.0]
+     */
+    public function update(ImageUploadRequest $request, Department $department): RedirectResponse
     {
-        if (is_null($department = Department::find($id))) {
-            return redirect()->route('departments.index')->with('error', trans('admin/departments/message.does_not_exist'));
-        }
 
         $this->authorize('update', $department);
 
         $department->fill($request->all());
         $department->manager_id = ($request->filled('manager_id') ? $request->input('manager_id') : null);
         $department->location_id = ($request->filled('location_id') ? $request->input('location_id') : null);
-        $department->company_id = ($request->filled('company_id') ? $request->input('company_id') : null);
-
+        $department->company_id = ($request->filled('company_id') ? Company::getIdForCurrentUser($request->input('company_id')) : null);
+        $department->phone = $request->input('phone');
+        $department->fax = $request->input('fax');
+        $department->tag_color = $request->input('tag_color');
+        $department->notes = $request->input('notes');
         $department = $request->handleImages($department);
 
         if ($department->save()) {

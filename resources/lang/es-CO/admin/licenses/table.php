@@ -1,17 +1,18 @@
 <?php
 
-return array(
+return [
 
-    'assigned_to'   	=> 'Asignada a',
-    'checkout'   		=> 'Quita/Asigna',
-    'id'      			=> 'ID',
-    'license_email'   	=> 'Email',
-    'license_name'   	=> 'Licenciado a',
-    'purchase_date'   	=> 'Fecha Compra',
-    'purchased'   		=> 'Comprada',
-    'seats'   			=> 'Instalaciones',
-    'hardware'   		=> 'Equipo',
-    'serial'   			=> 'N. Serie',
-    'title'      		=> 'Categoría de equipo',
+    'assigned_to' => 'Asignado a',
+    'checkout' => 'Entrada/Salida',
+    'deleted_at' => 'Eliminado el',
+    'id' => 'ID',
+    'license_email' => 'Correo electrónico de la licencia',
+    'license_name' => 'Licenciado a',
+    'purchase_date' => 'Fecha de compra',
+    'purchased' => 'Comprado',
+    'seats' => 'Total de licencias',
+    'hardware' => 'Hardware',
+    'serial' => 'Número de serie',
+    'title' => 'Licencia',
 
-);
+];
