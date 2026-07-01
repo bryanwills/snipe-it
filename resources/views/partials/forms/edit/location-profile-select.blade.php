@@ -1,8 +1,8 @@
 <!-- Location -->
 <div id="location_id" class="form-group{{ $errors->has('location_id') ? ' has-error' : '' }}"{!!  (isset($style)) ? ' style="'.e($style).'"' : ''  !!}>
 
-    {{ Form::label('location_id', $translated_name, array('class' => 'col-md-3 control-label')) }}
-    <div class="col-md-7">
+    <label for="location_id" class="col-md-3 control-label">{{ $translated_name }}</label>
+    <div class="col-md-8">
         <select class="js-data-ajax" data-endpoint="locations" data-placeholder="{{ trans('general.select_location') }}" name="location_id" style="width: 100%" id="location_id_location_select" aria-label="location_id">
             @if ($location_id = old('location_id', (isset($user)) ? $user->location_id : ''))
                 <option value="{{ $location_id }}" selected="selected" role="option" aria-selected="true"  role="option">
@@ -15,6 +15,14 @@
     </div>
 
     {!! $errors->first('location_id', '<div class="col-md-8 col-md-offset-3"><span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span></div>') !!}
+
+    @if ($snipeSettings->full_multiple_companies_support == '1' && $snipeSettings->scope_locations_fmcs == '1')
+        @cannot('superadmin')
+            <div class="col-md-8 col-md-offset-3">
+                <p class="help-block"><x-icon type="tip" /> {{ trans('general.fmcs_location_select_note') }}</p>
+            </div>
+        @endcannot
+    @endif
 
 </div>
 

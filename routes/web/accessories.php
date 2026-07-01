@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\Route;
  */
 Route::group(['prefix' => 'accessories', 'middleware' => ['auth']], function () {
     Route::get(
-        '{accessoryID}/checkout',
+        '{accessory}/checkout',
         [Accessories\AccessoryCheckoutController::class, 'create']
     )->name('accessories.checkout.show');
 
     Route::post(
-        '{accessoryID}/checkout',
+        '{accessory}/checkout',
         [Accessories\AccessoryCheckoutController::class, 'store']
     )->name('accessories.checkout.store');
 
@@ -27,32 +27,16 @@ Route::group(['prefix' => 'accessories', 'middleware' => ['auth']], function () 
         [Accessories\AccessoryCheckinController::class, 'store']
     )->name('accessories.checkin.store');
 
-    Route::post(
-        '{accessoryId}/upload',
-        [Accessories\AccessoriesFilesController::class, 'store']
-    )->name('upload/accessory');
-
-    Route::delete(
-        '{accessoryId}/deletefile/{fileId}',
-        [Accessories\AccessoriesFilesController::class, 'destroy']
-    )->name('delete/accessoryfile');
-
-    Route::get(
-        '{accessoryId}/showfile/{fileId}/{download?}',
-        [Accessories\AccessoriesFilesController::class, 'show']
-    )->name('show.accessoryfile');
-
-    Route::get('{accessoryId}/clone',
+    Route::get('{accessory}/clone',
             [Accessories\AccessoriesController::class, 'getClone']
         )->name('clone/accessories');
 
-    Route::post('{accessoryId}/clone', 
+    Route::post('{accessory}/clone',
         [Accessories\AccessoriesController::class, 'postCreate']
     );
 
 });
 
 Route::resource('accessories', Accessories\AccessoriesController::class, [
-    'middleware' => ['auth'],
-    'parameters' => ['accessory' => 'accessory_id'],
+    'middleware' => ['auth']
 ]);

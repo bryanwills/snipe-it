@@ -1,32 +1,77 @@
-@extends('layouts/edit-form', [
-    'createText' => trans('admin/companies/table.create') ,
-    'updateText' => trans('admin/companies/table.update'),
-    'helpPosition'  => 'right',
-    'helpText' => trans('help.companies'),
-    'formAction' => (isset($item->id)) ? route('companies.update', ['company' => $item->id]) : route('companies.store'),
-])
+@extends('layouts/default')
+
+{{-- Page title --}}
+@section('title')
+    @if ($item->id)
+        {{ trans('admin/companies/table.update') }}
+    @else
+        {{ trans('admin/companies/table.create') }}
+    @endif
+    @parent
+@stop
 
 {{-- Page content --}}
-@section('inputFields')
-@include ('partials.forms.edit.name', ['translated_name' => trans('admin/companies/table.name')])
+@section('content')
 
-@if (($item->image) && ($item->image!=''))
-    <div class="form-group{{ $errors->has('image_delete') ? ' has-error' : '' }}">
-        <div class="col-md-9 col-md-offset-3">
-            <label for="image_delete">
-                {{ Form::checkbox('image_delete', '1', old('image_delete'), ['class'=>'minimal','aria-label'=>'image_delete']) }}
-                {{ trans('general.image_delete') }}
-                {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-            </label>
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="col-md-9 col-md-offset-3">
-            <img src="{{ Storage::disk('public')->url(app('companies_upload_path').e($item->image)) }}" class="img-responsive">
-            {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-        </div>
-    </div>
-@endif
+<x-container class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
 
-@include ('partials.forms.edit.image-upload')
+    <x-form :$item route="{{ isset($item->id) ? route('companies.update', ['company' => $item->id]) : route('companies.store') }}">
+
+        <x-box>
+
+            <x-form.row
+                :label="trans('admin/companies/table.name')"
+                :$item
+                name="name"
+            />
+
+            <x-form.row
+                :label="trans('admin/suppliers/table.phone')"
+                :$item
+                name="phone"
+            />
+
+            <x-form.row
+                :label="trans('admin/suppliers/table.fax')"
+                :$item
+                name="fax"
+            />
+
+            <x-form.row
+                :label="trans('admin/suppliers/table.email')"
+                :$item
+                name="email"
+                type="email"
+            />
+
+            <x-form.row
+                :label="trans('general.notes')"
+                :$item
+                name="notes"
+                type="textarea"
+                :placeholder="trans('general.placeholders.notes')"
+            />
+
+            @include ('partials.forms.edit.image-upload', ['image_path' => app('companies_upload_path')])
+
+            <fieldset name="color-preferences">
+                <x-form.legend help_text="{{ trans('general.tag_color_help') }}">
+                    {{ trans('general.tag_color') }}
+                </x-form.legend>
+
+                <div class="form-group {{ $errors->has('tag_color') ? 'has-error' : '' }}">
+                    <label for="tag_color" class="col-md-3 control-label">{{ trans('general.tag_color') }}</label>
+                    <div class="col-md-9">
+                        <x-input.colorpicker :item="$item" id="tag_color" :value="old('tag_color', ($item->tag_color ?? '#f4f4f4'))" name="tag_color" />
+                        {!! $errors->first('tag_color', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+                    </div>
+                </div>
+            </fieldset>
+
+        </x-box>
+
+    </x-form>
+
+</x-container>
+
 @stop

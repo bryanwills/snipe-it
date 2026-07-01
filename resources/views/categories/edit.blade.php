@@ -9,13 +9,26 @@
 
 @section('inputFields')
 
-@include ('partials.forms.edit.name', ['translated_name' => trans('admin/categories/general.name')])
+    <!-- Name -->
+    <x-form.row
+            :label="trans('general.name')"
+            :$item
+            name="name"
+    />
+
 
 <!-- Type -->
 <div class="form-group {{ $errors->has('category_type') ? ' has-error' : '' }}">
     <label for="category_type" class="col-md-3 control-label">{{ trans('general.type') }}</label>
     <div class="col-md-7 required">
-        {{ Form::select('category_type', $category_types , old('category_type', $item->category_type), array('class'=>'select2', 'style'=>'min-width:350px', 'aria-label'=>'category_type', ($item->category_type!='') || ($item->itemCount() > 0) ? 'disabled' : '')) }}
+        <x-input.select
+            name="category_type"
+            :options="$category_types"
+            :selected="old('category_type', $item->category_type)"
+            :disabled="$item->category_type!='' || $item->itemCount() > 0"
+            style="min-width:350px"
+            aria-label="category_type"
+        />
         {!! $errors->first('category_type', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
     </div>
     <div class="col-md-7 col-md-offset-3">
@@ -23,92 +36,32 @@
     </div>
 </div>
 
+<livewire:category-edit-form
+    :alert-on-response="(bool) old('alert_on_response', $item->alert_on_response)"
+    :default-eula-text="$snipeSettings->default_eula_text"
+    :eula-text="old('eula_text', $item->eula_text)"
+    :require-acceptance="(bool) old('require_acceptance', $item->require_acceptance)"
+    :send-check-in-email="(bool) old('checkin_email', $item->checkin_email)"
+    :use-default-eula="(bool) old('use_default_eula', $item->use_default_eula)"
+/>
 
+@include ('partials.forms.edit.image-upload', ['image_path' => app('categories_upload_path')])
 
-<!-- EULA text -->
-<div class="form-group {{ $errors->has('eula_text') ? 'error' : '' }}">
-    <label for="eula_text" class="col-md-3 control-label">{{ trans('admin/categories/general.eula_text') }}</label>
-    <div class="col-md-7">
-        {{ Form::textarea('eula_text', old('eula_text', $item->eula_text), array('class' => 'form-control', 'aria-label'=>'eula_text')) }}
-        <p class="help-block">{!! trans('admin/categories/general.eula_text_help') !!} </p>
-        <p class="help-block">{!! trans('admin/settings/general.eula_markdown') !!} </p>
-
-        {!! $errors->first('eula_text', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+<div class="form-group{!! $errors->has('notes') ? ' has-error' : '' !!}">
+    <label for="notes" class="col-md-3 control-label">{{ trans('general.notes') }}</label>
+    <div class="col-md-8">
+        <x-input.textarea
+                name="notes"
+                id="notes"
+                :value="old('notes', $item->notes)"
+                placeholder="{{ trans('general.placeholders.notes') }}"
+                aria-label="notes"
+                rows="5"
+        />
+        {!! $errors->first('notes', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
     </div>
 </div>
 
-<!-- Use default checkbox -->
-<div class="form-group">
-    <div class="col-md-3">
-    </div>
-    <div class="col-md-9">
-        @if ($snipeSettings->default_eula_text!='')
-            <label for="use_default_eula">
-            {{ Form::checkbox('use_default_eula', '1', old('use_default_eula', $item->use_default_eula), ['class'=>'minimal', 'aria-label'=>'use_default_eula']) }}
-            {!! trans('admin/categories/general.use_default_eula') !!}
-            </label>
-        @else
-            <div class="icheckbox disabled">
-                <label for="use_default_eula">
-                {{ Form::checkbox('use_default_eula', '0', old('use_default_eula'), ['class'=>'disabled minimal','disabled' => 'disabled', 'aria-label'=>'use_default_eula']) }}
-                {!! trans('admin/categories/general.use_default_eula_disabled') !!}
-                </label>
-            </div>
-        @endif
-    </div>
-</div>
-
-
-<!-- Require Acceptance -->
-<div class="form-group">
-    <div class="col-md-3">
-    </div>
-    <div class="col-md-9">
-        <label for="require_acceptance">
-        {{ Form::checkbox('require_acceptance', '1', old('require_acceptance', $item->require_acceptance), ['class'=>'minimal', 'aria-label'=>'require_acceptance']) }}
-        {{ trans('admin/categories/general.require_acceptance') }}
-        </label>
-    </div>
-</div>
-
-
-<!-- Email on Checkin -->
-<div class="form-group">
-    <div class="col-md-9 col-md-offset-3">
-        <label for="checkin_email">
-        {{ Form::checkbox('checkin_email', '1', old('checkin_email', $item->checkin_email), ['class'=>'minimal','aria-label'=>'checkin_email']) }}
-        {{ trans('admin/categories/general.checkin_email') }}
-        </label>
-    </div>
-</div>
-
-
-
-<!-- Image -->
-@if (($item->image) && ($item->image!=''))
-    <div class="form-group{{ $errors->has('image_delete') ? ' has-error' : '' }}">
-        <div class="col-md-9 col-md-offset-3">
-            <label for="image_delete">
-                {{ Form::checkbox('image_delete', '1', old('image_delete'), ['class'=>'minimal','aria-label'=>'image_delete']) }}
-                {{ trans('general.image_delete') }}
-                {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-            </label>
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="col-md-9 col-md-offset-3">
-            <img src="{{ Storage::disk('public')->url(app('companies_upload_path').e($item->image)) }}" class="img-responsive">
-            {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-        </div>
-    </div>
-@endif
-
-@include ('partials.forms.edit.image-upload')
-
-@stop
-
-@section('content')
-@parent
 
 
 @if ($snipeSettings->default_eula_text!='')
@@ -131,6 +84,21 @@
 </div>
 @endif
 
+    <fieldset name="color-preferences">
+        <x-form.legend help_text="{{ trans('general.tag_color_help') }}">
+            {{ trans('general.tag_color') }}
+        </x-form.legend>
+        <!--  color -->
+        <div class="form-group {{ $errors->has('tag_color') ? 'error' : '' }}">
+            <label for="tag_color" class="col-md-3 control-label">
+                {{ trans('general.tag_color') }}
+            </label>
+            <div class="col-md-9">
+                <x-input.colorpicker :item="$item" id="color" :value="old('color', ($item->color ?? '#f4f4f4'))" name="tag_color" id="tag_color" />
+                {!! $errors->first('tag_color', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
+            </div>
+        </div>
+    </fieldset>
 
 
 @stop

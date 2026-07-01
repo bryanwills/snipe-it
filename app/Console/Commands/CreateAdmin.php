@@ -2,31 +2,29 @@
 
 namespace App\Console\Commands;
 
+use App\Models\User;
 use Illuminate\Console\Command;
-use \App\Models\User;
-
+use Illuminate\Support\Carbon;
 
 class CreateAdmin extends Command
 {
-
     /** @mixin User **/
     /**
      * App\Console\CreateAdmin
+     *
      * @property mixed $first_name
      * @property string $last_name
      * @property string $username
      * @property string $email
      * @property string $permissions
      * @property string $password
-     * @property boolean $activated
-     * @property boolean $show_in_list
-     * @property \Illuminate\Support\Carbon|null $created_at
+     * @property bool $activated
+     * @property bool $show_in_list
+     * @property bool $autoassign_licenses
+     * @property Carbon|null $created_at
      * @property mixed $created_by
      */
-
-
-
-    protected $signature = 'snipeit:create-admin {--first_name=} {--last_name=}  {--email=}  {--username=}  {--password=}   {show_in_list?}';
+    protected $signature = 'snipeit:create-admin {--first_name=} {--last_name=}  {--email=}  {--username=}  {--password=} {show_in_list?} {autoassign_licenses?}';
 
     /**
      * The console command description.
@@ -45,7 +43,6 @@ class CreateAdmin extends Command
         parent::__construct();
     }
 
-
     public function handle()
     {
         $first_name = $this->option('first_name');
@@ -54,6 +51,7 @@ class CreateAdmin extends Command
         $email = $this->option('email');
         $password = $this->option('password');
         $show_in_list = $this->argument('show_in_list');
+        $autoassign_licenses = $this->argument('autoassign_licenses');
 
         if (($first_name == '') || ($last_name == '') || ($username == '') || ($email == '') || ($password == '')) {
             $this->info('ERROR: All fields are required.');
@@ -70,6 +68,11 @@ class CreateAdmin extends Command
             if ($show_in_list == 'false') {
                 $user->show_in_list = 0;
             }
+
+            if ($autoassign_licenses == 'false') {
+                $user->autoassign_licenses = 0;
+            }
+
             if ($user->save()) {
                 $this->info('New user created');
                 $user->groups()->attach(1);
