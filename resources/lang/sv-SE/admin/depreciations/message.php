@@ -1,25 +1,24 @@
 <?php
 
-return array(
+return [
 
-    'does_not_exist' => 'Denna avskrivningskategori existerar inte.',
-    'assoc_users'	 => 'Denna avskrivning är för närvarande kopplad till en eller flera modeller och kan inte raderas. Ta bort modellerna och försök sedan radera igen.',
+    'does_not_exist' => 'Denna värdeminskningskategori existerar inte.',
+    'assoc_users' => 'Denna värdeminskning är för närvarande kopplad till en eller flera modeller och kan inte raderas. Ta bort modellerna och försök sedan radera igen. ',
 
+    'create' => [
+        'error' => 'Värdeminskningsklassen skapades inte, vänligen försök igen.',
+        'success' => 'Värdeminskningsklassen skapades.',
+    ],
 
-    'create' => array(
-        'error'   => 'Avskrivningsklassen skapades inte, försök igen. :(',
-        'success' => 'Avskrivningsklassen skapades framgångsrikt. :)'
-    ),
+    'update' => [
+        'error' => 'Värdeminskningsklassen uppdaterades inte, vänligen försök igen',
+        'success' => 'Värdeminskningsklassen uppdaterades.',
+    ],
 
-    'update' => array(
-        'error'   => 'Avskrivningsklassen uppdaterades inte, var god försök igen',
-        'success' => 'Avskrivningsklassen uppdaterades framgångsrikt.'
-    ),
+    'delete' => [
+        'confirm' => 'Är du säker på att du vill ta bort denna värdeminskningsklass?',
+        'error' => 'Det gick inte att ta bort värdeminskningsklassen. Vänligen försök igen.',
+        'success' => 'Värdeminskningsklassen har tagits bort.',
+    ],
 
-    'delete' => array(
-        'confirm'   => 'Är du säker på att du vill ta bort denna avskrivningsklass?',
-        'error'   => 'Det gick inte att ta bort avskrivningsklassen. Var god försök igen.',
-        'success' => 'Avskrivningsklassen har tagits bort.'
-    )
-
-);
+];

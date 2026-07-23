@@ -20,90 +20,57 @@
         }
     </style>
 
+    <x-container class="col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3">
+        <x-form route="{{ route('settings.asset_tags.save') }}">
+            <x-box>
+                <x-slot:header>
+                    <x-icon type="asset-tags"/> {{ trans('general.asset_tags') }}
+                </x-slot:header>
 
-    {{ Form::open(['method' => 'POST', 'files' => false, 'autocomplete' => 'off', 'class' => 'form-horizontal', 'role' => 'form' ]) }}
-    <!-- CSRF Token -->
-    {{csrf_field()}}
+                <x-form.checkbox-row
+                    name="auto_increment_assets"
+                    :label="trans('admin/settings/general.auto_increment_assets')"
+                    :item="$setting"
+                    data-toggle="disable-when-unchecked"
+                    data-disable-target="#auto_increment_prefix"
+                />
 
-    <div class="row">
-        <div class="col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2">
+                <x-form.row
+                    :label="trans('admin/settings/general.next_auto_tag_base')"
+                    :item="$setting"
+                    name="next_auto_tag_base"
+                />
 
+                <x-form.row
+                    :label="trans('admin/settings/general.auto_increment_prefix')"
+                    :item="$setting"
+                    name="auto_increment_prefix"
+                >
+                    <x-slot:input>
+                        <input
+                            class="form-control"
+                            id="auto_increment_prefix"
+                            name="auto_increment_prefix"
+                            type="text"
+                            maxlength="100"
+                            aria-label="auto_increment_prefix"
+                            value="{{ old('auto_increment_prefix', $setting->auto_increment_prefix) }}"
+                            @disabled(! old('auto_increment_assets', $setting->auto_increment_assets))
+                        />
+                    </x-slot:input>
+                </x-form.row>
 
-            <div class="panel box box-default">
-                <div class="box-header with-border">
-                    <h2 class="box-title">
-                        <i class="fas fa-list-ol"></i> {{ trans('general.asset_tags') }}
-                    </h4>
-                </div>
-                <div class="box-body">
-
-
-                    <div class="col-md-11 col-md-offset-1">
-
-                        <!-- auto ids -->
-                        <div class="form-group">
-                            <div class="col-md-5">
-                                {{ Form::label('auto_increment_assets', trans('admin/settings/general.auto_increment_assets')) }}
-                            </div>
-                            <div class="col-md-7">
-                                {{ Form::checkbox('auto_increment_assets', '1', old('auto_increment_assets', $setting->auto_increment_assets),array('class' => 'minimal', 'aria-label'=>'auto_increment_assets')) }}
-                                {{ trans('admin/settings/general.enabled') }}
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="col-md-5">
-                                {{ Form::label('next_auto_tag_base', trans('admin/settings/general.next_auto_tag_base')) }}
-                            </div>
-                            <div class="col-md-7">
-                                {{ Form::text('next_auto_tag_base', old('next_auto_tag_base', $setting->next_auto_tag_base), array('class' => 'form-control', 'style'=>'width: 150px;', 'aria-label'=>'next_auto_tag_base')) }}
-                                {!! $errors->first('next_auto_tag_base', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                            </div>
-                        </div>
-
-
-                        <!-- auto prefix -->
-                        <div class="form-group {{ $errors->has('auto_increment_prefix') ? 'error' : '' }}">
-                            <div class="col-md-5">
-                                {{ Form::label('auto_increment_prefix', trans('admin/settings/general.auto_increment_prefix')) }}
-                            </div>
-                            <div class="col-md-7">
-                                @if ($setting->auto_increment_assets == 1)
-                                    {{ Form::text('auto_increment_prefix', old('auto_increment_prefix', $setting->auto_increment_prefix), array('class' => 'form-control', 'style'=>'width: 150px;', 'aria-label'=>'auto_increment_prefix')) }}
-                                    {!! $errors->first('auto_increment_prefix', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                                @else
-                                    {{ Form::text('auto_increment_prefix', old('auto_increment_prefix', $setting->auto_increment_prefix), array('class' => 'form-control', 'disabled'=>'disabled', 'style'=>'width: 150px;', 'aria-label'=>'auto_increment_prefix')) }}
-                                @endif
-                            </div>
-                        </div>
-
-                        <!-- auto zerofill -->
-                        <div class="form-group {{ $errors->has('zerofill_count') ? 'error' : '' }}">
-                            <div class="col-md-5">
-                                {{ Form::label('zerofill_count', trans('admin/settings/general.zerofill_count')) }}
-                            </div>
-                            <div class="col-md-7">
-                                {{ Form::text('zerofill_count', old('zerofill_count', $setting->zerofill_count), array('class' => 'form-control', 'style'=>'width: 150px;', 'aria-label'=>'zerofill_count')) }}
-                                {!! $errors->first('zerofill_count', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                            </div>
-                        </div>
-
-                    </div>
-
-                </div> <!--/.box-body-->
-                <div class="box-footer">
-                    <div class="text-left col-md-6">
-                        <a class="btn btn-link text-left" href="{{ route('settings.index') }}">{{ trans('button.cancel') }}</a>
-                    </div>
-                    <div class="text-right col-md-6">
-                        <button type="submit" class="btn btn-primary"><i class="fas fa-check icon-white" aria-hidden="true"></i> {{ trans('general.save') }}</button>
-                    </div>
-
-                </div>
-            </div> <!-- /box -->
-        </div> <!-- /.col-md-8-->
-    </div> <!-- /.row-->
-
-    {{Form::close()}}
+                <x-form.row
+                    :label="trans('admin/settings/general.zerofill_count')"
+                    :item="$setting"
+                    name="zerofill_count"
+                    type="number"
+                    input_div_class="col-md-2"
+                    min="1"
+                    max="99999"
+                />
+            </x-box>
+        </x-form>
+    </x-container>
 
 @stop

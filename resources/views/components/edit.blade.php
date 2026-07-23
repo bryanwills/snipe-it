@@ -1,47 +1,126 @@
-@extends('layouts/edit-form', [
-    'createText' => trans('admin/components/general.create') ,
-    'updateText' => trans('admin/components/general.update'),
-    'helpPosition'  => 'right',
-    'helpText' => trans('help.components'),
-    'formAction' => (isset($item->id)) ? route('components.update', ['component' => $item->id]) : route('components.store'),
+@extends('layouts/default')
 
-])
+{{-- Page title --}}
+@section('title')
+    @if ($item->id)
+        {{ trans('admin/components/general.update') }}
+    @else
+        {{ trans('admin/components/general.create') }}
+    @endif
+    @parent
+@stop
 
 {{-- Page content --}}
-@section('inputFields')
+@section('content')
 
-@include ('partials.forms.edit.name', ['translated_name' => trans('admin/components/table.title')])
-@include ('partials.forms.edit.category-select', ['translated_name' => trans('general.category'), 'fieldname' => 'category_id','category_type' => 'component'])
-@include ('partials.forms.edit.quantity')
-@include ('partials.forms.edit.minimum_quantity')
-@include ('partials.forms.edit.serial', ['fieldname' => 'serial'])
-@include ('partials.forms.edit.company-select', ['translated_name' => trans('general.company'), 'fieldname' => 'company_id'])
-@include ('partials.forms.edit.location-select', ['translated_name' => trans('general.location'), 'fieldname' => 'location_id'])
-@include ('partials.forms.edit.order_number')
-@include ('partials.forms.edit.purchase_date')
-@include ('partials.forms.edit.purchase_cost')
+<x-container class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 col-sm-12 col-sm-offset-0">
 
-<!-- Image -->
-@if (($item->image) && ($item->image!=''))
-    <div class="form-group{{ $errors->has('image_delete') ? ' has-error' : '' }}">
-        <div class="col-md-9 col-md-offset-3">
-            <label for="image_delete">
-                {{ Form::checkbox('image_delete', '1', old('image_delete'), ['class'=>'minimal','aria-label'=>'image_delete']) }}
-                {{ trans('general.image_delete') }}
-                {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-            </label>
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="col-md-9 col-md-offset-3">
-            <img src="{{ Storage::disk('public')->url(app('components_upload_path').e($item->image)) }}" class="img-responsive">
-            {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-        </div>
-    </div>
-@endif
+    <x-form :$item route="{{ isset($item->id) ? route('components.update', ['component' => $item->id]) : route('components.store') }}">
 
-@include ('partials.forms.edit.notes')
+        <x-box top_submit>
+            @if ($item->id)
+                <x-slot:header>{{ $item->name }}</x-slot:header>
+            @endif
 
-@include ('partials.forms.edit.image-upload')
+            <x-input.company-select
+                :label="trans('general.company')"
+                name="company_id"
+                :selected="old('company_id', $item->company_id)"
+            />
+
+            <x-form.row
+                :label="trans('admin/components/table.title')"
+                :$item
+                name="name"
+            />
+
+            <x-input.category-select
+                :label="trans('general.category')"
+                name="category_id"
+                :selected="old('category_id', $item->category_id)"
+                required
+                categoryType="component"
+            />
+
+            <x-input.quantity :item="$item" />
+
+            <x-input.minimum-quantity :item="$item" />
+
+            <x-form.row
+                :label="trans('admin/hardware/form.serial')"
+                :$item
+                name="serial"
+            />
+
+            <x-input.manufacturer-select
+                :label="trans('general.manufacturer')"
+                name="manufacturer_id"
+                :selected="old('manufacturer_id', $item->manufacturer_id)"
+            />
+
+            <x-form.row
+                :label="trans('general.model_no')"
+                :$item
+                name="model_number"
+            />
+
+            <x-input.location-select
+                :label="trans('general.location')"
+                name="location_id"
+                :selected="old('location_id', $item->location_id)"
+            />
+
+            <x-input.supplier-select
+                :label="trans('general.supplier')"
+                name="supplier_id"
+                :selected="old('supplier_id', $item->supplier_id)"
+            />
+
+            <x-form.row
+                :label="trans('general.order_number')"
+                :$item
+                name="order_number"
+            />
+
+            <x-form.row
+                :label="trans('general.purchase_date')"
+                name="purchase_date"
+                type="datepicker"
+                :item="$item"
+                input_div_class="col-md-4"
+            />
+
+            <x-input.purchase-cost
+                :label="trans('general.unit_cost')"
+                :item="$item"
+                :currencyType="$item->location->currency ?? null"
+            />
+
+            <x-form.row
+                :label="trans('general.notes')"
+                :$item
+                name="notes"
+                type="textarea"
+            />
+
+            <x-input.image-upload :item="$item" :imagePath="app('components_upload_path')" />
+
+            <x-slot:customfooter>
+                <x-redirect_submit_options
+                    index_route="components.index"
+                    :button_label="trans('general.save')"
+                    :options="[
+                        'back' => trans('admin/hardware/form.redirect_to_type', ['type' => trans('general.previous_page')]),
+                        'index' => trans('admin/hardware/form.redirect_to_all', ['type' => 'components']),
+                        'item' => trans('admin/hardware/form.redirect_to_type', ['type' => trans('general.component')]),
+                    ]"
+                />
+            </x-slot:customfooter>
+
+        </x-box>
+
+    </x-form>
+
+</x-container>
 
 @stop

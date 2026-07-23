@@ -1,48 +1,101 @@
-@extends('layouts/edit-form', [
-    'createText' => trans('admin/departments/table.create') ,
-    'updateText' => trans('admin/departments/table.update'),
-    'formAction' => (isset($item->id)) ? route('departments.update', ['department' => $item->id]) : route('departments.store'),
-])
+@extends('layouts/default')
 
-{{-- Page content --}}
-@section('inputFields')
-
-    @include ('partials.forms.edit.name', ['translated_name' => trans('admin/departments/table.name')])
-
-    <!-- Company -->
-    @if (\App\Models\Company::canManageUsersCompanies())
-        @include ('partials.forms.edit.company-select', ['translated_name' => trans('general.company'), 'fieldname' => 'company_id'])
+{{-- Page title --}}
+@section('title')
+    @if ($item->id)
+        {{ trans('admin/departments/table.update') }}
     @else
-        <input id="hidden_company_id" type="hidden" name="company_id" value="{{ Auth::user()->company_id }}">
+        {{ trans('admin/departments/table.create') }}
     @endif
-
-
-    <!-- Manager -->
-    @include ('partials.forms.edit.user-select', ['translated_name' => trans('admin/users/table.manager'), 'fieldname' => 'manager_id'])
-
-    <!-- Location -->
-    @include ('partials.forms.edit.location-select', ['translated_name' => trans('general.location'), 'fieldname' => 'location_id'])
-
-    <!-- Image -->
-    @if (($item->image) && ($item->image!=''))
-        <div class="form-group{{ $errors->has('image_delete') ? ' has-error' : '' }}">
-            <div class="col-md-9 col-md-offset-3">
-                <label for="image_delete">
-                    {{ Form::checkbox('image_delete', '1', old('image_delete'), ['class'=>'minimal','aria-label'=>'image_delete']) }}
-                    {{ trans('general.image_delete') }}
-                    {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-                </label>
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="col-md-9 col-md-offset-3">
-                <img src="{{ Storage::disk('public')->url(app('departments_upload_path').e($item->image)) }}" class="img-responsive">
-                {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-            </div>
-        </div>
-    @endif
-
-    @include ('partials.forms.edit.image-upload')
-
+    @parent
 @stop
 
+{{-- Page content --}}
+@section('content')
+
+    <x-container class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 col-sm-12 col-sm-offset-0">
+
+        <x-form :$item route="{{ ($item->id) ? route('departments.update', ['department' => $item->id]) : route('departments.store') }}">
+
+            <x-box top_submit>
+                @if ($item->id)
+                    <x-slot:header>{{ $item->name }}</x-slot:header>
+                @endif
+
+                @if (\App\Models\Company::canManageUsersCompanies())
+                    <x-input.company-select
+                        :label="trans('general.company')"
+                        name="company_id"
+                        :selected="old('company_id', $item->company_id)"
+                    />
+                @else
+                    <input id="hidden_company_id" type="hidden" name="company_id" value="{{ Auth::user()->company_id }}">
+                @endif
+
+                <x-form.row
+                    :label="trans('admin/departments/table.name')"
+                    :$item
+                    name="name"
+                />
+
+                <x-form.row
+                    :label="trans('admin/suppliers/table.phone')"
+                    :$item
+                    name="phone"
+                    type="tel"
+                    input_icon="phone"
+                    input_group_addon="left"
+                />
+
+                <x-form.row
+                    :label="trans('admin/suppliers/table.fax')"
+                    :$item
+                    name="fax"
+                    type="tel"
+                    input_icon="fax"
+                    input_group_addon="left"
+                    :maxlength="34"
+                />
+
+                <x-input.user-select
+                    :label="trans('admin/users/table.manager')"
+                    name="manager_id"
+                    :selected="old('manager_id', $item->manager_id)"
+                />
+
+                <x-input.location-select
+                    :label="trans('general.location')"
+                    name="location_id"
+                    :selected="old('location_id', $item->location_id)"
+                />
+
+                <x-input.image-upload :item="$item" :imagePath="app('departments_upload_path')" />
+
+                <x-form.row
+                    :label="trans('general.notes')"
+                    :$item
+                    name="notes"
+                    type="textarea"
+                    :rows="5"
+                    :placeholder="trans('general.placeholders.notes')"
+                />
+
+                <fieldset name="color-preferences">
+                    <x-form.legend help_text="{{ trans('general.tag_color_help') }}">
+                        {{ trans('general.tag_color') }}
+                    </x-form.legend>
+                    <x-form.row
+                        :label="trans('general.tag_color')"
+                        :$item
+                        name="tag_color"
+                        type="colorpicker"
+                    />
+                </fieldset>
+
+            </x-box>
+
+        </x-form>
+
+    </x-container>
+
+@stop

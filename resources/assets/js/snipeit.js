@@ -1,8 +1,43 @@
+var jQuery = require('jquery');
+window.jQuery = jQuery
+window.$ = jQuery
 
+// window._ = require('lodash'); //the only place I saw this used was vue.js, and we don't use that anymore
 
-// var jQuery = require('jquery');
-// window.jQuery = jQuery
-// window.$ = jQuery
+/****************************************
+ Much of what you'll see below is just plain require()'ed, this is because
+ it is mostly jQuery stuff, which attaches itself to the $() function/object
+ So we don't have to assign it to anything, it will just automagically attach
+ itself
+ *****************************************/
+
+require("jquery-ui/dist/jquery-ui")
+jQuery.fn.uitooltip = jQuery.fn.tooltip;
+require('bootstrap-less');
+require('select2');
+require('admin-lte');
+require('tether');
+require('jquery-slimscroll');
+require('jquery.iframe-transport'); //probably not needed anymore, if I'm honest
+require('blueimp-file-upload')
+require('bootstrap-colorpicker')
+// eonasdan-bootstrap-datetimepicker (BS3) needs moment on window before it loads
+window.moment = require('moment')
+require('eonasdan-bootstrap-datetimepicker')
+require('ekko-lightbox') //TODO - this doesn't seem jquery-ish, we might need to do something weird here
+                         // it *does* require Bootstrap, which requires jquery, so maybe that's OK
+                         // it seems to work...
+require('./extensions/pGenerator.jquery'); //WEIRD, but works
+//require('chart.js') // Weirdly, this seems to "just work." Without this line, the dashboard blows up
+// but it's *HUGE* - and we only use it one place. So we're taking it out of the bundle
+window.SignaturePad = require('./signature_pad'); //ALSO WEIRD - but works
+require('jquery-validation')
+window.List = require('list.js')
+window.ClipboardJS = require('clipboard')
+// TODO - find everything using moment.js and kill it or upgrade it? It's huge
+// - adminLTE (UGH)
+// - bootstrap-daterangepicker
+// - fullcalendar (what's that? it's used by AdminLTE)
 
 /**
  * Module containing core application logic.
@@ -80,136 +115,75 @@ pieOptions = {
 
 var baseUrl = $('meta[name="baseUrl"]').attr('content');
 
-(function($, settings) {
-    var Components = {};
-    Components.modals = {};
+
+
+$(function () {
+
+    var $el = $('body');
 
     // confirm restore modal
-    Components.modals.confirmRestore = function() {
-        var $el = $('table');
 
-        var events = {
-            'click': function(evnt) {
-                var $context = $(this);
-                var $restoreConfirmModal = $('#restoreConfirmModal');
-                var href = $context.attr('href');
-                var message = $context.attr('data-content');
-                var title = $context.attr('data-title');
+    $el.on('click', '.restore-asset', function (evnt) {
+        var $context = $(this);
+        var $restoreConfirmModal = $('#restoreConfirmModal');
+        var href = $context.attr('href');
+        var message = $context.attr('data-content');
+        var title = $context.attr('data-title');
 
-                $('#restoreConfirmModalLabel').text(title);
-                $restoreConfirmModal.find('.modal-body').text(message);
-                $('#restoreForm').attr('action', href);
-                $restoreConfirmModal.modal({
-                    show: true
-                });
-                return false;
-            }
-        };
+        $('#confirmModalLabel').text(title);
+        $restoreConfirmModal.find('.modal-body').text(message);
+        $('#restoreForm').attr('action', href);
+        $restoreConfirmModal.modal({
+            show: true
+        });
+        return false;
+    });
 
-        var render = function() {
-            $el.on('click', '.restore-asset', events['click']);
-        };
-
-        return {
-            render: render
-        };
-    };
+    // Mark-a-maintenance-complete modal (green checkmark button in the
+    // maintenances table actions column). Sets the modal form's action to
+    // the row's completion URL and opens it.
+    $el.on('click', '.complete-maintenance', function () {
+        var url = $(this).data('url');
+        $('#completeMaintenanceForm').attr('action', url);
+        $('#completionNote').val('');
+        $('#completeMaintenanceModal').modal('show');
+    });
 
     // confirm delete modal
-    Components.modals.confirmDelete = function() {
-        var $el = $('table');
+    $el.on('click', '.delete-asset', function (evnt) {
+        var $context = $(this);
+        var $dataConfirmModal = $('#dataConfirmModal');
+        var href = $context.attr('href');
+        var message = $context.attr('data-content');
+        var headericon = $context.attr('data-icon');
+        var title = $context.attr('data-title');
 
-        var events = {
-            'click': function(evnt) {
-                var $context = $(this);
-                var $dataConfirmModal = $('#dataConfirmModal');
-                var href = $context.attr('href');
-                var message = $context.attr('data-content');
-                var title = $context.attr('data-title');
+        // deleteForm is the ID of the modal form itself
+        $('#deleteForm').attr('action', href);
+        $dataConfirmModal.find('.modal-header-icon').addClass(headericon);
+        $dataConfirmModal.find('.modal-title').text('').text(title).prepend('<i class="fa ' + headericon + '"></i> ');
+        $dataConfirmModal.find('.modal-body').text('').text(message);
+        $dataConfirmModal.attr('action', href);
 
-                $('#myModalLabel').text(title);
-                $dataConfirmModal.find('.modal-body').text(message);
-                $('#deleteForm').attr('action', href);
-                $dataConfirmModal.modal({
-                    show: true
-                });
-                return false;
-            }
-        };
-
-        var render = function() {
-            $el.on('click', '.delete-asset', events['click']);
-        };
-
-        return {
-            render: render
-        };
-    };
-
-
-    /**
-     * Application start point
-     * Component definition stays out of load event, execution only happens.
-     */
-    $(function() {
-        new Components.modals.confirmRestore().render();
-        new Components.modals.confirmDelete().render();
+        // Fire the modal
+        $dataConfirmModal.modal({
+            show: true
+        });
+        return false;
     });
-}(jQuery, window.snipeit.settings));
 
-$(document).ready(function () {
-
-    /*
-    * Slideout help menu
-    */
-     $('.slideout-menu-toggle').on('click', function(event){
-        event.preventDefault();
-        // create menu variables
-        var slideoutMenu = $('.slideout-menu');
-        var slideoutMenuWidth = $('.slideout-menu').width();
-
-        // toggle open class
-        slideoutMenu.toggleClass("open");
-
-        // slide menu
-        if (slideoutMenu.hasClass("open")) {
-         slideoutMenu.show();
-            slideoutMenu.animate({
-                right: "0px"
-            });
-        } else {
-            slideoutMenu.animate({
-                right: -slideoutMenuWidth
-            }, "-350px");
-         slideoutMenu.fadeOut();
-        }
-     });
-
-     /*
-     * iCheck checkbox plugin
-     */
-
-     $('input[type="checkbox"].minimal, input[type="radio"].minimal').iCheck({
-         checkboxClass: 'icheckbox_minimal-blue',
-         radioClass: 'iradio_minimal-blue'
-     });
 
 
      /*
      * Select2
      */
 
-     var iOS = /iPhone|iPad|iPod/.test(navigator.userAgent)  && !window.MSStream;
-     if(!iOS)
-     {
-        // Vue collision: Avoid overriding a vue select2 instance
-        // by checking to see if the item has already been select2'd.
         $('select.select2:not(".select2-hidden-accessible")').each(function (i,obj) {
             {
                 $(obj).select2();
             }
         });
-     }
+
 
     // $('.datepicker').datepicker();
     // var datepicker = $.fn.datepicker.noConflict(); // return $.fn.datepicker to previously assigned value
@@ -230,6 +204,8 @@ $(document).ready(function () {
              */
             placeholder: '',
             allowClear: true,
+            language: $('meta[name="language"]').attr('content'),
+            dir: $('meta[name="language-direction"]').attr('content'),
             
             ajax: {
 
@@ -245,7 +221,14 @@ $(document).ready(function () {
                     var data = {
                         search: params.term,
                         page: params.page || 1,
-                        assetStatusType: link.data("asset-status-type"),
+                        statusType: link.data("asset-status-type"),
+                        companyId: link.data("company-ids") || link.data("company-id"),
+                        excludeId: link.data("exclude-id"),
+                        // When true, the companies selectlist marks child companies
+                        // (those with a parent of their own) as disabled — used by
+                        // the parent-company picker so users can't choose options
+                        // that would fail the parent_must_be_top_level validator.
+                        onlyTopLevel: link.data("only-top-level"),
                     };
                     return data;
                 },
@@ -317,9 +300,9 @@ $(document).ready(function () {
 		
 		if(value && !noForceAjax && !isMouseUp) {
 			var endpoint = element.data("endpoint");
-			var assetStatusType = element.data("asset-status-type");
+            var statusType = element.data("asset-status-type");
 			$.ajax({
-				url: baseUrl + 'api/v1/' + endpoint + '/selectlist?search='+value+'&page=1' + (assetStatusType ? '&assetStatusType='+assetStatusType : ''),
+                url: baseUrl + 'api/v1/' + endpoint + '/selectlist?search=' + value + '&page=1' + (statusType ? '&statusType=' + statusType : ''),
 				dataType: 'json',
 				headers: {
 					"X-Requested-With": 'XMLHttpRequest',
@@ -382,8 +365,7 @@ $(document).ready(function () {
     }
 
     function formatDatalistSafe(datalist) {
-        // console.warn("What in the hell is going on with Select2?!?!!?!?");
-        // console.warn($.select2);
+
         if (datalist.loading) {
             return $('<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Loading...');
         }
@@ -391,28 +373,29 @@ $(document).ready(function () {
         var root_div = $("<div class='clearfix'>") ;
         var left_pull = $("<div class='pull-left' style='padding-right: 10px;'>");
         if (datalist.image) {
-            var inner_div = $("<div style='width: 30px;'>");
+            var inner_div = $("<div style='width: 20px;'>");
             /******************************************************************
-             * 
-             * We are specifically chosing empty alt-text below, because this 
+             *
+             * We are specifically chosing empty alt-text below, because this
              * image conveys no additional information, relative to the text
              * that will *always* be there in any select2 list that is in use
              * in Snipe-IT. If that changes, we would probably want to change
              * some signatures of some functions, but right now, we don't want
-             * screen readers to say "HP SuperJet 5000, .... picture of HP 
+             * screen readers to say "HP SuperJet 5000, .... picture of HP
              * SuperJet 5000..." and so on, for every single row in a list of
              * assets or models or whatever.
-             * 
+             *
              *******************************************************************/
-            var img = $("<img src='' style='max-height: 20px; max-width: 30px;' alt=''>");
-            // console.warn("Img is: ");
-            // console.dir(img);
-            // console.warn("Strigularly, that's: ");
-            // console.log(img);
-            img.attr("src", datalist.image );
+            var img = $("<img src='' style='max-height: 20px; max-width: 20px;' alt=''>");
+            img.attr("src", datalist.image);
             inner_div.append(img)
+        } else if (datalist.tag_color) {
+            var inner_div = $("<div style='width: 20px;'>");
+            var icon = $('<i class="fa-solid fa-square" style="font-size: 20px;" aria-hidden="true"></i>');
+            icon.css("color", datalist.tag_color );
+            inner_div.append(icon)
         } else {
-            var inner_div=$("<div style='height: 20px; width: 30px;'></div>");
+            var inner_div=$("<div style='height: 20px; width: 20px;'></div>");
         }
         left_pull.append(inner_div);
         root_div.append(left_pull);
@@ -451,7 +434,13 @@ $(document).ready(function () {
     // This handles the radio button selectors for the checkout-to-foo options
     // on asset checkout and also on asset edit
     $(function() {
-        $('input[name=checkout_to_type]').on("change",function () {
+        var checkoutToTypeInputs = $('input[name=checkout_to_type]');
+
+        if (!checkoutToTypeInputs.length) {
+            return;
+        }
+
+        function syncCheckoutToTypeUi(resetSelections) {
             var assignto_type = $('input[name=checkout_to_type]:checked').val();
             var userid = $('#assigned_user option:selected').val();
 
@@ -462,14 +451,22 @@ $(document).ready(function () {
                 $('#assigned_location').hide();
                 $('.notification-callout').fadeOut();
 
+                if (resetSelections) {
+                    $('[name="assigned_location"]').val('').trigger('change.select2');
+                    $('[name="assigned_user"]').val('').trigger('change.select2');
+                }
             } else if (assignto_type == 'location') {
                 $('#current_assets_box').fadeOut();
                 $('#assigned_asset').hide();
                 $('#assigned_user').hide();
                 $('#assigned_location').show();
                 $('.notification-callout').fadeOut();
-            } else  {
 
+                if (resetSelections) {
+                    $('[name="assigned_asset"]').val('').trigger('change.select2');
+                    $('[name="assigned_user"]').val('').trigger('change.select2');
+                }
+            } else {
                 $('#assigned_asset').hide();
                 $('#assigned_user').show();
                 $('#assigned_location').hide();
@@ -478,8 +475,35 @@ $(document).ready(function () {
                 }
                 $('.notification-callout').fadeIn();
 
+                if (resetSelections) {
+                    $('[name="assigned_asset"]').val('').trigger('change.select2');
+                    $('[name="assigned_location"]').val('').trigger('change.select2');
+                }
             }
+        }
+
+        checkoutToTypeInputs.on('change', function () {
+            syncCheckoutToTypeUi(true);
         });
+
+        // Expose so pages that reveal #assignto_selector later (asset edit's
+        // user_add() flow, etc.) can trigger the sync once the selector is
+        // visible. Standalone checkout pages don't need to call this — the
+        // initial-render block below handles them.
+        window.snipeitSyncCheckoutToTypeUi = syncCheckoutToTypeUi;
+
+        // Apply the current radio selection on initial render unless the page
+        // has explicitly hidden the selector via an inline style="display:none"
+        // (asset create/edit start that way and reveal it from user_add() after
+        // a deployability AJAX call). Using getAttribute('style') instead of
+        // jQuery's :visible avoids false negatives on pages like the standalone
+        // /hardware/{id}/checkout, where the selector is visible from the start
+        // but :visible can transiently return false during select2 boot — that
+        // was what hid the acceptance-options callout until a radio was toggled.
+        var selectorStyle = ($('#assignto_selector').attr('style') || '').toLowerCase();
+        if (selectorStyle.indexOf('display:none') === -1 && selectorStyle.indexOf('display: none') === -1) {
+            syncCheckoutToTypeUi(false);
+        }
     });
 
 
@@ -508,6 +532,37 @@ $(document).ready(function () {
         history.pushState(null, null, href);
         e.preventDefault();
         $('a[href="' + $(this).attr('href') + '"]').tab('show');
+    });
+
+    // Bootstrap-table's fixed-columns extension computes the overlay widths
+    // at init time. Tables inside a hidden tab pane initialize with a
+    // zero-width container and the fixed left/right columns never recover
+    // on their own once the pane becomes visible. Force a resetView on any
+    // snipe-tables inside the newly-shown pane so fixed columns line up.
+    $('body').on('shown.bs.tab', 'a[data-toggle="tab"]', function (e) {
+        var pane = $(e.target).attr('href');
+        if (!pane) return;
+        $(pane).find('.snipe-table').each(function () {
+            if ($(this).data('bootstrap.table')) {
+                $(this).bootstrapTable('resetView');
+            }
+        });
+    });
+
+    // Same story for viewport resizes: the fixed-columns overlay caches
+    // widths from the initial layout and doesn't recompute when the window
+    // width changes. Debounce so a drag-resize doesn't fire resetView on
+    // every intermediate pixel.
+    var snipeTableResizeTimer;
+    $(window).on('resize', function () {
+        clearTimeout(snipeTableResizeTimer);
+        snipeTableResizeTimer = setTimeout(function () {
+            $('.snipe-table').each(function () {
+                if ($(this).data('bootstrap.table')) {
+                    $(this).bootstrapTable('resetView');
+                }
+            });
+        }, 150);
     });
 
     // ------------------------------------------------
@@ -606,53 +661,531 @@ function htmlEntities(str) {
     
 })(jQuery);
 
+$(document).ready(function () {
+    $(".toggle-password").click(function () {
+        $(this).toggleClass("fa-eye fa-eye-slash");
+        var input = $($(this).attr("data-toggle"));
+        if (input.attr("type") === "password") {
+            input.attr("type", "text");
+        } else {
+            input.attr("type", "password");
+        }
+    });
+
+    // Auto-init eonasdan datetimepickers. bootstrap-datepicker has a native
+    // data-provide auto-init; eonasdan does not, so we do it ourselves.
+    // Options are read from data-attributes on the wrapper so blade components
+    // can tune format/side-by-side without touching this JS.
+    //
+    // Icon set is overridden to Font Awesome — the picker defaults to
+    // Glyphicon classes, which we do not ship, so up/down arrows and clock
+    // glyphs would otherwise render as empty boxes.
+    // Exposed so callers who insert new [data-provide="datetimepicker"]
+    // wrappers into the DOM post-load (e.g., AJAX-loaded custom fields on
+    // asset create/edit when the model changes) can re-run the init on the
+    // freshly-inserted elements. Pass a jQuery scope to narrow the search;
+    // omit to init every uninitialised picker on the page.
+    window.snipeitInitDatetimepickers = function (scope) {
+        var $targets = scope ? $(scope).find('[data-provide="datetimepicker"]') : $('[data-provide="datetimepicker"]');
+        $targets.each(initDatetimepicker);
+    };
+
+    function initDatetimepicker() {
+        var $wrapper = $(this);
+        // Skip if this wrapper already has an eonasdan instance attached
+        // (data('DateTimePicker') is set by the library on init).
+        if ($wrapper.data('DateTimePicker')) {
+            return;
+        }
+        var $input = $wrapper.find('input');
+        var existingValue = ($input.val() || '').trim();
+
+        var options = {
+            format: $wrapper.data('format') || 'YYYY-MM-DD HH:mm:ss',
+            // Default to the compact (collapsed) view — calendar shows first
+            // and a small clock icon toggles the time view. Callers that want
+            // date + time visible side by side can set data-side-by-side="true".
+            sideBySide: $wrapper.data('side-by-side') === true,
+            showClear: true,
+            showClose: true,
+            showTodayButton: true,
+            // In sideBySide mode the toolbar row (Today/Clear/Close) is only
+            // rendered when placement is explicitly 'top' or 'bottom'; the
+            // library drops it entirely on the default 'default' placement.
+            toolbarPlacement: 'bottom',
+            // Open the popup on any focus/click of the input (not just the
+            // calendar addon icon), matching the behavior of the bootstrap
+            // datepicker used elsewhere in the app.
+            allowInputToggle: true,
+            locale: $wrapper.data('locale') || 'en',
+            icons: {
+                time: 'fa-regular fa-clock',
+                date: 'fa-regular fa-calendar',
+                up: 'fa-solid fa-chevron-up',
+                down: 'fa-solid fa-chevron-down',
+                previous: 'fa-solid fa-chevron-left',
+                next: 'fa-solid fa-chevron-right',
+                today: 'fa-solid fa-calendar-day',
+                clear: 'fa-solid fa-trash',
+                close: 'fa-solid fa-xmark',
+            },
+        };
+
+        // Pre-fill empty inputs with the user's current local datetime by
+        // default. Callers that render a picker where "now" is NOT a safe
+        // default (e.g., user-defined custom fields) can opt out by setting
+        // data-default-now="false" on the wrapper.
+        var wantsDefaultNow = $wrapper.data('default-now') !== false;
+        if (existingValue === '' && wantsDefaultNow) {
+            options.defaultDate = moment();
+        }
+
+        // data-max-date="today" caps the picker at today (replaces the
+        // bootstrap-datepicker era's data-date-end-date="0d"); any other
+        // value is parsed as a moment-compatible date string.
+        var maxDate = $wrapper.data('max-date');
+        if (maxDate) {
+            options.maxDate = maxDate === 'today' ? moment().endOf('day') : moment(maxDate);
+        }
+
+        $wrapper.datetimepicker(options);
+    }
+
+    // Wires up the linked-pickers pattern for <x-input.date-range>. Each
+    // .js-date-range wrapper holds a .js-date-range-start and .js-date-range-end
+    // datetimepicker; changing one bounds the other so a user can't pick an
+    // end date before the start (or vice versa). Runs after the plain
+    // datetimepicker init above so both instances already exist.
+    function initDateRangeLinking() {
+        $('.js-date-range').each(function () {
+            var $start = $(this).find('.js-date-range-start');
+            var $end = $(this).find('.js-date-range-end');
+            if (!$start.length || !$end.length) {
+                return;
+            }
+            $start.off('dp.change.snipeitDateRange').on('dp.change.snipeitDateRange', function (e) {
+                var picker = $end.data('DateTimePicker');
+                if (picker) {
+                    picker.minDate(e.date);
+                }
+            });
+            $end.off('dp.change.snipeitDateRange').on('dp.change.snipeitDateRange', function (e) {
+                var picker = $start.data('DateTimePicker');
+                if (picker) {
+                    picker.maxDate(e.date);
+                }
+            });
+        });
+    }
+
+    window.snipeitInitDatetimepickers();
+    initDateRangeLinking();
+});
+
+
+
 /**
- * Universal Livewire Select2 and iCheck integration
+ * Universal Livewire Select2 integration
  *
  * How to use:
  *
- * 1. Set the class of your select2 elements to 'livewire-select2' and your icheck elements to 'livewire-icheck' (as appropriate).
- *    (For iCheck, you may still need to apply the other iCheck classes like 'minimal' or 'iCheck')
+ * 1. Set the class of your select2 elements to 'livewire-select2').
  * 2. Name your element to match a property in your Livewire component
- * 3. Add an attribute called 'data-livewire-component' that points to $_instance->id (via `{{ }}` if you're in a blade,
- *    or just $_instance->id if not).
- * 4. For iCheck, you need to wrap the 'checkbox' element with wire:ignore - perhaps in the <label> if it wraps the
- *    <input> element, or just put a <span wire:ignore></span> around just the input element.
- * 5. If you have dynamically shown/hidden checkboxes, you might need to initialize iCheck on them on component page-load.
- *    Just use $('.livewire-icheck').iCheck(), or for the minimal-style, use:
- *
- *    $('input[type="checkbox"].minimal.livewire-icheck, input[type="radio"].minimal.livewire-icheck').iCheck({
- *          checkboxClass: 'icheckbox_minimal-blue',
- *          radioClass: 'iradio_minimal-blue'
- *      });
- *
- *    (which is stolen from above here in this JS file)
+ * 3. Add an attribute called 'data-livewire-component' that points to $this->getId() (via `{{ }}` if you're in a blade,
+ *    or just $this->getId() if not).
  */
-$(function () {
+document.addEventListener('livewire:init', () => {
     $('.livewire-select2').select2()
 
     $(document).on('select2:select', '.livewire-select2', function (event) {
         var target = $(event.target)
         if(!event.target.name || !target.data('livewire-component')) {
             console.error("You need to set both name (which should match a Livewire property) and data-livewire-component on your Livewire-ed select2 elements!")
-            console.error("For data-livewire-component, you probably want to use $_instance->id or {{ $_instance->id }}, as appropriate")
+            console.error("For data-livewire-component, you probably want to use $this->getId() or {{ $this->getId() }}, as appropriate")
             return false
         }
-        window.livewire.find(target.data('livewire-component')).set(event.target.name, this.options[this.selectedIndex].value)
-    })
-
-    window.livewire.hook('message.processed', function (el,component) {
-        $('.livewire-select2').select2();
-        //$('.livewire-icheck').iCheck(); //this seems to blow up pretty badly.
+        // PHP property names cannot start with a digit — skip bare numeric names (e.g. "0") that would cause a 500
+        if (/^\d+$/.test(event.target.name)) {
+            console.error("Livewire select2: name attribute '" + event.target.name + "' is not a valid Livewire property name — skipping")
+            return false
+        }
+        Livewire.find(target.data('livewire-component')).set(event.target.name, this.options[this.selectedIndex].value)
     });
 
-    $(document).on('ifToggled', '.livewire-icheck', function (event) {
-        if(!event.target.name || !$(event.target).data('livewire-component')) {
-            console.error("You need to set both name (which should match a Livewire property) and data-livewire-component on your iCheck elements!")
-            console.error("For data-livewire-component, you probably want to use $_instance->id or {{ $_instance->id }}, as appropriate")
-            return false
-        }
-        window.livewire.find($(event.target).data('livewire-component')).set(event.target.name, event.target.checked)
-    })
+  Livewire.interceptMessage(({ onFinish }) => {
+    onFinish(() => {
+      // Runs after DOM morph completes (or on error/cancel)
+        queueMicrotask(() => {
+          $(".livewire-select2").select2();
+        });
+      });
+    }
+  );
+});
 
-})
+
+
+
+// Check/Uncheck all radio buttons in the permissions group
+$('.header-row input:radio').change(function() {
+    value = $(this).attr('value');
+    area = $(this).data('checker-group');
+    $('.radiochecker-'+area+'[value='+value+']').prop('checked', true);
+});
+
+// Generic toggleable callouts with remember state
+$(".remember-toggle").on("click",function(){
+
+    var toggleable_callout_id = $(this).attr('id');
+    var toggle_content_class = 'toggle-content-'+$(this).attr('id');
+    var toggle_arrow = '#toggle-arrow-' + toggleable_callout_id;
+    var toggle_cookie_name='toggle_state_'+toggleable_callout_id;
+
+    $('.'+toggle_content_class).fadeToggle(100);
+    $(toggle_arrow).toggleClass('fa-caret-right fa-caret-down');
+    var toggle_open = $(toggle_arrow).hasClass('fa-caret-down');
+    document.cookie=toggle_cookie_name+"="+toggle_open+';path=/';
+});
+
+var all_cookies = document.cookie.split(';')
+for (var i in all_cookies) {
+    var trimmed_cookie = all_cookies[i].trim(' ')
+    elems = trimmed_cookie.split('=', 2);
+
+    // We have to do more here since we don't know the name of the selector
+    if (trimmed_cookie.startsWith('toggle_state_')) {
+
+        var toggle_selector_name = elems[0].replace('toggle_state_','');
+
+        if (elems[1] != "true") {
+            $('#'+toggle_selector_name+'.remember-toggle').trigger('click')
+        }
+    }
+
+}
+
+
+/**
+ * This handles the show/hide of superuser and admin specific permissions
+ * on the group edit and user edit pages
+ */
+if ($("#superuser_allow").is(':checked')) {
+
+    // Hide here instead of fadeout on pageload to prevent what looks like Flash Of Unstyled Content (FOUC)
+    $(".nonsuperuser").hide();
+    $(".nonsuperuser").attr('display','none');
+}
+
+
+$(".superuser").change(function() {
+    if ($(this).val() == '1') {
+        $(".nonsuperuser").fadeOut();
+        $(".nonsuperuser").attr('display','none');
+        $(".nonadmin").fadeOut();
+        $(".nonadmin").attr('display','none');
+    } else if ($(this).val() != '1') {
+        $(".nonsuperuser").fadeIn();
+        $(".nonsuperuser").attr('display','block');
+
+        // If the superuser button has been set to deny, we need to
+        // check that the admin button isn't set to allow, before we show non-admin stuff
+        if ($("#admin_allow").is(':checked')) {
+
+            // Hide here instead of fadeout on pageload to prevent what looks like Flash Of Unstyled Content (FOUC)
+            $(".nonadmin").hide();
+            $(".nonadmin").attr('display','none');
+        }
+
+    }
+});
+
+
+
+if ($("#admin_allow").is(':checked')) {
+
+    // Hide here instead of fadeout on pageload to prevent what looks like Flash Of Unstyled Content (FOUC)
+    $(".nonadmin").hide();
+    $(".nonadmin").attr('display','none');
+}
+
+$(".admin").change(function() {
+    if ($(this).val() == '1') {
+        $(".nonadmin").fadeOut();
+        $(".nonadmin").attr('display','none');
+    } else if ($(this).val() != '1') {
+        $(".nonadmin").fadeIn();
+        $(".nonadmin").attr('display','block');
+    }
+});
+
+// Handle the select/deselect of the select boxes with the button from right to left
+
+$(function () {
+
+    function moveItems(origin, dest) {
+        $(origin).find(':selected').appendTo(dest);
+        $(dest).attr('selected', true);
+        $(dest).sort_select_box();
+    }
+
+    function moveAllItems(origin, dest) {
+        $(origin).children("option:visible").appendTo(dest);
+        $(dest).attr('selected', true);
+        $(dest).sort_select_box();
+    }
+
+    $('.left').on('click', function () {
+        var container = $(this).closest('.addremove-multiselect');
+        moveItems($(container).find('select.multiselect.selected'), $(container).find('select.multiselect.available'));
+    });
+
+    $('.right').on('click', function () {
+        var container = $(this).closest('.addremove-multiselect');
+        moveItems($(container).find('select.multiselect.available'), $(container).find('select.multiselect.selected'));
+
+    });
+
+    $('.leftall').on('click', function () {
+        var container = $(this).closest('.addremove-multiselect');
+        moveAllItems($(container).find('select.multiselect.selected'), $(container).find('select.multiselect.available'));
+    });
+
+    $('.rightall').on('click', function () {
+        var container = $(this).closest('.addremove-multiselect');
+        moveAllItems($(container).find('select.multiselect.available'), $(container).find('select.multiselect.selected'));
+    });
+
+    $('select.multiselect.selected').on('dblclick keyup',function(e){
+        if(e.which == 13 || e.type == 'dblclick') {
+            var container = $(this).closest('.addremove-multiselect');
+            moveItems($(container).find('select.multiselect.selected'), $(container).find('select.multiselect.available'));
+        }
+    });
+
+    $('select.multiselect.available').on('dblclick keyup',function(e){
+        if(e.which == 13 || e.type == 'dblclick') {
+            var container = $(this).closest('.addremove-multiselect');
+            moveItems($(container).find('select.multiselect.available'), $(container).find('select.multiselect.selected'));
+            $('#hidden_ids_box').val($('#selected-select').val());
+        }
+    });
+
+
+});
+
+$.fn.sort_select_box = function(){
+    // Get options from select box
+    var selected_options = $(this).children('option');
+    // sort alphabetically
+    selected_options.sort(function(a,b) {
+        if (a.text > b.text) return 1;
+        else if (a.text < b.text) return -1;
+        else return 0
+    })
+    //replace with sorted my_options;
+    $(this).empty().append(selected_options);
+
+    var selected_in_box =  $('#selected-select option').toArray().map(item => item.value).join();
+
+    $('#hidden_ids_box').empty().val(selected_in_box);
+
+    $('#count_selected_box').html($('#selected-select option').length);
+    $('#count_unselected_box').html($('#available-select option').length);
+
+    // clearing any selections
+    $("#"+this.attr('id')+" option").attr('selected', true);
+}
+
+
+/*
+ * Data-attribute driven initializers. Blades attach behavior by adding
+ * `data-toggle="..."` (plus supporting data-* attributes) to elements
+ * instead of shipping an inline <script> block. Add new handlers here
+ * as inline scripts get migrated out of blades.
+ */
+$(function () {
+
+    // Sound preview on account/profile. Fires the URL in data-sound-url
+    // when the user toggles the checkbox on.
+    $(document).on('click', '[data-toggle="sound-test"]', function () {
+        if (!$(this).is(':checked')) return;
+        var url = $(this).data('sound-url');
+        if (!url) return;
+        new Audio(url).play();
+    });
+
+    // Confetti preview on account/profile. Same shape as sound-test.
+    $(document).on('click', '[data-toggle="confetti-test"]', function () {
+        if (!$(this).is(':checked')) return;
+
+        var duration = 1500;
+        var animationEnd = Date.now() + duration;
+        var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+        function randomInRange(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        var interval = setInterval(function () {
+            var timeLeft = animationEnd - Date.now();
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+            var particleCount = 50 * (timeLeft / duration);
+            confetti({
+                ...defaults,
+                particleCount,
+                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+            });
+            confetti({
+                ...defaults,
+                particleCount,
+                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+            });
+        }, 250);
+    });
+
+    // Live color preview for the nav-link colorpicker on account/profile.
+    // The colorpicker widget itself is initialized by $(".color").colorpicker()
+    // in the default layout; this just wires the changeColor listener.
+    if ($('#nav-link-color').length) {
+        $('#nav-link-color').on('changeColor', function (e) {
+            var color = e.color.toString('rgba');
+            $('.navbar-nav > li > a:link').attr('style', 'color: ' + color + ' !important');
+            $('.btn-theme').attr('style', 'color: ' + color + ' !important');
+        });
+    }
+
+    // Reset the localStorage theme override when the user clicks the
+    // "system default" link (any element carrying data-theme-toggle-clear).
+    document.querySelectorAll('[data-theme-toggle-clear]').forEach(function (el) {
+        el.addEventListener('click', function () {
+            localStorage.removeItem('theme');
+        });
+    });
+
+    // Master checkbox → target field disabled state. Callers pair a
+    // <input type="checkbox" data-toggle="disable-when-unchecked"
+    // data-disable-target="#some-field"> with a target rendered
+    // server-side with the matching @disabled state (avoids FOUC).
+    // Handler keeps them in sync on change.
+    $(document).on('change', '[data-toggle="disable-when-unchecked"]', function () {
+        var target = $(this).data('disable-target');
+        if (target) {
+            $(target).prop('disabled', !$(this).is(':checked'));
+        }
+    });
+
+    // Disable empty REQUIRED inputs on submit so browser HTML5 validation
+    // doesn't block the request before Laravel's form-request validator
+    // gets a chance to return a nicer error. Non-required empties (like a
+    // "Do not change" select with an explicit value="" option) are left
+    // enabled so they submit their intentional empty value. Opt in per
+    // form with data-disable-empty-on-submit.
+    $(document).on('submit', 'form[data-disable-empty-on-submit]', function () {
+        $(this).find(':input[required]').filter(function () { return !this.value; }).attr('disabled', 'disabled');
+    });
+
+    // Master checkbox → toggle every non-disabled checkbox in the closest
+    // form or table (or a caller-specified selector via data-check-scope).
+    // Used by bulk-delete confirmation pages to select or deselect the
+    // whole list of rows at once.
+    $(document).on('change', '[data-toggle="check-all"]', function () {
+        var $master = $(this);
+        var scope = $master.data('check-scope');
+        var $container = scope ? $(scope) : $master.closest('form, table');
+        $container.find('input[type="checkbox"]').not($master).not(':disabled').prop('checked', $master.prop('checked'));
+    });
+
+    // When the "This user can login" (activated) checkbox is off, the
+    // password + confirmation fields are functionally useless because
+    // login is gated by the activated flag. Hide the whole form-group
+    // (or dynamic-form-row in the modal) so the form doesn't show
+    // fields the user can't meaningfully fill in, and also drop the
+    // HTML `required` attribute so the browser doesn't block submission.
+    // The server side already skips the password rule for this case
+    // via SaveUserRequest::rules(), and the controller stores
+    // User::noPassword() raw so no Hash::check can ever match.
+    // Applies to both the main users/edit create form and the
+    // users/modal form since they share the input names.
+    var syncPasswordFields = function ($checkbox) {
+        var $form = $checkbox.closest('form');
+        var $passwords = $form.find(
+            'input[name="password"], input[name="password_confirmation"]'
+        );
+        var visible = $checkbox.is(':checked');
+        $passwords.prop('required', visible);
+        $passwords.each(function () {
+            var $wrap = $(this).closest('.form-group, .dynamic-form-row');
+            if (visible) {
+                $wrap.show();
+            } else {
+                $wrap.hide();
+            }
+        });
+    };
+
+    // Sensitive fields (username, email, password) ship with a
+    // `readonly` + onfocus-removes-readonly anti-autofill trick to
+    // stop password managers from prefilling or overwriting the
+    // operator's own login credentials on user-create forms. The
+    // side-effect is that HTML5 `required` constraint validation is
+    // SILENTLY skipped for readonly inputs, so hitting submit without
+    // ever focusing a required field lets the empty form through the
+    // browser check entirely.
+    //
+    // On submit-button click we strip `readonly` from any
+    // required+readonly input inside the form. The browser then runs
+    // its normal constraint check (all fields participating) and
+    // shows the "please fill in this field" popup on empties. Autofill
+    // was already prevented at page load, so removing readonly at
+    // click time doesn't reopen that hole.
+    $(document).on('click', 'button[type="submit"], input[type="submit"]', function () {
+        var $form = $(this).closest('form');
+        if (! $form.length) {
+            return;
+        }
+        $form.find('input[required][readonly]').each(function () {
+            this.removeAttribute('readonly');
+        });
+    });
+    $('input[name="activated"][type="checkbox"]').each(function () {
+        syncPasswordFields($(this));
+    });
+    $(document).on('change', 'input[name="activated"][type="checkbox"]', function () {
+        syncPasswordFields($(this));
+    });
+
+    // A <select data-gates-submit> disables the submit button(s) in its
+    // form until a value is chosen. Used by users/confirm-bulk-delete
+    // where the operator must pick a status for the deleted users' assets
+    // before the form can be submitted. Runs once on load to reflect
+    // whatever value was pre-selected (old input after a validation
+    // redirect) and re-syncs on change and on select2's own event.
+    $('select[data-gates-submit]').each(function () {
+        var $select = $(this);
+        var $submits = $select.closest('form').find(':submit');
+        var sync = function () {
+            $submits.prop('disabled', ! $select.val());
+        };
+        sync();
+        $select.on('change select2:select', sync);
+    });
+
+    // Auto-focus the first select2 search input on pages that ask for it.
+    // Bulk-checkout uses this so the operator lands directly on the
+    // assets-to-checkout picker and can start typing immediately. Results
+    // are hidden until the first keystroke so the operator doesn't see a
+    // full-list flash on open.
+    if ($('[data-autofocus-select2-search]').length) {
+        setTimeout(function () {
+            var $searchField = $('.select2-search__field');
+            var $results = $('.select2-results');
+            $searchField.focus();
+            $results.hide();
+            $searchField.on('input', function () {
+                $results.show();
+            });
+        }, 0);
+    }
+});

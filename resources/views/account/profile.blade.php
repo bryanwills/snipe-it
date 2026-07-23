@@ -8,157 +8,196 @@
 {{-- Account page content --}}
 @section('content')
 
-<div class="row">
-  <div class="col-md-9">
-  {{ Form::open(['method' => 'POST', 'files' => true, 'class' => 'form-horizontal', 'autocomplete' => 'off']) }}
-  <!-- CSRF Token -->
-    <input type="hidden" name="_token" value="{{ csrf_token() }}" />
-    <div class="box box-default">
-      <div class="box-body">
-        <!-- First Name -->
-        <div class="form-group {{ $errors->has('first_name') ? ' has-error' : '' }}">
-          <label for="first_name" class="col-md-3 control-label">{{ trans('general.first_name') }}
-          </label>
-          <div class="col-md-8 required">
-            <input class="form-control" type="text" name="first_name" id="first_name" value="{{ old('first_name', $user->first_name) }}" />
-            {!! $errors->first('first_name', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
-          </div>
-        </div>
 
-        <!-- Last Name -->
-        <div class="form-group {{ $errors->has('last_name') ? ' has-error' : '' }}">
-          <label for="last_name" class="col-md-3 control-label">
-            {{ trans('general.last_name') }}
-          </label>
-          <div class="col-md-8 required">
-            <input class="form-control" type="text" name="last_name" id="last_name" value="{{ old('last_name', $user->last_name) }}" />
-            {!! $errors->first('last_name', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
-          </div>
-        </div>
+<x-container class="col-md-6 col-md-offset-3">
+  <x-form route="{{ route('profile.update') }}">
+    <x-box>
 
+          <fieldset name="display-preferences">
+              <x-form.legend>
+                  {{ trans('admin/settings/general.legends.display') }}
+              </x-form.legend>
 
-        @can('self.edit_location')
-        <!-- Location -->
-        @include ('partials.forms.edit.location-profile-select', ['translated_name' => trans('general.location')])
-        @endcan
+              <x-form.row
+                  :label="trans('general.language')"
+                  name="locale"
+                  input_div_class="col-md-6"
+              >
+                  <x-slot:input>
+                      @if (!config('app.lock_passwords'))
+                          <x-input.locale-select name="locale" :selected="old('locale', $user->locale)"/>
+                      @else
+                          <x-form.help name="locale">{{ trans('general.feature_disabled') }}</x-form.help>
+                      @endif
+                  </x-slot:input>
+              </x-form.row>
 
+              <x-form.row
+                  :label="trans('admin/settings/general.nav_link_color')"
+                  :item="$user"
+                  name="nav_link_color"
+                  type="colorpicker"
+                  default="#ffffff"
+                  :help_text="trans('admin/settings/general.nav_link_color_help')"
+              />
 
-        <!-- Language -->
-        <div class="form-group {{ $errors->has('locale') ? 'has-error' : '' }}">
-          <label class="col-md-3 control-label" for="locale">{{ trans('general.language') }}</label>
-          <div class="col-md-9">
+              <x-form.row
+                  :label="trans('admin/settings/general.link_light_color')"
+                  :item="$user"
+                  name="link_light_color"
+                  type="colorpicker"
+                  :default="$link_light_color"
+                  :help_text="trans('admin/settings/general.link_light_color_help')"
+              />
 
-            @if (!config('app.lock_passwords'))
-              {!! Form::locales('locale', old('locale', $user->locale), 'select2') !!}
-              {!! $errors->first('locale', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-            @else
-              <p class="help-block">{{ trans('general.feature_disabled') }}</p>
-            @endif
+              <x-form.row
+                  :label="trans('admin/settings/general.link_dark_color')"
+                  :item="$user"
+                  name="link_dark_color"
+                  type="colorpicker"
+                  :default="$link_light_color"
+                  :help_text="trans('admin/settings/general.link_dark_color_help')"
+              />
 
-          </div>
-        </div>
-
-        @if ($snipeSettings->allow_user_skin=='1')
-        <!-- Skin -->
-        <div class="form-group {{ $errors->has('skin') ? 'error' : '' }}">
-          <label for="website" class="col-md-3 control-label">{{ Form::label('skin', trans('general.skin')) }}</label>
-          <div class="col-md-8">
-            {!! Form::user_skin('skin', old('skin', $user->skin), 'select2') !!}
-            {!! $errors->first('skin', '<span class="alert-msg">:message</span>') !!}
-          </div>
-        </div>
-        @endif
-
-        <!-- Phone -->
-        <div class="form-group {{ $errors->has('phone') ? 'has-error' : '' }}">
-          <label class="col-md-3 control-label" for="phone">{{ trans('admin/users/table.phone') }}</label>
-          <div class="col-md-4">
-            <input class="form-control" type="text" name="phone" id="phone" value="{{ old('phone', $user->phone) }}" />
-            {!! $errors->first('phone', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-          </div>
-        </div>
-
-        <!-- Website URL -->
-        <div class="form-group {{ $errors->has('website') ? ' has-error' : '' }}">
-          <label for="website" class="col-md-3 control-label">{{ trans('general.website') }}</label>
-          <div class="col-md-8">
-            <input class="form-control" type="text" name="website" id="website" value="{{ old('website', $user->website) }}" />
-            {!! $errors->first('website', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
-          </div>
-        </div>
-
-        <!-- Gravatar Email -->
-        <div class="form-group {{ $errors->has('gravatar') ? ' has-error' : '' }}">
-          <label for="gravatar" class="col-md-3 control-label">{{ trans('general.gravatar_email') }}
-            <small>(Private)</small>
-          </label>
-          <div class="col-md-8">
-            <input class="form-control" type="text" name="gravatar" id="gravatar" value="{{ old('gravatar', $user->gravatar) }}" />
-            {!! $errors->first('gravatar', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
-            <p>
-              <img src="//secure.gravatar.com/avatar/{{ md5(strtolower(trim($user->gravatar))) }}" width="30" height="30" alt="{{ $user->present()->fullName() }} avatar image">
-              {!! trans('general.gravatar_url') !!}
-            </p>
-          </div>
-        </div>
-
-        <!-- Avatar -->
-
-        @if (($user->avatar) && ($user->avatar!=''))
-          <div class="form-group{{ $errors->has('image_delete') ? ' has-error' : '' }}">
-            <div class="col-md-9 col-md-offset-3">
-              <label for="image_delete">
-                {{ Form::checkbox('image_delete', '1', old('image_delete'), ['class'=>'minimal','aria-label'=>'image_delete']) }}
-                {{ trans('general.image_delete') }}
-                {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-              </label>
-            </div>
-          </div>
-          <div class="form-group">
-            <div class="col-md-9 col-md-offset-3">
-              <img src="{{ Storage::disk('public')->url(app('users_upload_path').e($user->avatar)) }}" class="img-responsive">
-              {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-            </div>
-          </div>
-        @endif
+              <x-form.row
+                  :label="trans('general.light_dark')"
+                  name="light_dark"
+                  input_div_class="col-md-9"
+                  :help_text="trans('general.system_default_help')"
+              >
+                  <x-slot:input>
+                      <p class="form-control-static" style="padding-top: 7px;">
+                          <a data-theme-toggle-clear class="btn btn-theme btn-sm" href="{{ route('profile') }}">
+                              {{ trans('general.system_default') }}
+                          </a>
+                      </p>
+                  </x-slot:input>
+              </x-form.row>
 
 
-        @include ('partials.forms.edit.image-upload', ['fieldname' => 'avatar'])
+              <x-form.checkbox-row
+                  name="enable_sounds"
+                  :label="trans('account/general.enable_sounds')"
+                  :item="$user"
+                  data-toggle="sound-test"
+                  data-sound-url="{{ url('sounds/success.mp3') }}"
+              />
+
+              <x-form.checkbox-row
+                  name="enable_confetti"
+                  :label="trans('account/general.enable_confetti')"
+                  :item="$user"
+                  data-toggle="confetti-test"
+              />
 
 
 
-        <!-- Two factor opt in -->
-        @if ($snipeSettings->two_factor_enabled=='1')
-        <div class="form-group {{ $errors->has('two_factor_optin') ? 'has-error' : '' }}">
-          <div class="col-md-7 col-md-offset-3">
-            @can('self.two_factor')
-              <label for="two_factor_optin">{{ Form::checkbox('two_factor_optin', '1', Request::old('two_factor_optin', $user->two_factor_optin),array('class' => 'minimal')) }}
-            @else
-                <label for="avatar">{{ Form::checkbox('two_factor_optin', '1', Request::old('two_factor_optin', $user->two_factor_optin),['class' => 'disabled minimal', 'disabled' => 'disabled']) }}
-            @endcan
 
-            {{ trans('admin/settings/general.two_factor_enabled_text') }}</label>
-            @can('self.two_factor')
-              <p class="help-block">{{ trans('admin/settings/general.two_factor_enabled_warning') }}</p>
-            @else
-              <p class="help-block">{{ trans('admin/settings/general.two_factor_enabled_edit_not_allowed') }}</p>
-            @endcan
-            @if (config('app.lock_passwords'))
-              <p class="help-block">{{ trans('general.feature_disabled') }}</p>
-            @endif
-          </div>
-        </div>
-        @endif
+          </fieldset>
+
+          @can('self.profile')
+
+          <fieldset name="user-preferences">
+              <x-form.legend>
+                  {{ trans('admin/settings/general.legends.your_details') }}
+              </x-form.legend>
+                    <x-form.row
+                        :label="trans('general.first_name')"
+                        :item="$user"
+                        name="first_name"
+                    />
+
+                    <x-form.row
+                        :label="trans('general.last_name')"
+                        :item="$user"
+                        name="last_name"
+                    />
+
+                    @can('self.edit_location')
+                        <x-input.location-select
+                            :label="trans('general.location')"
+                            name="location_id"
+                            :selected="old('location_id', $user->location_id)"
+                        />
+
+                        @if ($snipeSettings->full_multiple_companies_support == '1' && $snipeSettings->scope_locations_fmcs == '1')
+                            @cannot('superadmin')
+                                <div class="col-md-8 col-md-offset-3">
+                                    <x-form.help name="location_id_fmcs" icon="tip">{{ trans('general.fmcs_location_select_note') }}</x-form.help>
+                                </div>
+                            @endcannot
+                        @endif
+                    @endcan
+
+                    <x-form.row
+                        :label="trans('admin/users/table.phone')"
+                        :item="$user"
+                        name="phone"
+                        type="tel"
+                        input_icon="phone"
+                        input_group_addon="left"
+                    />
+
+                    <x-form.row
+                        :label="trans('general.website')"
+                        :item="$user"
+                        name="website"
+                        type="url"
+                        input_icon="link"
+                        input_group_addon="left"
+                        placeholder="https://example.com"
+                    />
 
 
-      </div> <!-- .box-body -->
-      <div class="text-right box-footer">
-        <a class="btn btn-link" href="{{ URL::previous() }}">{{ trans('button.cancel') }}</a>
-        <button type="submit" class="btn btn-primary"><i class="fas fa-check icon-white" aria-hidden="true"></i> {{ trans('general.save') }}</button>
-      </div>
-    </div> <!-- .box-default -->
-    {{ Form::close() }}
-  </div> <!-- .col-md-9 -->
-</div> <!-- .row-->
+                    @if (($user->avatar) && ($user->avatar != ''))
+                        <x-input.image-upload :item="$user" fieldname="avatar" :imagePath="app('users_upload_path')" />
+                    @else
+                        <x-form.row
+                            :label="trans('general.gravatar_email').' (Private)'"
+                            name="gravatar"
+                            input_div_class="col-md-8"
+                        >
+                            <x-slot:input>
+                                <input class="form-control" type="text" name="gravatar" id="gravatar" value="{{ old('gravatar', $user->gravatar) }}" />
+                                <p style="padding-top: 3px;">
+                                    <img src="//secure.gravatar.com/avatar/{{ md5(strtolower(trim($user->gravatar))) }}" width="30" height="30" alt="{{ $user->display_name }} avatar image">
+                                    {!! trans('general.gravatar_url') !!}
+                                </p>
+                            </x-slot:input>
+                        </x-form.row>
+                    @endif
+
+
+
+
+                    @if ($snipeSettings->two_factor_enabled == '1')
+                        <x-form.checkbox-row
+                            name="two_factor_optin"
+                            :label="trans('admin/settings/general.two_factor_enabled_text')"
+                            :item="$user"
+                            :disabled="auth()->user()->cannot('self.two_factor')"
+                        />
+                        <div class="col-md-8 col-md-offset-3">
+                            @can('self.two_factor')
+                                <x-form.help name="two_factor_optin">{{ trans('admin/settings/general.two_factor_enabled_warning') }}</x-form.help>
+                            @else
+                                <x-form.help name="two_factor_optin">{{ trans('admin/settings/general.two_factor_enabled_edit_not_allowed') }}</x-form.help>
+                            @endcan
+                            @if (config('app.lock_passwords'))
+                                <x-form.help name="two_factor_optin_lock">{{ trans('general.feature_disabled') }}</x-form.help>
+                            @endif
+                        </div>
+                    @endif
+          </fieldset>
+          @endcan
+
+
+
+
+
+    </x-box>
+  </x-form>
+</x-container>
 
 @stop
+

@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'about_suppliers_title' => 'Um birgja',
+    'about_suppliers_text' => 'Birgjar eru notaðir til að rekja uppruna hluta',
+    'address' => 'Heimilisfang birgja',
+    'assets' => 'Eignir',
+    'city' => 'Borg',
+    'contact' => 'Nafn tengiliðar',
+    'country' => 'Land',
+    'create' => 'Skrá birgja',
+    'email' => 'Netfang',
+    'fax' => 'Bréfsími',
+    'id' => 'ID',
+    'licenses' => 'Leyfi',
+    'name' => 'Heiti birgja',
+    'notes' => 'Athugasemdir',
+    'phone' => 'Sími',
+    'state' => 'Fylki',
+    'suppliers' => 'Birgjar',
+    'update' => 'Uppfæra birgja',
+    'view' => 'Skoða birgja',
+    'view_assets_for' => 'Skoða eignir frá',
+    'zip' => 'Póstnúmer',
+
+];

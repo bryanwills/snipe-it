@@ -6,55 +6,36 @@
 @parent
 @stop
 
-@section('header_right')
-<a href="{{ route('depreciations.create') }}" class="btn btn-primary pull-right">
-  {{ trans('general.create') }}</a>
-@stop
-
 
 {{-- Page content --}}
 @section('content')
+    <x-container>
+        <x-box name="depreciation">
 
-<div class="row">
-  <div class="col-md-9">
-    <div class="box box-default">
-      <div class="box-body">
-        <div class="table-responsive">
+            <x-slot:bulkactions>
+                <x-table.bulk-actions
+                        name='depreciation'
+                        action_route="{{ route('depreciations.bulk.delete') }}"
+                        model_name="depreciation"
+                >
+                    @can('delete', App\Models\Depreciation::class)
+                        <option>{{ trans('general.delete') }}</option>
+                    @endcan
+                </x-table.bulk-actions>
+            </x-slot:bulkactions>
 
-          <table
-                  data-columns="{{ \App\Presenters\DepreciationPresenter::dataTableLayout() }}"
-                  data-cookie-id-table="depreciationsTable"
-                  data-pagination="true"
-                  data-id-table="depreciationsTable"
-                  data-search="true"
-                  data-side-pagination="server"
-                  data-show-columns="true"
-                  data-show-export="true"
-                  data-show-refresh="true"
-                  data-sort-order="asc"
-                  id="depreciationsTable"
-                  class="table table-striped snipe-table"
-                  data-url="{{ route('api.depreciations.index') }}"
-                  data-export-options='{
-                    "fileName": "export-depreciations-{{ date('Y-m-d') }}",
-                    "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-                    }'>
-
-          </table>
-        </div>
-      </div>
-    </div>
-  </div> <!-- /.col-md-9-->
-
-
-  <!-- side address column -->
-  <div class="col-md-3">
-    <h2>{{ trans('admin/depreciations/general.about_asset_depreciations') }}</h4>
-    <p>{{ trans('admin/depreciations/general.about_depreciations') }} </p>
-  </div>
-
-</div>
-
+            <x-table
+                    name="depreciation"
+                    show_column_search="false"
+                    buttons="depreciationButtons"
+                    fixed_right_number="1"
+                    fixed_number="1"
+                    api_url="{{ route('api.depreciations.index') }}"
+                    :presenter="\App\Presenters\DepreciationPresenter::dataTableLayout()"
+                    export_filename="export-depreciations-{{ date('Y-m-d') }}"
+            />
+        </x-box>
+    </x-container>
 @stop
 
 @section('moar_scripts')

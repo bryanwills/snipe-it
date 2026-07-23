@@ -1,12 +1,15 @@
 .couscous
 .DS_Store
 .env
-.env.dusk.*
-!.env.dusk.example
 .env.testing
 phpstan.neon
 .idea
 /bin/
+# The .screenshotter/ tool. Tracked: README + everything under src/.
+# Ignored: the entire screenshots/ output tree. The layout separates
+# source from output so a bug in the wipe logic can't self-delete the
+# script.
+/.screenshotter/screenshots/
 /bootstrap/compiled.php
 /node_modules
 /vendor
@@ -49,6 +52,7 @@ storage/private_uploads/users/*
 tests/_data/scenarios
 tests/_output/*
 tests/_support/_generated/*
+tests/coverage/*
 /npm-debug.log
 /storage/oauth-private.key
 /storage/oauth-public.key
@@ -69,3 +73,6 @@ _ide_helper_models.php
 /.phplint-cache
 storage/ldap_client_tls.cert
 storage/ldap_client_tls.key
+/storage/framework/testing
+
+/.phpunit.cache
