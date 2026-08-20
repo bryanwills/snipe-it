@@ -1,0 +1,19 @@
+<?php
+
+return [
+    'component_name' => 'Назва компонента',
+    'checkin' => 'Прийняти компонент',
+    'checkout' => 'Видати компонент',
+    'cost' => 'Вартість покупки',
+    'create' => 'Створити компонент',
+    'edit' => 'Редагувати компонент',
+    'date' => 'Дата покупки',
+    'order' => 'Номер замовлення',
+    'remaining' => 'Залишилось',
+    'total' => 'Загалом',
+    'update' => 'Оновити компонент',
+    'checkin_limit' => 'Відзначена сума повинна бути рівною або меншою за :assigned_qty',
+    'exclude_deleted' => 'Exclude Deleted Components',
+    'include_deleted' => 'Include Deleted Components',
+    'only_deleted' => 'Only Deleted Components',
+];

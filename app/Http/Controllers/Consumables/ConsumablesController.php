@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Consumables;
 
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AdjustQuantityRequest;
 use App\Http\Requests\ImageUploadRequest;
+use App\Http\Requests\StoreConsumableRequest;
+use App\Http\Traits\HandlesAdjustQuantity;
 use App\Models\Company;
 use App\Models\Consumable;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Input;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * This controller handles all actions related to Consumables for
@@ -19,14 +23,19 @@ use Illuminate\Support\Facades\Validator;
  */
 class ConsumablesController extends Controller
 {
+    use HandlesAdjustQuantity;
+
     /**
      * Return a view to display component information.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @see ConsumablesController::getDatatable() method that generates the JSON response
      * @since [v1.0]
-     * @return \Illuminate\Contracts\View\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
+     *
+     * @return View
+     *
+     * @throws AuthorizationException
      */
     public function index()
     {
@@ -39,16 +48,19 @@ class ConsumablesController extends Controller
      * Return a view to display the form view to create a new consumable
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @see ConsumablesController::postCreate() method that stores the form data
      * @since [v1.0]
-     * @return \Illuminate\Contracts\View\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
+     *
+     * @return View
+     *
+     * @throws AuthorizationException
      */
     public function create()
     {
         $this->authorize('create', Consumable::class);
 
-        return view('consumables/edit')->with('category_type', 'consumable')
+        return view('consumables.edit')->with('category_type', 'consumable')
             ->with('item', new Consumable);
     }
 
@@ -56,36 +68,60 @@ class ConsumablesController extends Controller
      * Validate and store new consumable data.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @see ConsumablesController::getCreate() method that returns the form view
      * @since [v1.0]
-     * @param ImageUploadRequest $request
-     * @return \Illuminate\Http\RedirectResponse
-     * @throws \Illuminate\Auth\Access\AuthorizationException
+     *
+     * @param  ImageUploadRequest  $request
+     * @return RedirectResponse
+     *
+     * @throws AuthorizationException
      */
-    public function store(ImageUploadRequest $request)
+    public function store(StoreConsumableRequest $request)
     {
         $this->authorize('create', Consumable::class);
-        $consumable = new Consumable();
-        $consumable->name                   = $request->input('name');
-        $consumable->category_id            = $request->input('category_id');
-        $consumable->location_id            = $request->input('location_id');
-        $consumable->company_id             = Company::getIdForCurrentUser($request->input('company_id'));
-        $consumable->order_number           = $request->input('order_number');
-        $consumable->min_amt                = $request->input('min_amt');
-        $consumable->manufacturer_id        = $request->input('manufacturer_id');
-        $consumable->model_number           = $request->input('model_number');
-        $consumable->item_no                = $request->input('item_no');
-        $consumable->purchase_date          = $request->input('purchase_date');
-        $consumable->purchase_cost          = Helper::ParseCurrency($request->input('purchase_cost'));
-        $consumable->qty                    = $request->input('qty');
-        $consumable->user_id                = Auth::id();
-        $consumable->notes                  = $request->input('notes');
+        $consumable = new Consumable;
+        $consumable->name = $request->input('name');
+        $consumable->category_id = $request->input('category_id');
+        $consumable->location_id = $request->input('location_id');
+        $consumable->company_id = Company::getIdForCurrentUser($request->input('company_id'));
+        // order_number / supplier_id / purchase_date / purchase_cost all
+        // moved off the parent column to Orders / OrderItems.
+        $consumable->min_amt = $request->input('min_amt');
+        $consumable->manufacturer_id = $request->input('manufacturer_id');
+        $consumable->model_number = $request->input('model_number');
+        $consumable->item_no = $request->input('item_no');
+        $consumable->qty = $request->input('qty');
+        $consumable->created_by = auth()->id();
+        $consumable->notes = $request->input('notes');
+        // Seed the template supplier from the initial-acquisition
+        // supplier on the create form; editable afterwards.
+        $consumable->default_supplier_id = $request->input('default_supplier_id', $request->input('supplier_id'));
 
+        if ($request->has('use_cloned_image')) {
+            $cloned_model_img = Consumable::select('image')->find($request->input('clone_image_from_id'));
+            if ($cloned_model_img) {
+                $new_image_name = 'clone-'.date('U').'-'.$cloned_model_img->image;
+                $new_image = 'consumables/'.$new_image_name;
+                Storage::disk('public')->copy('consumables/'.$cloned_model_img->image, $new_image);
+                $consumable->image = $new_image_name;
+            }
 
-        $consumable = $request->handleImages($consumable);
+        } else {
+            $consumable = $request->handleImages($consumable);
+        }
+
+        if ($request->input('redirect_option') === 'back') {
+            session()->put(['redirect_option' => 'index']);
+        } else {
+            session()->put(['redirect_option' => $request->input('redirect_option')]);
+        }
 
         if ($consumable->save()) {
-            return redirect()->route('consumables.index')->with('success', trans('admin/consumables/message.create.success'));
+            $this->enrichInitialOrderFromRequest($request, $consumable);
+
+            return Helper::getRedirectOption($request, $consumable->id, 'Consumables')
+                ->with('success', trans('admin/consumables/message.create.success'));
         }
 
         return redirect()->back()->withInput()->withErrors($consumable->getErrors());
@@ -95,71 +131,70 @@ class ConsumablesController extends Controller
      * Returns a form view to edit a consumable.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @param  int $consumableId
+     *
+     * @param  int  $consumableId
+     *
      * @see ConsumablesController::postEdit() method that stores the form data.
      * @since [v1.0]
-     * @return \Illuminate\Contracts\View\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
      */
-    public function edit($consumableId = null)
+    public function edit(Consumable $consumable): View|RedirectResponse
     {
-        if ($item = Consumable::find($consumableId)) {
-            $this->authorize($item);
-
-            return view('consumables/edit', compact('item'))->with('category_type', 'consumable');
+        $this->authorize($consumable);
+        if ($safeReferer = Helper::sameOriginUrl(url()->previous())) {
+            session()->put('url.intended', $safeReferer);
         }
 
-        return redirect()->route('consumables.index')->with('error', trans('admin/consumables/message.does_not_exist'));
+        return view('consumables/edit')
+            ->with('item', $consumable)
+            ->with('category_type', 'consumable');
+
     }
 
     /**
      * Returns a form view to edit a consumable.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @param ImageUploadRequest $request
-     * @param  int $consumableId
-     * @return \Illuminate\Http\RedirectResponse
-     * @throws \Illuminate\Auth\Access\AuthorizationException
+     *
+     * @param  ImageUploadRequest  $request
+     * @param  int  $consumableId
+     * @return RedirectResponse
+     *
+     * @throws AuthorizationException
+     *
      * @see ConsumablesController::getEdit() method that stores the form data.
      * @since [v1.0]
      */
-    public function update(ImageUploadRequest $request, $consumableId = null)
+    public function update(StoreConsumableRequest $request, Consumable $consumable)
     {
-        if (is_null($consumable = Consumable::find($consumableId))) {
-            return redirect()->route('consumables.index')->with('error', trans('admin/consumables/message.does_not_exist'));
-        }
-
-        $min = $consumable->numCheckedOut();
-        $validator = Validator::make($request->all(), [
-            "qty" => "required|numeric|min:$min"
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
         $this->authorize($consumable);
 
-        $consumable->name                   = $request->input('name');
-        $consumable->category_id            = $request->input('category_id');
-        $consumable->location_id            = $request->input('location_id');
-        $consumable->company_id             = Company::getIdForCurrentUser($request->input('company_id'));
-        $consumable->order_number           = $request->input('order_number');
-        $consumable->min_amt                = $request->input('min_amt');
-        $consumable->manufacturer_id        = $request->input('manufacturer_id');
-        $consumable->model_number           = $request->input('model_number');
-        $consumable->item_no                = $request->input('item_no');
-        $consumable->purchase_date          = $request->input('purchase_date');
-        $consumable->purchase_cost          = Helper::ParseCurrency($request->input('purchase_cost'));
-        $consumable->qty                    = Helper::ParseFloat($request->input('qty'));
-        $consumable->notes                  = $request->input('notes');
+        // qty and order_number are intentionally NOT accepted on update.
+        // See AccessoriesController::update for rationale. supplier_id is
+        // editable again (imperfect single-value semantics accepted for
+        // the info-panel display).
+        $consumable->name = $request->input('name');
+        $consumable->category_id = $request->input('category_id');
+        $consumable->location_id = $request->input('location_id');
+        $consumable->company_id = Company::getIdForCurrentUser($request->input('company_id'));
+        $consumable->min_amt = $request->input('min_amt');
+        $consumable->manufacturer_id = $request->input('manufacturer_id');
+        $consumable->model_number = $request->input('model_number');
+        $consumable->item_no = $request->input('item_no');
+        // supplier_id, purchase_date, purchase_cost are create-only on
+        // the parent. Post-create acquisitions live as Orders +
+        // OrderItems (each with its own supplier / date / price).
+        // default_supplier_id remains editable — see accessory update
+        // controller for the parent-as-template rationale.
+        $consumable->default_supplier_id = $request->input('default_supplier_id');
+        $consumable->notes = $request->input('notes');
 
         $consumable = $request->handleImages($consumable);
 
+        session()->put(['redirect_option' => $request->input('redirect_option')]);
+
         if ($consumable->save()) {
-            return redirect()->route('consumables.index')->with('success', trans('admin/consumables/message.update.success'));
+            return Helper::getRedirectOption($request, $consumable->id, 'Consumables')
+                ->with('success', trans('admin/consumables/message.update.success'));
         }
 
         return redirect()->back()->withInput()->withErrors($consumable->getErrors());
@@ -169,10 +204,14 @@ class ConsumablesController extends Controller
      * Delete a consumable.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @param  int $consumableId
+     *
+     * @param  int  $consumableId
+     *
      * @since [v1.0]
-     * @return \Illuminate\Http\RedirectResponse
-     * @throws \Illuminate\Auth\Access\AuthorizationException
+     *
+     * @return RedirectResponse
+     *
+     * @throws AuthorizationException
      */
     public function destroy($consumableId)
     {
@@ -180,7 +219,9 @@ class ConsumablesController extends Controller
             return redirect()->route('consumables.index')->with('error', trans('admin/consumables/message.not_found'));
         }
         $this->authorize($consumable);
+
         $consumable->delete();
+
         // Redirect to the locations management page
         return redirect()->route('consumables.index')->with('success', trans('admin/consumables/message.delete.success'));
     }
@@ -189,21 +230,51 @@ class ConsumablesController extends Controller
      * Return a view to display component information.
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
      * @see ConsumablesController::getDataView() method that generates the JSON response
      * @since [v1.0]
-     * @param int $consumableId
-     * @return \Illuminate\Contracts\View\View
-     * @throws \Illuminate\Auth\Access\AuthorizationException
+     *
+     * @param  int  $consumableId
+     * @return View
+     *
+     * @throws AuthorizationException
      */
-    public function show($consumableId = null)
+    public function show(Consumable $consumable)
     {
-        $consumable = Consumable::find($consumableId);
+        $consumable = Consumable::withCount('users as users_consumables')->find($consumable->id);
         $this->authorize($consumable);
-        if (isset($consumable->id)) {
-            return view('consumables/view', compact('consumable'));
-        }
 
-        return redirect()->route('consumables.index')
-            ->with('error', trans('admin/consumables/message.does_not_exist'));
+        return view('consumables/view', compact('consumable'));
+    }
+
+    public function clone(Consumable $consumable): View
+    {
+        $this->authorize('create', $consumable);
+        $consumable_to_close = $consumable;
+        $consumable = clone $consumable_to_close;
+        $consumable->id = null;
+        $consumable->created_by = null;
+
+        // See AccessoriesController::getClone for the rationale, including
+        // the note on why these are explicit assignments not a foreach.
+        $prefill = $consumable_to_close->lastOrderPrefill();
+        $consumable->supplier_id = $prefill['supplier_id'];
+        $consumable->purchase_date = $prefill['purchase_date'];
+        $consumable->purchase_cost = $prefill['purchase_cost'];
+        $consumable->order_number = $prefill['order_number'];
+
+        return view('consumables/edit')
+            ->with('cloned_model', $consumable_to_close)
+            ->with('item', $consumable);
+    }
+
+    /**
+     * Apply an on-hand quantity delta (+/-) and log the change. Route
+     * exists here so route-model binding resolves against Consumable,
+     * everything else lives on HandlesAdjustQuantity.
+     */
+    public function adjustQuantity(AdjustQuantityRequest $request, Consumable $consumable): RedirectResponse
+    {
+        return $this->adjustQuantityAsRedirect($request, $consumable);
     }
 }

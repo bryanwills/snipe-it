@@ -2,115 +2,222 @@
 
 {{-- Page title --}}
 @section('title')
-  {{ trans('admin/hardware/general.checkin') }}
-  @parent
+    {{ trans('admin/hardware/general.checkin') }}
+    @parent
 @stop
 
 {{-- Page content --}}
 @section('content')
-  <style>
 
-    .input-group {
-      padding-left: 0px !important;
-    }
-  </style>
+    <style>
+        .input-group {
+            padding-left: 0px !important;
+        }
+    </style>
 
+    <x-container class="col-md-7 col-sm-11 col-xs-12 col-md-offset-2">
+        <x-form :route="$backto == 'user'
+            ? route('hardware.checkin.store', ['assetId' => $asset->id, 'backto' => 'user'])
+            : route('hardware.checkin.store', ['assetId' => $asset->id])">
 
-  <div class="row">
-    <!-- left column -->
-    <div class="col-md-9">
-      <div class="box box-default">
-        <div class="box-header with-border">
-          <h2 class="box-title">{{ trans('admin/hardware/form.tag') }} {{ $asset->asset_tag }}</h2>
-        </div><!-- /.box-header -->
+            <x-box>
+                <x-slot:header>
+                    {{ trans('admin/hardware/form.tag') }} {{ $asset->asset_tag }}
+                </x-slot:header>
 
-        <div class="box-body">
-          <div class="col-md-12">
-            @if ($backto=='user')
-              <form class="form-horizontal" method="post"
-                    action="{{ route('hardware.checkin.store', array('assetId'=> $asset->id, 'backto'=>'user')) }}"
-                    autocomplete="off">
-                @else
-                  <form class="form-horizontal" method="post"
-                        action="{{ route('hardware.checkin.store', array('assetId'=> $asset->id)) }}" autocomplete="off">
-                  @endif
-                  {{csrf_field()}}
+                <div class="col-md-12">
 
-                  <!-- AssetModel name -->
-                    <div class="form-group">
-                      {{ Form::label('model', trans('admin/hardware/form.model'), array('class' => 'col-md-3 control-label')) }}
-                      <div class="col-md-8">
-                        <p class="form-control-static">
-                          @if (($asset->model) && ($asset->model->name))
-                            {{ $asset->model->name }}
+                    @if ($asset->company)
+                        {{-- Company (read-only) --}}
+                        <x-form.row :label="trans('general.company')" name="company_display" input_div_class="col-md-6">
+                            <x-slot:input>
+                                <p class="form-control-static">{!! $asset->company->present()->formattedNameLink !!}</p>
+                            </x-slot:input>
+                        </x-form.row>
+                    @endif
 
-                          @else
-                            <span class="text-danger text-bold">
-                      <i class="fas fa-exclamation-triangle"></i>{{ trans('admin/hardware/general.model_invalid')}}
-                      <a href="{{ route('hardware.edit', $asset->id) }}"></a> {{ trans('admin/hardware/general.model_invalid_fix')}}</span>
-                          @endif
-                        </p>
-                      </div>
-                    </div>
- 
+                    @if ($asset->model->category)
+                        {{-- Category (read-only) --}}
+                        <x-form.row :label="trans('general.category')" name="category_display" input_div_class="col-md-6">
+                            <x-slot:input>
+                                <p class="form-control-static">{!! $asset->model->category->present()->formattedNameLink !!}</p>
+                            </x-slot:input>
+                        </x-form.row>
+                    @endif
 
-                    <!-- Asset Name -->
-                    <div class="form-group {{ $errors->has('name') ? 'error' : '' }}">
-                      {{ Form::label('name', trans('admin/hardware/form.name'), array('class' => 'col-md-3 control-label')) }}
-                      <div class="col-md-8">
-                        <input class="form-control" type="text" name="name" aria-label="name" id="name"
-                               value="{{ old('name', $asset->name) }}"/>
-                        {!! $errors->first('name', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
-                      </div>
-                    </div>
+                    {{-- Model (read-only with fallback UI when the model
+                         reference is broken — asset points at a deleted or
+                         invalid model). --}}
+                    <x-form.row :label="trans('admin/hardware/form.model')" name="model_display" input_div_class="col-md-8">
+                        <x-slot:input>
+                            <p class="form-control-static">
+                                @if ($asset->model)
+                                    {!! $asset->model->present()->formattedNameLink !!}
+                                @else
+                                    <span class="text-danger text-bold">
+                                        <x-icon type="warning" />
+                                        {{ trans('admin/hardware/general.model_invalid') }}
+                                    </span>
+                                    {{ trans('admin/hardware/general.model_invalid_fix') }}
+                                    <a href="{{ route('hardware.edit', $asset->id) }}">
+                                        <strong>{{ trans('admin/hardware/general.edit') }}</strong>
+                                    </a>
+                                @endif
+                            </p>
+                        </x-slot:input>
+                    </x-form.row>
 
-                    <!-- Status -->
-                    <div class="form-group {{ $errors->has('status_id') ? 'error' : '' }}">
-                      {{ Form::label('status_id', trans('admin/hardware/form.status'), array('class' => 'col-md-3 control-label')) }}
-                      <div class="col-md-7 required">
-                        {{ Form::select('status_id', $statusLabel_list, '', array('class'=>'select2', 'style'=>'width:100%','id' =>'modal-statuslabel_types', 'aria-label'=>'status_id')) }}
-                        {!! $errors->first('status_id', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
-                      </div>
-                    </div>
+                        @if ($asset->defaultLoc)
+                            {{-- Default Location (read-only) --}}
+                            <x-form.row :label="trans('admin/hardware/form.default_location')" name="default_location" input_div_class="col-md-6">
+                                <x-slot:input>
+                                    <p class="form-control-static"> {!! $asset->defaultLoc->present()->formattedNameLink() !!}</p>
+                                </x-slot:input>
+                            </x-form.row>
+                        @endif
 
-                  @include ('partials.forms.edit.location-select', ['translated_name' => trans('general.location'), 'fieldname' => 'location_id', 'help_text' => ($asset->defaultLoc) ? 'You can choose to check this asset in to a location other than the default location of '.$asset->defaultLoc->name.' if one is set.' : null])
+                    {{-- Asset name --}}
+                    <x-form.row
+                        :label="trans('general.name')"
+                        name="name"
+                        type="text"
+                        :item="$asset"
+                        input_div_class="col-md-8"
+                    />
 
-                  <!-- Checkout/Checkin Date -->
-                    <div class="form-group{{ $errors->has('checkin_at') ? ' has-error' : '' }}">
-                      {{ Form::label('checkin_at', trans('admin/hardware/form.checkin_date'), array('class' => 'col-md-3 control-label')) }}
-                      <div class="col-md-8">
-                        <div class="input-group col-md-5 required">
-                          <div class="input-group date" data-provide="datepicker" data-date-format="yyyy-mm-dd"  data-autoclose="true">
-                            <input type="text" class="form-control" placeholder="{{ trans('general.select_date') }}" name="checkin_at" id="checkin_at" value="{{ old('checkin_at', date('Y-m-d')) }}">
-                            <span class="input-group-addon"><i class="fas fa-calendar" aria-hidden="true"></i></span>
-                          </div>
-                          {!! $errors->first('checkin_at', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
+                    {{-- Status. The select gets id=modal-statuslabel_types
+                         because the JS at the bottom of the page keys the
+                         requestable-wrapper visibility toggle on that id. --}}
+                    <x-form.row
+                        :label="trans('admin/hardware/form.status')"
+                        name="status_id"
+                        input_div_class="col-md-8 required"
+                    >
+                        <x-slot:input>
+                            <x-input.select
+                                name="status_id"
+                                id="modal-statuslabel_types"
+                                :options="$statusLabel_list"
+                                :selected="old('status_id')"
+                                style="width: 100%"
+                                aria-label="status_id"
+                            />
+                        </x-slot:input>
+                    </x-form.row>
+
+                    {{-- Requestable toggle. The outer form-group carries
+                         id=requestable-wrapper — the snipeit.js handler
+                         shows/hides it based on whether the selected
+                         status is deployable (list of deployable status
+                         ids handed off via data attribute), and
+                         x-form.checkbox-row doesn't forward attributes to
+                         its wrapper, so this stays hand-rolled. The
+                         checkbox itself carries two data attributes that
+                         drive its localStorage-preference behavior. --}}
+                    <div
+                        class="form-group"
+                        id="requestable-wrapper"
+                        data-deployable-status-ids="{{ json_encode($deployable_status_ids) }}"
+                        @if (! $show_requestable_toggle) style="display: none;" @endif
+                    >
+                        <div class="col-md-9 col-md-offset-3">
+                            <label class="form-control" for="requestable">
+                                <input
+                                    type="checkbox"
+                                    value="1"
+                                    name="requestable"
+                                    id="requestable"
+                                    data-user-preference-key="snipeit.checkin.requestable_default.{{ auth()->id() ?? 'guest' }}"
+                                    data-had-old-input="{{ ((bool) old('requestable', false)) || session()->has('_old_input.requestable') ? '1' : '0' }}"
+                                    @checked((bool) old('requestable', $asset->requestable))
+                                />
+                                {{ trans('admin/hardware/general.requestable') }}
+                            </label>
                         </div>
-                      </div>
                     </div>
 
+                        {{-- Location and default-location pickers. Both are
+                             pre-populated with the asset's rtd_location_id so
+                             the common case (submit without touching either
+                             field) resets `location` to rtd and leaves the
+                             default unchanged, matching the codebase-wide
+                             checkin convention. Fixes #19401, where a blank
+                             submission used to wipe `location` to null.
 
-                    <!-- Note -->
-                    <div class="form-group {{ $errors->has('note') ? 'error' : '' }}">
+                             Users can override either field by picking a
+                             different location or clearing via the select2 X
+                             button. --}}
+                    <x-input.location-select
+                        :label="trans('general.location')"
+                        name="location_id"
+                        :selected="old('location_id', $asset->rtd_location_id)"
+                        :company_id="$asset->company_id"
+                    />
 
-                      {{ Form::label('note', trans('admin/hardware/form.notes'), array('class' => 'col-md-3 control-label')) }}
+                        <x-input.location-select
+                            :label="trans('admin/hardware/form.default_location')"
+                            name="rtd_location_id"
+                            :selected="old('rtd_location_id', $asset->rtd_location_id)"
+                        :company_id="$asset->company_id"
+                    />
 
-                      <div class="col-md-8">
-                  <textarea class="col-md-6 form-control" id="note"
-                            name="note">{{ old('note', $asset->note) }}</textarea>
-                        {!! $errors->first('note', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
-                      </div>
-                    </div>
-                    <div class="box-footer">
-                      <a class="btn btn-link" href="{{ URL::previous() }}"> {{ trans('button.cancel') }}</a>
-                      <button type="submit" class="btn btn-primary pull-right"><i class="fas fa-check icon-white" aria-hidden="true"></i> {{ trans('general.checkin') }}</button>
-                    </div>
-                  </form>
-          </div> <!--/.col-md-12-->
-        </div> <!--/.box-body-->
+                    {{-- Checkout/Checkin date. The nested input-group carries
+                         responsive col-* classes for the datetimepicker
+                         layout at different breakpoints; kept as slot:input
+                         since x-form.row doesn't nest an input-group inside
+                         its input column. --}}
+                    <x-form.row
+                        :label="trans('admin/hardware/form.checkin_date')"
+                        name="checkin_at"
+                        label_class="col-sm-3 col-xs-12 col-sm-12"
+                        input_div_class="col-md-8 col-xs-12 col-sm-12"
+                    >
+                        <x-slot:input>
+                            <div class="input-group col-xl-5 col-lg-5 col-md-7 col-sm-9 col-xs-12 required">
+                                <x-input.datetimepicker
+                                    id="checkin_at"
+                                    name="checkin_at"
+                                    :value="old('checkin_at', date('Y-m-d H:i:s'))"
+                                />
+                            </div>
+                        </x-slot:input>
+                    </x-form.row>
 
-      </div> <!--/.box.box-default-->
-    </div>
-  </div>
+                    {{-- Note --}}
+                    <x-form.row
+                        :label="trans('general.notes')"
+                        name="note"
+                        input_div_class="col-md-8"
+                    >
+                        <x-slot:input>
+                            <textarea class="col-md-6 form-control" id="note" @required($snipeSettings->require_checkinout_notes) name="note">{{ old('note', $asset->note) }}</textarea>
+                        </x-slot:input>
+                    </x-form.row>
+
+                    {{-- Custom fields --}}
+                    @include('models/custom_fields_form', [
+                        'model' => $asset->model,
+                        'show_custom_fields_type' => 'checkin',
+                    ])
+
+                </div>
+
+                <x-slot:customfooter>
+                    <x-redirect_submit_options
+                        index_route="hardware.index"
+                        :button_label="trans('general.checkin')"
+                        :disabled_select="! $asset->model"
+                        :options="[
+                            'index' => trans('admin/hardware/form.redirect_to_all', ['type' => trans('general.assets')]),
+                            'item' => trans('admin/hardware/form.redirect_to_type', ['type' => trans('general.asset')]),
+                            'target' => $target_option,
+                        ]"
+                    />
+                </x-slot:customfooter>
+
+            </x-box>
+        </x-form>
+    </x-container>
 
 @stop
+

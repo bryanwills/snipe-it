@@ -4,9 +4,8 @@ namespace App\Http\Transformers;
 
 use App\Helpers\Helper;
 use App\Models\Consumable;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Gate;
 
 class ConsumablesTransformer
 {
@@ -22,23 +21,63 @@ class ConsumablesTransformer
 
     public function transformConsumable(Consumable $consumable)
     {
+        // See AccessoriesTransformer for the last-acquisition-with-fallback
+        // resolution pattern for supplier / purchase_date / purchase_cost.
+        $lastDefaults = $consumable->lastOrderDefaults();
+        $lastSupplier = $consumable->lastAcquisitionSupplier();
+
         $array = [
-            'id'            => (int) $consumable->id,
-            'name'          => e($consumable->name),
-            'image' =>   ($consumable->image) ? Storage::disk('public')->url('consumables/'.e($consumable->image)) : null,
-            'category'      => ($consumable->category) ? ['id' => $consumable->category->id, 'name' => e($consumable->category->name)] : null,
-            'company'   => ($consumable->company) ? ['id' => (int) $consumable->company->id, 'name' => e($consumable->company->name)] : null,
-            'item_no'       => e($consumable->item_no),
-            'location'      => ($consumable->location) ? ['id' => (int) $consumable->location->id, 'name' => e($consumable->location->name)] : null,
-            'manufacturer'  => ($consumable->manufacturer) ? ['id' => (int) $consumable->manufacturer->id, 'name' => e($consumable->manufacturer->name)] : null,
-            'min_amt'       => (int) $consumable->min_amt,
-            'model_number'  => ($consumable->model_number != '') ? e($consumable->model_number) : null,
-            'remaining'  => $consumable->numRemaining(),
-            'order_number'  => e($consumable->order_number),
-            'purchase_cost'  => Helper::formatCurrencyOutput($consumable->purchase_cost),
-            'purchase_date'  => Helper::getFormattedDateObject($consumable->purchase_date, 'date'),
-            'qty'           => (int) $consumable->qty,
-            'notes'         => ($consumable->notes) ? e($consumable->notes) : null,
+            'id' => (int) $consumable->id,
+            'name' => e($consumable->name),
+            'image' => ($consumable->getImageUrl()) ? ($consumable->getImageUrl()) : null,
+            'qr_code_url' => route('qr_code/common', ['object_type' => 'consumables', 'id' => $consumable->id]),
+            'category' => ($consumable->category) ? [
+                'id' => $consumable->category->id,
+                'name' => e($consumable->category->name),
+                'tag_color' => $consumable->category->tag_color ? e($consumable->category->tag_color) : null,
+            ] : null,
+            'company' => ($consumable->company) ? [
+                'id' => (int) $consumable->company->id,
+                'name' => e($consumable->company->name),
+                'tag_color' => $consumable->company->tag_color ? e($consumable->company->tag_color) : null,
+            ] : null,
+            'item_no' => e($consumable->item_no),
+            'location' => ($consumable->location) ? [
+                'id' => (int) $consumable->location->id,
+                'name' => e($consumable->location->name),
+                'tag_color' => $consumable->location->tag_color ? e($consumable->location->tag_color) : null,
+            ] : null,
+            'manufacturer' => ($consumable->manufacturer) ? [
+                'id' => (int) $consumable->manufacturer->id,
+                'name' => e($consumable->manufacturer->name),
+                'tag_color' => $consumable->manufacturer->tag_color ? e($consumable->manufacturer->tag_color) : null,
+            ] : null,
+            'supplier' => $lastSupplier ? [
+                'id' => $lastSupplier->id,
+                'name' => e($lastSupplier->name),
+                'tag_color' => $lastSupplier->tag_color ? e($lastSupplier->tag_color) : null,
+            ] : null,
+            'min_amt' => (int) $consumable->min_amt,
+            'model_number' => ($consumable->model_number != '') ? e($consumable->model_number) : null,
+            'remaining' => $consumable->numRemaining(),
+            'percent_remaining' => round($consumable->percentRemaining()),
+            // See AccessoriesTransformer for why order_number is no longer
+            // in the parent-level output.
+            //
+            // Distinct order numbers this consumable has been purchased on,
+            // pulled from the eager-loaded orderItems.order relation
+            // (Api\ConsumablesController::index preloads it). Feeds the
+            // datatable's ordersSummaryFormatter.
+            'orders' => $consumable->orderItems->pluck('order.order_number')->filter()->unique()->values()->all(),
+            'purchase_cost' => Helper::formatCurrencyOutput($lastDefaults['unit_cost'] ?? null),
+            'total_cost' => Helper::formatCurrencyOutput($consumable->totalCostSum()),
+            'purchase_date' => ($lastDefaults['purchase_date'] ?? null) ? Helper::getFormattedDateObject($lastDefaults['purchase_date'], 'date') : null,
+            'qty' => (int) $consumable->qty,
+            'notes' => ($consumable->notes) ? Helper::parseEscapedMarkedownInline($consumable->notes) : null,
+            'created_by' => ($consumable->adminuser) ? [
+                'id' => (int) $consumable->adminuser->id,
+                'name' => e($consumable->adminuser->display_name),
+            ] : null,
             'created_at' => Helper::getFormattedDateObject($consumable->created_at, 'datetime'),
             'updated_at' => Helper::getFormattedDateObject($consumable->updated_at, 'datetime'),
         ];
@@ -53,7 +92,9 @@ class ConsumablesTransformer
             'checkout' => Gate::allows('checkout', Consumable::class),
             'checkin' => Gate::allows('checkin', Consumable::class),
             'update' => Gate::allows('update', Consumable::class),
+            'adjust_quantity' => Gate::allows('update', Consumable::class),
             'delete' => Gate::allows('delete', Consumable::class),
+            'clone' => (Gate::allows('create', Consumable::class) && ($consumable->deleted_at == '')),
         ];
         $array += $permissions_array;
 

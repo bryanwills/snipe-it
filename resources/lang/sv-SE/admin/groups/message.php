@@ -1,22 +1,23 @@
 <?php
 
-return array(
+return [
 
-    'group_exists'        => 'Gruppen existerar redan!',
-    'group_not_found'     => 'Grupp [:id] existerar inte.',
-    'group_name_required' => 'Namnfältet är obligatoriskt',
+    'group_exists' => 'Gruppen existerar redan!',
+    'group_not_found' => 'Grupp-ID :id finns inte.',
+    'group_name_required' => 'Namn är obligatoriskt',
+    'assoc_users' => 'Den här avdelningen är för närvarande kopplad till minst en användare och kan inte raderas. Uppdatera dina användare för att inte längre referera till den här avdelningen och försök igen.',
 
-    'success' => array(
-        'create' => 'Gruppen skapades.',
-        'update' => 'Gruppen uppdaterades.',
-        'delete' => 'Gruppen raderades.',
-    ),
+    'success' => [
+        'create' => 'Grupp skapad.',
+        'update' => 'Grupp uppdaterad.',
+        'delete' => 'Grupp raderad.',
+    ],
 
-    'delete' => array(
-        'confirm'   => 'Är du säker på att du vill radera denna grupp?',
-        'create' => 'Det uppstod ett problem med att skapa gruppen. Var god försök igen.',
-        'update' => 'Det uppstod ett problem med att uppdatera gruppen. Var god försök igen.',
-        'delete' => 'Det uppstod ett problem med att ta bort gruppen. Var god försök igen.',
-    ),
+    'delete' => [
+        'confirm' => 'Är du säker på att du vill radera denna grupp?',
+        'create' => 'Det gick inte att skapa gruppen. Vänligen försök igen.',
+        'update' => 'Det gick inte att uppdatera gruppen. Vänligen försök igen.',
+        'delete' => 'Det gick inte att ta bort gruppen. Vänligen försök igen.',
+    ],
 
-);
+];

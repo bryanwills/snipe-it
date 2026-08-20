@@ -6,360 +6,411 @@
     @parent
 @stop
 
-@section('header_right')
-    <a href="{{ route('settings.index') }}" class="btn btn-primary"> {{ trans('general.back') }}</a>
-@stop
-
-
 {{-- Page content --}}
 @section('content')
 
-    <style>
-        .checkbox label {
-            padding-right: 40px;
-        }
-    </style>
+    <form method="POST" autocomplete="off" class="form-horizontal" role="form" id="create-form">
+        <!-- CSRF Token -->
+        {{ csrf_field() }}
+
+        <div class="row">
+            <div class="col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2">
 
 
-
-    {{ Form::open(['method' => 'POST', 'files' => false, 'autocomplete' => 'off', 'class' => 'form-horizontal', 'role' => 'form' ]) }}
-    <!-- CSRF Token -->
-    {{csrf_field()}}
-
-    <div class="row">
-        <div class="col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2">
-
-
-            <div class="panel box box-default">
-                <div class="box-header with-border">
-                    <h2 class="box-title">
-                        <i class="fas fa-wrench" aria-hidden="true"></i>
-                        {{ trans('admin/settings/general.general_settings') }}
-                    </h2>
-                </div>
-
-               <div class="box-body">
-
-                   <div class="col-md-12">
-
-                    <!-- Full Multiple Companies Support -->
-                    <div class="form-group {{ $errors->has('full_multiple_companies_support') ? 'error' : '' }}">
-                        <div class="col-md-3">
-                            {{ Form::label('full_multiple_companies_support', trans('admin/settings/general.full_multiple_companies_support_text')) }}
-                        </div>
-                        <div class="col-md-9">
-                            {{ Form::checkbox('full_multiple_companies_support', '1', old('full_multiple_companies_support', $setting->full_multiple_companies_support),array('class' => 'minimal', 'aria-label'=>'full_multiple_companies_support')) }}
-                            {{ trans('admin/settings/general.full_multiple_companies_support_text') }}
-                            {!! $errors->first('full_multiple_companies_support', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                            <p class="help-block">
-                                {{ trans('admin/settings/general.full_multiple_companies_support_help_text') }}
-                            </p>
-                        </div>
+                <div class="panel box box-default">
+                    <div class="box-header with-border">
+                        <h2 class="box-title">
+                            <x-icon type="general-settings"/>
+                            {{ trans('admin/settings/general.general_settings') }}
+                        </h2>
                     </div>
 
-                    <!-- /.form-group -->
+                    <div class="box-body">
 
-                    <!-- Require signature for acceptance -->
-                    <div class="form-group {{ $errors->has('require_accept_signature') ? 'error' : '' }}">
-                        <div class="col-md-3">
-                            {{ Form::label('require_accept_signature',
-                                           trans('admin/settings/general.require_accept_signature')) }}
+                        <div class="col-md-12">
+
+                            <fieldset>
+                                <x-form.legend>
+                                    {{ trans('admin/settings/general.legends.scoping') }}
+                                </x-form.legend>
+
+                                <!-- Full Multiple Companies Support -->
+                                <x-form.checkbox-row
+                                    name="full_multiple_companies_support"
+                                    :label="trans('admin/settings/general.full_multiple_companies_support_text')"
+                                    :item="$setting"
+                                    :help_text="trans('admin/settings/general.full_multiple_companies_support_help_text')"
+                                />
+
+                                <!-- Scope Locations with Full Multiple Companies Support -->
+                                <div class="form-group">
+                                    <div class="col-md-8 col-md-offset-3">
+                                        <livewire:location-scope-check />
+                                    </div>
+                                </div>
+
+                                <!-- Null Company Is Floater -->
+                                <x-form.checkbox-row
+                                    name="null_company_is_floater"
+                                    :label="trans('admin/settings/general.null_company_is_floater_text')"
+                                    :item="$setting"
+                                    :disabled="! $setting->full_multiple_companies_support"
+                                    :help_text="trans('admin/settings/general.null_company_is_floater_help_text')"
+                                />
+                            </fieldset>
+
+                            <fieldset>
+                                <x-form.legend>
+                                    {{ trans('admin/settings/general.legends.formats') }}
+                                </x-form.legend>
+
+                                <!-- Email domain -->
+                                <x-form.row
+                                    name="email_domain"
+                                    :label="trans('general.email_domain')"
+                                    :help_text="trans('general.email_domain_help')"
+                                >
+                                    <x-slot:input>
+                                        <x-input.text
+                                            name="email_domain"
+                                            :value="old('email_domain', $setting->email_domain)"
+                                            placeholder="example.com"
+                                        />
+                                    </x-slot:input>
+                                </x-form.row>
+
+                                <!-- Email format -->
+                                <x-form.row
+                                    name="email_format"
+                                    :label="trans('admin/settings/general.email_formats.email_format')"
+                                >
+                                    <x-slot:input>
+                                        <x-input.email-format-select
+                                            name="email_format"
+                                            :selected="old('email_format', $setting->email_format)"
+                                            style="width: 100%"
+                                            aria-label="email_format"
+                                        />
+                                    </x-slot:input>
+                                </x-form.row>
+
+                                <!-- Username format -->
+                                <x-form.row
+                                    name="username_format"
+                                    :label="trans('admin/settings/general.username_formats.username_format')"
+                                    :help_text="trans('admin/settings/general.username_format_help')"
+                                >
+                                    <x-slot:input>
+                                        <x-input.username-select
+                                            name="username_format"
+                                            :selected="old('username_format', $setting->username_format)"
+                                            style="width: 100%"
+                                            aria-label="username_format"
+                                        />
+                                    </x-slot:input>
+                                </x-form.row>
+                            </fieldset>
+
+
+                            <fieldset>
+                                <x-form.legend>
+                                    {{ trans('admin/settings/general.legends.profiles') }}
+                                </x-form.legend>
+
+                                <!-- user profile edit checkbox -->
+                                <x-form.checkbox-row
+                                    name="profile_edit"
+                                    :label="trans('admin/settings/general.profile_edit_help')"
+                                    :item="$setting"
+                                />
+                            </fieldset>
+
+                            <fieldset>
+                                <x-form.legend>
+                                    {{ trans('admin/settings/general.legends.eula') }}
+                                </x-form.legend>
+
+                                <!-- Require signature for acceptance -->
+                                <x-form.checkbox-row
+                                    name="require_accept_signature"
+                                    :label="trans('admin/settings/general.require_accept_signature')"
+                                    :item="$setting"
+                                    :help_text="trans('admin/settings/general.require_accept_signature_help_text')"
+                                />
+
+                                <!-- Default EULA -->
+                                <x-form.row
+                                    name="default_eula_text"
+                                    :label="trans('admin/settings/general.default_eula_text')"
+                                    :help_text="trans('admin/settings/general.default_eula_help_text')"
+                                >
+                                    <x-slot:input>
+                                        <x-input.textarea
+                                            name="default_eula_text"
+                                            :value="old('default_eula_text', $setting->default_eula_text)"
+                                            :placeholder="trans('admin/settings/general.default_eula_text_placeholder')"
+                                        />
+                                        <x-form.help name="default_eula_text" icon="markdown">
+                                            {{ trans('general.markdown') }}
+                                        </x-form.help>
+                                    </x-slot:input>
+                                </x-form.row>
+                            </fieldset>
+
+                            <fieldset>
+                                <x-form.legend>
+                                    {{ trans('admin/settings/general.legends.misc_display') }}
+                                </x-form.legend>
+
+                                <!-- Thumb Size -->
+                                <x-form.row
+                                    name="thumbnail_max_h"
+                                    :label="trans('admin/settings/general.thumbnail_max_h')"
+                                    :help_text="trans('admin/settings/general.thumbnail_max_h_help')"
+                                >
+                                    <x-slot:input>
+                                        <x-input.text
+                                            type="number"
+                                            name="thumbnail_max_h"
+                                            :value="old('thumbnail_max_h', $setting->thumbnail_max_h ?? '25')"
+                                            style="max-width: 100px;"
+                                            placeholder="50"
+                                            maxlength="3"
+                                        />
+                                    </x-slot:input>
+                                </x-form.row>
+
+                                <!-- Model List prefs -->
+                                <x-form.checkbox-row
+                                    name="show_in_model_list"
+                                    :label="trans('admin/settings/general.show_in_model_list')"
+                                    :options="[
+                                        'image' => trans('general.image'),
+                                        'category' => trans('general.category'),
+                                        'manufacturer' => trans('general.manufacturer'),
+                                        'model_number' => trans('general.model_no'),
+                                    ]"
+                                    :selected="$snipeSettings->modellist_displays"
+                                />
+
+                                <!-- Shortcuts enable -->
+                                <x-form.checkbox-row
+                                    name="shortcuts_enabled"
+                                    :label="trans('admin/settings/general.shortcuts_enabled')"
+                                    :item="$setting"
+                                    help_text="{!! trans('admin/settings/general.shortcuts_help_text') !!}"
+                                />
+
+                                <!-- Archived in List -->
+                                <x-form.checkbox-row
+                                    name="show_archived_in_list"
+                                    :label="trans('admin/settings/general.show_archived_in_list_text')"
+                                    :item="$setting"
+                                />
+
+                                <!-- Show assets assigned to user's assets -->
+                                <x-form.checkbox-row
+                                    name="show_assigned_assets"
+                                    :label="trans('admin/settings/general.show_assigned_assets')"
+                                    :item="$setting"
+                                    :help_text="trans('admin/settings/general.show_assigned_assets_help')"
+                                />
+                            </fieldset>
+
+
+                            <fieldset>
+                                <x-form.legend>
+                                    {{ trans('general.email') }}
+                                </x-form.legend>
+
+                                <!-- Mail test -->
+                                <div class="form-group">
+                                    <label for="login_note" class="col-md-3 control-label">{{ trans('admin/settings/general.test_mail') }}</label>
+
+                                    <div class="col-md-8" id="mailtestrow">
+                                        <a class="btn btn-default btn-sm pull-left{{ (config('mail.reply_to.address') == '') ? ' disabled' : '' }}" id="mailtest" style="margin-right: 10px;">
+                                            {{ trans('admin/settings/general.mail_test') }}</a>
+                                        <span id="mailtesticon" role="status" aria-live="polite" aria-atomic="true"></span>
+                                        <span id="mailtestresult"></span>
+                                        <span id="mailteststatus" role="status" aria-live="polite" aria-atomic="true"></span>
+                                    </div>
+                                    <div class="col-md-8 col-md-offset-3">
+                                        <div id="mailteststatus-error" class="text-danger" role="alert" aria-live="assertive" aria-atomic="true"></div>
+                                    </div>
+                                    <div class="col-md-8 col-md-offset-3">
+                                        <div class="help-block">
+                                            @if (config('mail.reply_to.address') == '')
+                                                <p class="text-warning">
+                                                    <x-icon type="warning"/> {{ trans('admin/settings/general.mail_test_no_email') }}
+                                                </p>
+                                            @else
+                                                <p>{{ trans('admin/settings/general.mail_test_help', ['replyto' => config('mail.reply_to.address')]) }}</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Load images in emails -->
+                                <x-form.checkbox-row
+                                    name="show_images_in_email"
+                                    :label="trans('admin/settings/general.show_images_in_email')"
+                                    :item="$setting"
+                                />
+                            </fieldset>
+
+
+                            <fieldset name="checkin-preferences">
+                                <x-form.legend>
+                                    {{ trans('admin/settings/general.legends.checkin') }}
+                                </x-form.legend>
+
+                                <!-- Require Notes on checkin/checkout checkbox -->
+                                <x-form.checkbox-row
+                                    name="require_checkinout_notes"
+                                    :label="trans('admin/settings/general.require_checkinout_notes')"
+                                    :item="$setting"
+                                    :help_text="trans('admin/settings/general.require_checkinout_notes_help_text')"
+                                />
+                            </fieldset>
+
+
+                            <fieldset name="dashboard">
+                                <x-form.legend>
+                                    {{ trans('admin/settings/general.legends.dashboard') }}
+                                </x-form.legend>
+
+                                <!-- login text -->
+                                <x-form.row
+                                    name="login_note"
+                                    :label="trans('admin/settings/general.login_note')"
+                                    help_html="{!! trans('admin/settings/general.login_note_help') !!}"
+                                >
+                                    <x-slot:input>
+                                        <x-input.textarea
+                                            name="login_note"
+                                            :value="old('login_note', $setting->login_note)"
+                                            :placeholder="trans('admin/settings/general.login_note_placeholder')"
+                                            rows="2"
+                                            aria-label="login_note"
+                                            :disabled="config('app.lock_passwords')"
+                                        />
+                                        <x-demo-lock>{{ trans('general.feature_disabled') }}</x-demo-lock>
+                                    </x-slot:input>
+                                </x-form.row>
+
+                                <!-- dash chart -->
+                                <x-form.row
+                                    name="dash_chart_type"
+                                    :label="trans('general.pie_chart_type')"
+                                >
+                                    <x-slot:input>
+                                        <x-input.select
+                                            name="dash_chart_type"
+                                            :options="['name' => 'Status Label Name', 'type' => 'Status Label Type']"
+                                            :selected="old('dash_chart_type', $setting->dash_chart_type)"
+                                            style="width: 80%"
+                                        />
+                                    </x-slot:input>
+                                </x-form.row>
+
+                                <!-- dashboard text -->
+                                <x-form.row
+                                    name="dashboard_message"
+                                    :label="trans('admin/settings/general.dashboard_message')"
+                                >
+                                    <x-slot:input>
+                                        <x-input.textarea
+                                            name="dashboard_message"
+                                            :value="old('dashboard_message', $setting->dashboard_message)"
+                                            rows="2"
+                                            aria-label="dashboard_message"
+                                            :disabled="config('app.lock_passwords')"
+                                        />
+                                        <x-demo-lock>{{ trans('general.feature_disabled') }}</x-demo-lock>
+                                        <p class="help-block">
+                                            {{ trans('admin/settings/general.dashboard_message_help') }}
+                                            <x-icon type="markdown" /> {!! trans('general.github_markdown') !!}
+                                        </p>
+                                    </x-slot:input>
+                                </x-form.row>
+                            </fieldset>
+
+
+                            <fieldset>
+                                <x-form.legend>
+                                    {{ trans('admin/settings/general.legends.misc') }}
+                                </x-form.legend>
+
+                                <!-- Privacy Policy Footer -->
+                                <x-form.row
+                                    name="privacy_policy_link"
+                                    :label="trans('admin/settings/general.privacy_policy_link')"
+                                    :help_text="trans('admin/settings/general.privacy_policy_link_help')"
+                                >
+                                    <x-slot:input>
+                                        <x-input.text
+                                            name="privacy_policy_link"
+                                            :value="old('privacy_policy_link', $setting->privacy_policy_link)"
+                                            :disabled="config('app.lock_passwords')"
+                                        />
+                                        <x-demo-lock>{{ trans('general.feature_disabled') }}</x-demo-lock>
+                                    </x-slot:input>
+                                </x-form.row>
+
+                                <!-- Depreciation method -->
+                                <x-form.row
+                                    name="depreciation_method"
+                                    :label="trans('admin/depreciations/general.depreciation_method')"
+                                >
+                                    <x-slot:input>
+                                        <x-input.select
+                                            name="depreciation_method"
+                                            id="depreciation_method"
+                                            :options="[
+                                                'default' => trans('admin/depreciations/general.linear_depreciation'),
+                                                'half_1' => trans('admin/depreciations/general.half_1'),
+                                                'half_2' => trans('admin/depreciations/general.half_2'),
+                                            ]"
+                                            :selected="old('depreciation_method', $setting->depreciation_method)"
+                                            style="width: 80%"
+                                        />
+                                    </x-slot:input>
+                                </x-form.row>
+
+                                <!-- unique serial -->
+                                <x-form.checkbox-row
+                                    name="unique_serial"
+                                    :label="trans('admin/settings/general.unique_serial')"
+                                    :item="$setting"
+                                    :help_text="trans('admin/settings/general.unique_serial_help_text')"
+                                />
+
+                                <!-- Manager View -->
+                                <x-form.checkbox-row
+                                    name="manager_view_enabled"
+                                    :label="trans('admin/settings/general.manager_view_enabled_text')"
+                                    :item="$setting"
+                                    :help_text="trans('admin/settings/general.manager_view_enabled_help')"
+                                />
+                            </fieldset>
+
+
                         </div>
-                        <div class="col-md-9">
-                            {{ Form::checkbox('require_accept_signature', '1', Request::old('require_accept_signature', $setting->require_accept_signature),array('class' => 'minimal')) }}
-                            {{ trans('general.yes') }}
-                            {!! $errors->first('require_accept_signature', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                            <p class="help-block">{{ trans('admin/settings/general.require_accept_signature_help_text') }}</p>
+                    </div> <!--/.box-body-->
+                    <div class="box-footer">
+                        <div class="text-left col-md-6">
+                            <a class="btn btn-link text-left" href="{{ route('settings.index') }}">{{ trans('button.cancel') }}</a>
+                        </div>
+                        <div class="text-right col-md-6">
+                            <button type="submit" class="btn btn-primary"><x-icon type="checkmark" /> {{ trans('general.save') }}</button>
                         </div>
                     </div>
-                    <!-- /.form-group -->
+                </div> <!-- /box -->
+            </div> <!-- /.col-md-8-->
+        </div>
 
 
-                    <!-- Email domain -->
-                    <div class="form-group {{ $errors->has('email_domain') ? 'error' : '' }}">
-                        <div class="col-md-3">
-                            {{ Form::label('email_domain', trans('general.email_domain')) }}
-                        </div>
-                        <div class="col-md-9">
-                            {{ Form::text('email_domain', Request::old('email_domain', $setting->email_domain), array('class' => 'form-control','placeholder' => 'example.com')) }}
-                            <span class="help-block">{{ trans('general.email_domain_help')  }}</span>
-                            {!! $errors->first('email_domain', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                        </div>
-                    </div>
-
-
-                    <!-- Email format -->
-                    <div class="form-group {{ $errors->has('email_format') ? 'error' : '' }}">
-                        <div class="col-md-3">
-                            {{ Form::label('email_format', trans('general.email_format')) }}
-                        </div>
-                        <div class="col-md-9">
-                            {!! Form::username_format('email_format', old('email_format', $setting->email_format), 'select2') !!}
-                            {!! $errors->first('email_format', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                        </div>
-                    </div>
-
-                    <!-- Username format -->
-                    <div class="form-group {{ $errors->has('username_format') ? 'error' : '' }}">
-                        <div class="col-md-3">
-                            {{ Form::label('username_format', trans('general.username_format')) }}
-                        </div>
-                        <div class="col-md-9">
-                            {!! Form::username_format('username_format', old('username_format', $setting->username_format), 'select2') !!}
-                            {!! $errors->first('username_format', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-
-                            <p class="help-block">
-                                {{ trans('admin/settings/general.username_format_help') }}
-                            </p>
-                        </div>
-                    </div>
-
-                       <!-- Load images in emails -->
-                       <div class="form-group {{ $errors->has('show_images_in_email') ? 'error' : '' }}">
-                           <div class="col-md-3">
-                               {{ Form::label('show_images_in_email', trans('admin/settings/general.show_images_in_email')) }}
-                           </div>
-                           <div class="col-md-9">
-                               {{ Form::checkbox('show_images_in_email', '1', Request::old('show_images_in_email', $setting->show_images_in_email),array('class' => 'minimal')) }}
-                               {{ trans('general.yes') }}
-                               {!! $errors->first('show_images_in_email', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-
-                           </div>
-                       </div>
-
-                       <!-- unique serial -->
-                       <div class="form-group">
-                           <div class="col-md-3">
-                               {{ Form::label('unique_serial', trans('admin/settings/general.unique_serial')) }}
-                           </div>
-                           <div class="col-md-9">
-                               {{ Form::checkbox('unique_serial', '1', Request::old('unique_serial', $setting->unique_serial),array('class' => 'minimal')) }}
-                               {{ trans('general.yes') }}
-                               {!! $errors->first('unique_serial', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                               <p class="help-block">
-                               {{ trans('admin/settings/general.unique_serial_help_text') }}
-                               </p>
-                           </div>
-                       </div>
-
-
-                       <!-- Per Page -->
-                    <div class="form-group {{ $errors->has('per_page') ? 'error' : '' }}">
-                        <div class="col-md-3">
-                            {{ Form::label('per_page', trans('admin/settings/general.per_page')) }}
-                        </div>
-                        <div class="col-md-9">
-                            {{ Form::text('per_page', old('per_page', $setting->per_page), array('class' => 'form-control','placeholder' => '5', 'maxlength'=>'3', 'style'=>'width: 60px;')) }}
-                            {!! $errors->first('per_page', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                        </div>
-                    </div>
-
-                   <!-- Thumb Size -->
-                   <div class="form-group {{ $errors->has('thumbnail_max_h') ? 'error' : '' }}">
-                       <div class="col-md-3">
-                           {{ Form::label('thumbnail_max_h', trans('admin/settings/general.thumbnail_max_h')) }}
-                       </div>
-                       <div class="col-md-9">
-                           {{ Form::text('thumbnail_max_h', Request::old('thumbnail_max_h', $setting->thumbnail_max_h), array('class' => 'form-control','placeholder' => '50', 'maxlength'=>'3', 'style'=>'width: 60px;')) }}
-                           <p class="help-block">{{ trans('admin/settings/general.thumbnail_max_h_help') }}</p>
-                           {!! $errors->first('thumbnail_max_h', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                       </div>
-                   </div>
-
-                    <!-- Default EULA -->
-                   <div class="form-group {{ $errors->has('default_eula_text') ? 'error' : '' }}">
-                       <div class="col-md-3">
-                           {{ Form::label('default_eula_text', trans('admin/settings/general.default_eula_text')) }}
-                       </div>
-                       <div class="col-md-9">
-                           {{ Form::textarea('default_eula_text', old('default_eula_text', $setting->default_eula_text), array('class' => 'form-control','placeholder' => 'Add your default EULA text')) }}
-                           {!! $errors->first('default_eula_text', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                           <p class="help-block">{{ trans('admin/settings/general.default_eula_help_text') }}</p>
-                           <p class="help-block">{!! trans('admin/settings/general.eula_markdown') !!}</p>
-                       </div>
-                   </div>
-
-
-                    <!-- login text -->
-                    <div class="form-group {{ $errors->has('login_note') ? 'error' : '' }}">
-                        <div class="col-md-3">
-                            {{ Form::label('login_note', trans('admin/settings/general.login_note')) }}
-                        </div>
-                        <div class="col-md-9">
-                            @if (config('app.lock_passwords'))
-
-                                <textarea class="form-control disabled" name="login_note" placeholder="If you do not have a login or have found a device belonging to this company, please call technical support at 888-555-1212. Thank you." rows="2" aria-label="login_note" readonly>{{ old('login_note', $setting->login_note) }}</textarea>
-                                {!! $errors->first('login_note', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                                <p class="text-warning"><i class="fas fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
-                            @else
-                                <textarea class="form-control" name="login_note" aria-label="login_note" placeholder="If you do not have a login or have found a device belonging to this company, please call technical support at 888-555-1212. Thank you." rows="2">{{ old('login_note', $setting->login_note) }}</textarea>
-                                {!! $errors->first('login_note', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                            @endif
-                            <p class="help-block">{!!  trans('admin/settings/general.login_note_help') !!}</p>
-                        </div>
-                    </div>
-
-                       <!-- Mail test -->
-                       <div class="form-group">
-                           <div class="col-md-3">
-                               {{ Form::label('login_note', 'Test Mail') }}
-                           </div>
-                           <div class="col-md-9" id="mailtestrow">
-                               <a class="btn btn-default btn-sm pull-left" id="mailtest" style="margin-right: 10px;">
-                                   {{ trans('admin/settings/general.mail_test') }}</a>
-                               <span id="mailtesticon"></span>
-                               <span id="mailtestresult"></span>
-                               <span id="mailteststatus"></span>
-                           </div>
-                           <div class="col-md-9 col-md-offset-3">
-                               <div id="mailteststatus-error" class="text-danger"></div>
-                           </div>
-                           <div class="col-md-9 col-md-offset-3">
-                               <div class="help-block">
-                                   <p>{{ trans('admin/settings/general.mail_test_help', array('replyto' => config('mail.reply_to.address'))) }}</p>
-                               </div>
-                           </div>
-
-                       </div>
-
-                       <!-- dashboard text -->
-                       <div class="form-group {{ $errors->has('dashboard_message') ? 'error' : '' }}">
-                           <div class="col-md-3">
-                               {{ Form::label('dashboard_message', trans('admin/settings/general.dashboard_message')) }}
-                           </div>
-                           <div class="col-md-9">
-                               @if (config('app.lock_passwords'))
-
-                                   <textarea class="form-control disabled" name="login_note" placeholder="If you do not have a login or have found a device belonging to this company, please call technical support at 888-555-1212. Thank you." rows="2" aria-label="dashboard_message" readonly>{{ old('dashboard_message', $setting->login_note) }}</textarea>
-                                   {!! $errors->first('dashboard_message', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                                   <p class="text-warning"><i class="fas fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
-                               @else
-                                   <textarea class="form-control" aria-label="dashboard_message" name="dashboard_message" rows="2">{{ old('login_note', $setting->dashboard_message) }}</textarea>
-                                   {!! $errors->first('dashboard_message', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-                               @endif
-                               <p class="help-block">
-                                   {{ trans('admin/settings/general.dashboard_message_help') }}
-                                   {!!  trans('general.github_markdown') !!}</p>
-                           </div>
-                       </div>
-
-
-
-
-                       <!-- Archived in List -->
-                       <div class="form-group {{ $errors->has('show_archived_in_list') ? 'error' : '' }}">
-                           <div class="col-md-3">
-                               {{ Form::label('show_archived_in_list',
-                                              trans('admin/settings/general.show_archived_in_list')) }}
-                           </div>
-                           <div class="col-md-9">
-                               {{ Form::checkbox('show_archived_in_list', '1', Request::old('show_archived_in_list', $setting->show_archived_in_list),array('class' => 'minimal')) }}
-                               {{ trans('admin/settings/general.show_archived_in_list_text') }}
-                               {!! $errors->first('show_archived_in_list', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-
-                           </div>
-                       </div>
-
-                       <!-- Show assets assigned to user's assets -->
-                       <div class="form-group {{ $errors->has('show_assigned_assets') ? 'error' : '' }}">
-                           <div class="col-md-3">
-                               {{ Form::label('show_assigned_assets',
-                                              trans('admin/settings/general.show_assigned_assets')) }}
-                           </div>
-                           <div class="col-md-9">
-                               {{ Form::checkbox('show_assigned_assets', '1', Request::old('show_assigned_assets', $setting->show_assigned_assets),array('class' => 'minimal')) }}
-                               {{ trans('general.yes') }}
-                               <p class="help-block">{{ trans('admin/settings/general.show_assigned_assets_help') }}</p>
-                               {!! $errors->first('show_assigned_assets', '<span class="alert-msg">:message</span>') !!}
-                           </div>
-                       </div>
-
-                       <!-- Model List prefs -->
-                       <div class="form-group {{ $errors->has('show_in_model_list') ? 'error' : '' }}">
-                           <div class="col-md-3">
-                               {{ Form::label('show_in_model_list',
-                                              trans('admin/settings/general.show_in_model_list')) }}
-                           </div>
-                           <div class="col-md-9">
-                               {{ Form::checkbox('show_in_model_list[]', 'image', old('show_in_model_list', $snipeSettings->modellistCheckedValue('image')),array('class' => 'minimal', 'aria-label'=>'show_in_model_list' )) }} {{ trans('general.image') }} <br>
-                               {{ Form::checkbox('show_in_model_list[]', 'category', old('show_in_model_list', $snipeSettings->modellistCheckedValue('category')),array('class' => 'minimal', 'aria-label'=>'show_in_model_list' )) }} {{ trans('general.category') }} <br>
-                               {{ Form::checkbox('show_in_model_list[]', 'manufacturer', old('show_in_model_list', $snipeSettings->modellistCheckedValue('manufacturer')),array('class' => 'minimal', 'aria-label'=>'show_in_model_list' )) }}  {{ trans('general.manufacturer') }} <br>
-                               {{ Form::checkbox('show_in_model_list[]', 'model_number', old('show_in_model_list', $snipeSettings->modellistCheckedValue('model_number')),array('class' => 'minimal', 'aria-label'=>'show_in_model_list' )) }} {{ trans('general.model_no') }}<br>
-                           </div>
-                       </div>
-
-
-                       <!-- dash chart -->
-                       <div class="form-group {{ $errors->has('dash_chart_type') ? 'error' : '' }}">
-                           <div class="col-md-3">
-                               {{ Form::label('show_in_model_list',
-                                              trans('general.pie_chart_type')) }}
-                           </div>
-                           <div class="col-md-9">
-                               {{ Form::select('dash_chart_type', array(
-                                   'name' => 'Status Label Name',
-                                   'type' => 'Status Label Type'), Request::old('dash_chart_type', $setting->dash_chart_type), ['class' =>'select2', 'style' => 'width: 80%']) }}
-                           </div>
-                       </div>
-
-                       
-                       <!-- Depreciation method -->
-                       <div class="form-group {{ $errors->has('depreciation_method') ? 'error' : '' }}">
-                           <div class="col-md-3">
-                                {{ Form::label('depreciation_method', trans('Depreciation method')) }}
-                           </div>
-                           <div class="col-md-9">
-                               {{ Form::select('depreciation_method', array(
-                                    'default' => 'Linear (default)', 
-                                    'half_1' => 'Half-year convention, always applied', 
-                                    'half_2' => 'Half-year convention, applied with condition', 
-                                ), Request::old('username_format', $setting->depreciation_method), ['class' =>'select2', 'style' => 'width: 80%']) }}
-                           </div>
-                       </div>
-                       <!-- /.form-group -->
-
-                       <!-- Privacy Policy Footer-->
-                       <div class="form-group {{ $errors->has('privacy_policy_link') ? 'error' : '' }}">
-                           <div class="col-md-3">
-                               {{ Form::label('privacy_policy_link', trans('admin/settings/general.privacy_policy_link')) }}
-                           </div>
-                           <div class="col-md-9">
-                               @if (config('app.lock_passwords'))
-                                   {{ Form::text('privacy_policy_link', Request::old('privacy_policy_link', $setting->privacy_policy_link), array('class' => 'form-control disabled', 'disabled' => 'disabled')) }}
-                               @else
-                                   {{ Form::text('privacy_policy_link', Request::old('privacy_policy_link', $setting->privacy_policy_link), array('class' => 'form-control')) }}
-
-                               @endif
-
-
-                               <span class="help-block">{{ trans('admin/settings/general.privacy_policy_link_help')  }}</span>
-                               {!! $errors->first('privacy_policy_link', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-
-                               @if (config('app.lock_passwords')===true)
-                                   <p class="text-warning"><i class="fas fa-lock"></i> {{ trans('general.feature_disabled') }}</p>
-                               @endif
-
-                           </div>
-                       </div>
-                   </div>
-
-            </div> <!--/.box-body-->
-            <div class="box-footer">
-                <div class="text-left col-md-6">
-                    <a class="btn btn-link text-left" href="{{ route('settings.index') }}">{{ trans('button.cancel') }}</a>
-                </div>
-                <div class="text-right col-md-6">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-check icon-white" aria-hidden="true"></i> {{ trans('general.save') }}</button>
-                </div>
-
-            </div>
-            </div>
-
-        </div> <!-- /box -->
-    </div> <!-- /.col-md-8-->
-    </div> <!-- /.row-->
-
-    {{ Form::close() }}
+    </form>
 
 @stop
 
@@ -432,7 +483,6 @@
 
             });
         });
-
 
     </script>
 @stop

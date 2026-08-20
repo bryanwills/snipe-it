@@ -5,40 +5,46 @@ use Illuminate\Support\Facades\Route;
 
 // Components
 Route::group(['prefix' => 'components', 'middleware' => ['auth']], function () {
+    // Component / componentAsset ids are always numeric auto-increment PKs,
+    // so constrain the route parameters at the router. Without this,
+    // non-numeric garbage (pen-test scanners hitting things like
+    // components/2||(SELECT...) reach the breadcrumb closure which is
+    // typed `int $componentID` and throws TypeError, spamming Rollbar.
+    // Constraining at the router 404s the request before any controller
+    // or breadcrumb runs.
     Route::get(
         '{componentID}/checkout',
         [Components\ComponentCheckoutController::class, 'create']
-    )->name('components.checkout.show');
+    )->where('componentID', '[0-9]+')
+        ->name('components.checkout.show');
 
     Route::post(
         '{componentID}/checkout',
         [Components\ComponentCheckoutController::class, 'store']
-    )->name('components.checkout.store');
+    )->where('componentID', '[0-9]+')
+        ->name('components.checkout.store');
 
     Route::get(
         '{componentID}/checkin/{backto?}',
         [Components\ComponentCheckinController::class, 'create']
-    )->name('components.checkin.show');
+    )->where('componentID', '[0-9]+')
+        ->name('components.checkin.show');
 
     Route::post(
         '{componentID}/checkin/{backto?}',
         [Components\ComponentCheckinController::class, 'store']
-    )->name('components.checkin.store');
+    )->where('componentID', '[0-9]+')
+        ->name('components.checkin.store');
 
-    Route::post(
-        '{componentId}/upload',
-        [Components\ComponentsFilesController::class, 'store']
-    )->name('upload/component');
+    Route::get('{component}/clone',
+        [Components\ComponentsController::class, 'getClone']
+    )->where('component', '[0-9]+')
+        ->name('components.clone.create');
 
-    Route::delete(
-        '{componentId}/deletefile/{fileId}',
-        [Components\ComponentsFilesController::class, 'destroy']
-    )->name('delete/componentfile');
-
-    Route::get(
-        '{componentId}/showfile/{fileId}/{download?}',
-        [Components\ComponentsFilesController::class, 'show']
-    )->name('show.componentfile');
+    Route::post('{component}/adjust-quantity',
+        [Components\ComponentsController::class, 'adjustQuantity']
+    )->where('component', '[0-9]+')
+        ->name('components.adjust-quantity');
 
 });
 

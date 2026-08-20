@@ -2,41 +2,64 @@
 
 namespace App\Models;
 
+use App\Models\Traits\AdjustsQuantity;
+use App\Models\Traits\CompanyableTrait;
+use App\Models\Traits\HasOrders;
+use App\Models\Traits\HasUploads;
+use App\Models\Traits\Loggable;
 use App\Models\Traits\Searchable;
+use App\Presenters\ComponentPresenter;
 use App\Presenters\Presentable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\Gate;
 use Watson\Validating\ValidatingTrait;
 
 /**
  * Model for Components.
  *
- * @version    v1.0
+ * @version v1.0
  */
 class Component extends SnipeModel
 {
     use HasFactory;
 
-    protected $presenter = \App\Presenters\ComponentPresenter::class;
+    protected $presenter = ComponentPresenter::class;
+
+    use AdjustsQuantity;
     use CompanyableTrait;
+    use HasOrders;
+    use HasUploads;
     use Loggable, Presentable;
     use SoftDeletes;
+
     protected $casts = [
         'purchase_date' => 'datetime',
     ];
+
     protected $table = 'components';
 
     /**
      * Category validation rules
      */
     public $rules = [
-        'name'           => 'required|min:3|max:255',
-        'qty'            => 'required|integer|min:1',
-        'category_id'    => 'required|integer|exists:categories,id',
-        'company_id'     => 'integer|nullable',
-        'min_amt'        => 'integer|min:0|nullable',
-        'purchase_date'   => 'date_format:Y-m-d|nullable',
-        'purchase_cost'  => 'numeric|nullable|gte:0',
+        'name' => 'required|max:191',
+        'qty' => 'required|integer|min:1',
+        'category_id' => 'required|integer|exists:categories,id',
+        'supplier_id' => 'nullable|integer|exists:suppliers,id',
+        'company_id' => 'integer|nullable|exists:companies,id|fmcs_company',
+        'location_id' => 'exists:locations,id|nullable|fmcs_location',
+        'min_amt' => 'integer|min:0|nullable',
+        'purchase_date' => 'date_format:Y-m-d|nullable',
+        'purchase_cost' => 'numeric|nullable|gte:0|max:99999999999999999.99',
+        'manufacturer_id' => 'integer|exists:manufacturers,id|nullable',
+        'default_supplier_id' => 'nullable|integer|exists:suppliers,id',
+        'default_purchase_cost' => 'numeric|nullable|gte:0|max:99999999999999999.99',
     ];
 
     /**
@@ -47,6 +70,7 @@ class Component extends SnipeModel
      * @var bool
      */
     protected $injectUniqueIdentifier = true;
+
     use ValidatingTrait;
 
     /**
@@ -54,18 +78,23 @@ class Component extends SnipeModel
      *
      * @var array
      */
+    // supplier_id / purchase_date / purchase_cost are intentionally
+    // absent. See Accessory::$fillable for the full rationale.
+    // default_supplier_id / default_purchase_cost are parent-level
+    // "template" values that seed the adjust-quantity modal.
     protected $fillable = [
         'category_id',
         'company_id',
         'location_id',
+        'manufacturer_id',
+        'model_number',
         'name',
-        'purchase_cost',
-        'purchase_date',
         'min_amt',
-        'order_number',
         'qty',
         'serial',
         'notes',
+        'default_supplier_id',
+        'default_purchase_cost',
     ];
 
     use Searchable;
@@ -75,7 +104,12 @@ class Component extends SnipeModel
      *
      * @var array
      */
-    protected $searchableAttributes = ['name', 'order_number', 'serial', 'purchase_cost', 'purchase_date', 'notes'];
+    protected $searchableAttributes = [
+        'name',
+        'serial',
+        'notes',
+        'model_number',
+    ];
 
     /**
      * The relations and their attributes that should be included when searching the model.
@@ -83,125 +117,301 @@ class Component extends SnipeModel
      * @var array
      */
     protected $searchableRelations = [
-        'category'     => ['name'],
-        'company'      => ['name'],
-        'location'     => ['name'],
+        'category' => ['name'],
+        'company' => ['name'],
+        'location' => ['name'],
+        // Search by the parent's "typical supplier" template — see the
+        // Accessory model for the rationale.
+        'defaultSupplier' => ['name'],
+        'manufacturer' => ['name'],
+        'adminuser' => ['first_name', 'last_name', 'display_name'],
+        // See Accessory::$searchableRelations. Search hits order_number
+        // through the HasOrders trait's orders() HasManyThrough into
+        // the Orders table so historical order references still match.
+        'orders' => ['order_number'],
     ];
 
-
-    /**
-     * Establishes the components -> action logs -> uploads relationship
-     *
-     * @author A. Gianotto <snipe@snipe.net>
-     * @since [v6.1.13]
-     * @return \Illuminate\Database\Eloquent\Relations\Relation
-     */
-    public function uploads()
+    public static function booted()
     {
-        return $this->hasMany(\App\Models\Actionlog::class, 'item_id')
-            ->where('item_type', '=', self::class)
-            ->where('action_type', '=', 'uploaded')
-            ->whereNotNull('filename')
-            ->orderBy('created_at', 'desc');
+        static::saving(function ($model) {
+            // We use 'sum_unconstrained_assets' as a 'cache' of the count of the sum of unconstrained assets, but
+            // Eloquent will gladly try to save the value of that attribute in the case where we populate it ourselves.
+            // But when it gets populated by 'withSum()' - it seems to work fine due to some Eloquent magic I am not
+            // aware of. During a save, the quantity may have changed or other aspects may have changed, so
+            // "invalidating the 'cache'" seems like a fair choice here.
+            unset($model->sum_unconstrained_assets);
+        });
     }
 
+    public function isDeletable()
+    {
+        return Gate::allows('delete', $this)
+            && ($this->numCheckedOut() === 0)
+            && ($this->deleted_at == '');
+    }
 
     /**
      * Establishes the component -> location relationship
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @since [v3.0]
-     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     *
+     * @since  [v3.0]
+     *
+     * @return Relation
      */
     public function location()
     {
-        return $this->belongsTo(\App\Models\Location::class, 'location_id');
+        return $this->belongsTo(Location::class, 'location_id');
     }
 
     /**
      * Establishes the component -> assets relationship
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @since [v3.0]
-     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     *
+     * @since  [v3.0]
+     *
+     * @return Relation
      */
     public function assets()
     {
-        return $this->belongsToMany(\App\Models\Asset::class, 'components_assets')->withPivot('id', 'assigned_qty', 'created_at', 'user_id', 'note');
+        return $this->belongsToMany(Asset::class, 'components_assets')->withPivot('id', 'assigned_qty', 'created_at', 'created_by', 'note');
     }
 
     /**
-     * Establishes the component -> admin user relationship
+     * Per-pivot line cost for components-assets. Pulls the per-unit
+     * price from the last acquisition (with the same default_* fallback
+     * that lastOrderDefaults() applies) and multiplies by pivot qty.
      *
-     * @todo this is probably not needed - refactor
-     *
-     * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @since [v3.0]
-     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     * @return Attribute<float|null, never>
      */
-    public function admin()
+    protected function calculatedPurchaseCost(): Attribute
     {
-        return $this->belongsTo(\App\Models\User::class, 'user_id');
+        return Attribute::make(
+            get: function ($value) {
+                $unitPurchaseCost = $this->lastOrderDefaults()['unit_cost'] ?? null;
+                $assignedQty = $this->pivot?->assigned_qty;
+
+                if ($unitPurchaseCost === null) {
+                    return $assignedQty !== null ? 0.0 : null;
+                }
+
+                if ($assignedQty !== null) {
+                    return (float) $unitPurchaseCost * (int) $assignedQty;
+                }
+
+                return (float) $unitPurchaseCost;
+            }
+        );
     }
 
     /**
      * Establishes the component -> company relationship
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @since [v3.0]
-     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     *
+     * @since  [v3.0]
+     *
+     * @return Relation
      */
     public function company()
     {
-        return $this->belongsTo(\App\Models\Company::class, 'company_id');
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
     /**
      * Establishes the component -> category relationship
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @since [v3.0]
-     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     *
+     * @since  [v3.0]
+     *
+     * @return Relation
      */
     public function category()
     {
-        return $this->belongsTo(\App\Models\Category::class, 'category_id');
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    /**
+     * Establishes the item -> supplier relationship
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
+     * @since  [v6.1.1]
+     *
+     * @return Relation
+     */
+    // No `supplier()` relation, no `supplier_id` / `purchase_date` /
+    // `purchase_cost` accessors — see Accessory model for rationale.
+    // Callers use `$component->orders` or `$component->lastOrderDefaults()`.
+
+    /**
+     * Parent-level "typical supplier" template — see Accessory model.
+     */
+    public function defaultSupplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'default_supplier_id');
+    }
+
+    /**
+     * Establishes the item -> manufacturer relationship
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
+     * @since  [v3.0]
+     *
+     * @return Relation
+     */
+    public function manufacturer()
+    {
+        return $this->belongsTo(Manufacturer::class, 'manufacturer_id');
+    }
+
+    /**
+     * Determine whether this asset requires acceptance by the assigned user
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
+     * @since [v4.0]
+     *
+     * @return bool
+     */
+    public function requireAcceptance()
+    {
+        return $this->category?->require_acceptance ?? false;
     }
 
     /**
      * Establishes the component -> action logs relationship
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @since [v3.0]
-     * @return \Illuminate\Database\Eloquent\Relations\Relation
+     *
+     * @since  [v3.0]
+     *
+     * @return Relation
      */
     public function assetlog()
     {
-        return $this->hasMany(\App\Models\Actionlog::class, 'item_id')->where('item_type', self::class)->orderBy('created_at', 'desc')->withTrashed();
+        return $this->hasMany(Actionlog::class, 'item_id')->where('item_type', self::class)->orderBy('created_at', 'desc')->withTrashed();
     }
 
     /**
      * Check how many items within a component are checked out
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @since [v5.0]
+     *
+     * @since  [v5.0]
+     *
      * @return int
      */
-    public function numCheckedOut()
+    public function numCheckedOut(bool $recalculate = false)
     {
-        $checkedout = 0;
-        foreach ($this->assets as $checkout) {
-            $checkedout += $checkout->pivot->assigned_qty;
+        /**
+         * WARNING: This method caches the result, so if you're doing something
+         * that is going to change the number of checked-out items, make sure to pass
+         * 'true' as the first parameter to force this to recalculate the number of checked-out
+         * items!!!!!
+         */
+
+        // In case there are elements checked out to assets that belong to a different company
+        // than this asset and full multiple company support is on we'll remove the global scope,
+        // so they are included in the count.
+
+        // the 'sum' query returns NULL when there are zero checkouts - which can inadvertently re-trigger the following query
+        // for un-checked-out components. So we have to do this very careful process of fetching the 'attributes'
+        // of the component, then see if sum_unconstrained_assets exists as an attribute. If it doesn't, we run the
+        // query. But if it *does* exist as an attribute - even a null - we skip the query, because that means that this
+        // component was fetched using withCount() - and that count *is* accurate, even if null. We just do a quick
+        // null-coalesce at the end to zero for the null case.
+        $raw_attributes = $this->getAttributes();
+        if (! array_key_exists('sum_unconstrained_assets', $raw_attributes) || $recalculate) {
+            // This part should *only* run if the component was fetched *without* withCount() (or you've asked to recalculate)
+            // NOTE: doing this will add a 'pseudo-attribute' to the component in question, so we need to _remove_ this
+            // before we save - so that gets handled in the 'saving' callback defined in the 'booted' method, above.
+            $this->sum_unconstrained_assets = $this->unconstrainedAssets()->sum('assigned_qty') ?? 0;
         }
 
-        return $checkedout;
+        return $this->sum_unconstrained_assets ?? 0;
+    }
+
+    /**
+     * AdjustsQuantity trait hook: units currently assigned to assets.
+     * Passes true to numCheckedOut to force a fresh count instead of
+     * trusting the cached sum_unconstrained_assets attribute, since the
+     * adjust-quantity flow can be entered without withCount() priming
+     * that value.
+     */
+    public function currentlyInUseCount(): int
+    {
+        return (int) $this->numCheckedOut(true);
+    }
+
+    /**
+     * @return BelongsToMany
+     *
+     * This allows us to get the assets with assigned components without the company restriction
+     */
+    public function unconstrainedAssets()
+    {
+
+        return $this->belongsToMany(Asset::class, 'components_assets')
+            ->withPivot('id', 'assigned_qty', 'created_at', 'created_by', 'note')
+            ->withoutGlobalScope(new CompanyableScope);
+
+    }
+
+    public function percentRemaining()
+    {
+        $totalQuantity = (int) $this->qty;
+
+        if ($totalQuantity <= 0) {
+            return 0;
+        }
+
+        $availableQuantity = max(0, min($this->numRemaining(), $totalQuantity));
+
+        return ($availableQuantity / $totalQuantity) * 100;
+    }
+
+    /**
+     * Determine whether to send a checkin/checkout email based on
+     * asset model category
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
+     * @since [v4.0]
+     *
+     * @return bool
+     */
+    public function checkin_email()
+    {
+        return $this->category?->checkin_email;
+    }
+
+    /**
+     * Get the list of checkouts for this License
+     *
+     * @author [A. Gianotto] [<snipe@snipe.net>]
+     *
+     * @since  [v2.0]
+     *
+     * @return Relation
+     */
+    public function checkouts()
+    {
+        return $this->assetlog()->where('action_type', '=', 'checkout')
+            ->orderBy('created_at', 'desc')
+            ->withTrashed();
     }
 
     /**
      * Check how many items within a component are remaining
      *
      * @author [A. Gianotto] [<snipe@snipe.net>]
-     * @since [v3.0]
+     *
+     * @since  [v3.0]
+     *
      * @return int
      */
     public function numRemaining()
@@ -210,12 +420,41 @@ class Component extends SnipeModel
     }
 
     /**
+     * -----------------------------------------------
+     * BEGIN MUTATORS
+     * -----------------------------------------------
+     **/
+
+    /**
+     * This sets a value for qty if no value is given. The database does not allow this
+     * field to be null, and in the other areas of the code, we set a default, but the importer
+     * does not.
+     *
+     * This simply checks that there is a value for quantity, and if there isn't, set it to 0.
+     *
+     * @author A. Gianotto <snipe@snipe.net>
+     *
+     * @since  v6.3.4
+     *
+     * @return void
+     */
+    public function setQtyAttribute($value)
+    {
+        $this->attributes['qty'] = (! $value) ? 0 : intval($value);
+    }
+
+    /**
+     * -----------------------------------------------
+     * BEGIN QUERY SCOPES
+     * -----------------------------------------------
+     **/
+
+    /**
      * Query builder scope to order on company
      *
-     * @param  \Illuminate\Database\Query\Builder  $query  Query builder instance
-     * @param  string                              $order       Order
-     *
-     * @return \Illuminate\Database\Query\Builder          Modified query builder
+     * @param  Builder  $query  Query builder instance
+     * @param  string  $order  Order
+     * @return Builder Modified query builder
      */
     public function scopeOrderCategory($query, $order)
     {
@@ -225,10 +464,9 @@ class Component extends SnipeModel
     /**
      * Query builder scope to order on company
      *
-     * @param  \Illuminate\Database\Query\Builder  $query  Query builder instance
-     * @param  string                              $order       Order
-     *
-     * @return \Illuminate\Database\Query\Builder          Modified query builder
+     * @param  Builder  $query  Query builder instance
+     * @param  string  $order  Order
+     * @return Builder Modified query builder
      */
     public function scopeOrderLocation($query, $order)
     {
@@ -238,13 +476,77 @@ class Component extends SnipeModel
     /**
      * Query builder scope to order on company
      *
-     * @param  \Illuminate\Database\Query\Builder  $query  Query builder instance
-     * @param  string                              $order       Order
-     *
-     * @return \Illuminate\Database\Query\Builder          Modified query builder
+     * @param  Builder  $query  Query builder instance
+     * @param  string  $order  Order
+     * @return Builder Modified query builder
      */
     public function scopeOrderCompany($query, $order)
     {
         return $query->leftJoin('companies', 'components.company_id', '=', 'companies.id')->orderBy('companies.name', $order);
+    }
+
+    /**
+     * Query builder scope to order on supplier
+     *
+     * @param  Builder  $query  Query builder instance
+     * @param  text  $order  Order
+     * @return Builder Modified query builder
+     */
+    public function scopeOrderSupplier($query, $order)
+    {
+        return $query->leftJoin('suppliers', 'components.default_supplier_id', '=', 'suppliers.id')->orderBy('suppliers.name', $order);
+    }
+
+    /**
+     * Query builder scope to order on manufacturer
+     *
+     * @param  Builder  $query  Query builder instance
+     * @param  text  $order  Order
+     * @return Builder Modified query builder
+     */
+    public function scopeOrderManufacturer($query, $order)
+    {
+        return $query->leftJoin('manufacturers', 'components.manufacturer_id', '=', 'manufacturers.id')->orderBy('manufacturers.name', $order);
+    }
+
+    public function scopeOrderByCreatedBy($query, $order)
+    {
+        return $query->leftJoin('users as admin_sort', 'components.created_by', '=', 'admin_sort.id')->select('components.*')->orderBy('admin_sort.first_name', $order)->orderBy('admin_sort.last_name', $order);
+    }
+
+    /**
+     * Query builder scope to sort by the calculated `% remaining` column.
+     *
+     * Mirrors Component::percentRemaining(): (qty - numCheckedOut) / qty * 100.
+     * sum_unconstrained_assets is added by withSum() in the API index()
+     * as the total checked-out quantity. Guards against division by zero
+     * for components with qty of 0.
+     *
+     * PostgreSQL note: references a SELECT-list alias inside a compound
+     * ORDER BY expression, which PostgreSQL rejects per SQL standard.
+     * Snipe-IT officially supports MySQL/MariaDB and tests on SQLite
+     * (both allow this); moving to PostgreSQL would require inlining
+     * the subquery or wrapping the query in an outer SELECT.
+     */
+    public function scopeOrderPercentRemaining($query, $order)
+    {
+        $direction = strtolower($order) === 'asc' ? 'asc' : 'desc';
+
+        return $query->orderByRaw('CASE WHEN components.qty = 0 THEN 0 ELSE ((components.qty - COALESCE(sum_unconstrained_assets, 0)) * 100.0 / components.qty) END '.$direction);
+    }
+
+    /**
+     * Query builder scope to sort by the raw `remaining` column
+     * (qty minus current checkouts). Same sum_unconstrained_assets
+     * alias as scopeOrderPercentRemaining above; the difference is
+     * that this one sorts by absolute count rather than percentage,
+     * so items with the same absolute stock left group together
+     * regardless of their total qty.
+     */
+    public function scopeOrderRemaining($query, $order)
+    {
+        $direction = strtolower($order) === 'asc' ? 'asc' : 'desc';
+
+        return $query->orderByRaw('(components.qty - COALESCE(sum_unconstrained_assets, 0)) ' . $direction);
     }
 }

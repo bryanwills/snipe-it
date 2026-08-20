@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\CustomField;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class CustomFieldFactory extends Factory
@@ -22,9 +23,12 @@ class CustomFieldFactory extends Factory
     public function definition()
     {
         return [
-            'name' => $this->faker->catchPhrase(),
+            'name' => $this->faker->unique()->catchPhrase(),
             'format' => '',
             'element' => 'text',
+            'auto_add_to_fieldsets' => '0',
+            'show_in_requestable_list' => '0',
+            'created_by' => User::factory()->superuser(),
         ];
     }
 
@@ -65,6 +69,7 @@ class CustomFieldFactory extends Factory
             return [
                 'name' => 'CPU',
                 'help_text' => 'The speed of the processor on this device.',
+                'show_in_requestable_list' => '1',
             ];
         });
     }
@@ -75,6 +80,123 @@ class CustomFieldFactory extends Factory
             return [
                 'name' => 'MAC Address',
                 'format' => 'regex:/^([0-9a-fA-F]{2}[:-]){5}[0-9a-fA-F]{2}$/',
+            ];
+        });
+    }
+
+    public function testEncrypted()
+    {
+        return $this->state(function () {
+            return [
+                'name' => 'Test Encrypted',
+                'field_encrypted' => '1',
+                'help_text' => 'This is a sample encrypted field.',
+            ];
+        });
+    }
+
+    public function encrypt()
+    {
+        return $this->state(function () {
+            return [
+                'field_encrypted' => '1',
+            ];
+        });
+    }
+
+    public function alpha()
+    {
+        return $this->state(function () {
+            return [
+                'format' => 'alpha',
+            ];
+        });
+    }
+
+    public function numeric()
+    {
+        return $this->state(function () {
+            return [
+                'format' => 'numeric',
+            ];
+        });
+    }
+
+    public function email()
+    {
+        return $this->state(function () {
+            return [
+                'format' => 'email',
+            ];
+        });
+    }
+
+    public function testCheckbox()
+    {
+        return $this->state(function () {
+            return [
+                'name' => 'Test Checkbox',
+                'help_text' => 'This is a sample checkbox.',
+                'field_values' => "One\r\nTwo\r\nThree",
+                'element' => 'checkbox',
+            ];
+        });
+    }
+
+    public function testRadio()
+    {
+        return $this->state(function () {
+            return [
+                'name' => 'Test Radio',
+                'help_text' => 'This is a sample radio.',
+                'field_values' => "One\r\nTwo\r\nThree",
+                'element' => 'radio',
+            ];
+        });
+    }
+
+    public function testDate()
+    {
+        return $this->state(function () {
+            return [
+                'name' => 'Sample Date',
+                'help_text' => 'This shows a datepicker',
+                'element' => 'date_picker',
+                'format' => 'DATE',
+            ];
+        });
+    }
+
+    public function testDatetime()
+    {
+        return $this->state(function () {
+            return [
+                'name' => 'Sample Datetime',
+                'help_text' => 'This shows a datetimepicker',
+                'element' => 'datetime_picker',
+                'format' => 'DATETIME',
+            ];
+        });
+    }
+
+    public function testMarkdownTextarea()
+    {
+        return $this->state(function () {
+            return [
+                'name' => 'Notes',
+                'help_text' => 'Additional notes about this asset. Markdown is supported.',
+                'element' => 'markdown-textarea',
+            ];
+        });
+    }
+
+    public function xss()
+    {
+        return $this->state(function () {
+            return [
+                'name' => '<img src=x onerror=alert(1)>',
+                'help_text' => 'This is an intentional XSS seeded field so we can easily check for BS tables slips in escaping.',
+                'show_in_requestable_list' => '0',
             ];
         });
     }

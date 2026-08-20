@@ -3,37 +3,31 @@
 use App\Http\Controllers\Consumables;
 use Illuminate\Support\Facades\Route;
 
-
-
 Route::group(['prefix' => 'consumables', 'middleware' => ['auth']], function () {
     Route::get(
         '{consumablesID}/checkout',
         [Consumables\ConsumableCheckoutController::class, 'create']
-    )->name('consumables.checkout.show');
+    )->where('consumablesID', '[0-9]+')
+        ->name('consumables.checkout.show');
 
     Route::post(
         '{consumablesID}/checkout',
         [Consumables\ConsumableCheckoutController::class, 'store']
-    )->name('consumables.checkout.store');
+    )->where('consumablesID', '[0-9]+')
+        ->name('consumables.checkout.store');
 
-    Route::post(
-        '{consumableId}/upload',
-        [Consumables\ConsumablesFilesController::class, 'store']
-    )->name('upload/consumable');
+    Route::get('{consumable}/clone',
+        [Consumables\ConsumablesController::class, 'clone']
+    )->where('consumable', '[0-9]+')
+        ->name('consumables.clone.create');
 
-    Route::delete(
-        '{consumableId}/deletefile/{fileId}',
-        [Consumables\ConsumablesFilesController::class, 'destroy']
-    )->name('delete/consumablefile');
-
-    Route::get(
-        '{consumableId}/showfile/{fileId}/{download?}',
-        [Consumables\ConsumablesFilesController::class, 'show']
-    )->name('show.consumablefile');
-
+    Route::post('{consumable}/adjust-quantity',
+        [Consumables\ConsumablesController::class, 'adjustQuantity']
+    )->where('consumable', '[0-9]+')
+        ->name('consumables.adjust-quantity');
 
 });
-    
+
 Route::resource('consumables', Consumables\ConsumablesController::class, [
     'middleware' => ['auth'],
     'parameters' => ['consumable' => 'consumable_id'],

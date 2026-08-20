@@ -1,9 +1,17 @@
 <?php
-return array(
+
+return [
     'companies' => 'Compañías',
-    'create'    => 'Crear Compañía',
-    'title'     => 'Compañía',
-    'update'    => 'Actualizar Compañía',
-    'name'      => 'Nombre de Compañía',
-    'id'        => 'Identificación',
-);
+    'create' => 'Crear una compañía',
+    'email' => 'Correo electrónico de la compañía',
+    'title' => 'Compañía',
+    'phone' => 'Teléfono de la compañía',
+    'update' => 'Actualizar compañía',
+    'name' => 'Nombre de la compañía',
+    'id' => 'ID',
+    'parent' => 'Parent Company',
+    'parent_help' => 'Optional. If set, this company is a child of the selected parent. Users assigned to the parent automatically have access to this company. Only one level of nesting is allowed.',
+    'children' => 'Child Companies',
+    'inherited' => 'Inherited',
+    'inherited_help' => 'This item belongs to a related company in the hierarchy (parent or child), not this company directly.',
+];
