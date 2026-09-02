@@ -36,10 +36,9 @@
                         <div class="login-box-body">
                             <div class="row">
                                 <div class="col-md-12">
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle" aria-hidden="true"></i>
+                                    <x-alert type="info" icon="info-circle">
                                         {!! trans('auth/general.username_help_top') !!}
-                                    </div>
+                                    </x-alert>
                                 </div>
 
 
@@ -48,16 +47,16 @@
 
 
                                 <!-- Notifications -->
-                                @include('notifications')
+                                <x-notifications />
 
 
 
                                     <div class="form-group{{ $errors->has('username') ? ' has-error' : '' }}">
 
                                         <div class="col-md-12">
-                                            <label for="username"><i class="fas fa-user" aria-hidden="true"></i> {{ trans('admin/users/table.username') }} </label>
+                                            <label for="username"><x-icon type="user" /> {{ trans('admin/users/table.username') }} </label>
                                             <input type="text" class="form-control" name="username" value="{{ old('username') }}" placeholder="{{ trans('admin/users/table.username') }}" aria-label="username">
-                                            {!! $errors->first('username', '<span class="alert-msg"><i class="fas fa-times"></i> :message</span>') !!}
+                                            <x-form.error name="username" />
                                         </div>
                                     </div>
                             </div>
@@ -67,13 +66,13 @@
                                     <br>
                                     <!-- show help text toggle -->
                                     <a href="#" id="show">
-                                        <i class="fa fa-caret-right"></i>
+                                        <x-icon type="caret-right" />
                                         {{ trans('general.show_help') }}
                                     </a>
 
                                     <!-- hide help text toggle -->
                                     <a href="#" id="hide" style="display:none">
-                                        <i class="fa fa-caret-up"></i>
+                                        <x-icon type="caret-up" />
                                         {{ trans('general.hide_help') }}
                                     </a>
 

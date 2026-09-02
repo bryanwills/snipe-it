@@ -3,26 +3,24 @@
 namespace App\Notifications;
 
 use App\Helpers\Helper;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Symfony\Component\Mime\Email;
 
-class ExpectedCheckinNotification extends Notification
+class ExpectedCheckinNotification extends Notification implements ShouldQueue
 {
     use Queueable;
-    /**
-     * @var
-     */
-    private $params;
-
+    
     /**
      * Create a new notification instance.
-     *
-     * @param $params
      */
-    public function __construct($params)
+    public function __construct(
+        public $params
+    )
     {
-        $this->params = $params;
     }
 
     /**
@@ -43,18 +41,31 @@ class ExpectedCheckinNotification extends Notification
     /**
      * Get the mail representation of the notification.
      *
-     * @return \Illuminate\Notifications\Messages\MailMessage
+     * @return MailMessage
      */
     public function toMail()
     {
+        $today = Carbon::today();
+        $expected = Carbon::parse($this->params->expected_checkin)->startOfDay();
+
+        $subjectText = $today->greaterThan($expected)
+            ? trans('mail.Expected_Checkin_Notification_Pastdue', ['name' => $this->params->display_name])
+            : trans('mail.Expected_Checkin_Notification', ['name' => $this->params->display_name]);
+
         $message = (new MailMessage)->markdown('notifications.markdown.expected-checkin',
             [
-                'date' => Helper::getFormattedDateObject($this->params->expected_checkin, 'date', false),
-                'asset' => $this->params->present()->name(),
+                'expected_checkin_date' => $this->params->expected_checkin,
+                'date' => Helper::getFormattedDateObject($this->params->expected_checkin, 'datetime', false),
+                'asset' => $this->params->display_name,
                 'serial' => $this->params->serial,
                 'asset_tag' => $this->params->asset_tag,
             ])
-            ->subject(trans('mail.Expected_Checkin_Notification', ['name' => $this->params->present()->name()]));
+            ->subject('⏰'.$subjectText)
+            ->withSymfonyMessage(function (Email $message) {
+                $message->getHeaders()->addTextHeader(
+                    'X-System-Sender', 'Snipe-IT'
+                );
+            });
 
         return $message;
     }

@@ -3,7 +3,11 @@
 namespace App\Providers;
 
 use App\Listeners\CheckoutableListener;
+use App\Listeners\CheckoutablesCheckedOutInBulkListener;
+use App\Listeners\FulfillCheckoutRequestListener;
+use App\Listeners\LogFailedLogin;
 use App\Listeners\LogListener;
+use App\Listeners\LogSuccessfulLogin;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
@@ -15,11 +19,11 @@ class EventServiceProvider extends ServiceProvider
      */
     protected $listen = [
         'Illuminate\Auth\Events\Login' => [
-            \App\Listeners\LogSuccessfulLogin::class,
+            LogSuccessfulLogin::class,
         ],
 
         'Illuminate\Auth\Events\Failed' => [
-            \App\Listeners\LogFailedLogin::class,
+            LogFailedLogin::class,
         ],
     ];
 
@@ -30,6 +34,11 @@ class EventServiceProvider extends ServiceProvider
      */
     protected $subscribe = [
         LogListener::class,
+        // Runs AFTER LogListener so the checkout Actionlog row it
+        // just wrote is available for the checkout_actionlog_id
+        // back-link on the CheckoutRequest.
+        FulfillCheckoutRequestListener::class,
         CheckoutableListener::class,
+        CheckoutablesCheckedOutInBulkListener::class,
     ];
 }

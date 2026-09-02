@@ -3,26 +3,24 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Symfony\Component\Mime\Email;
 
-class ExpiringLicenseNotification extends Notification
+class ExpiringLicenseNotification extends Notification implements ShouldQueue
 {
     use Queueable;
-    /**
-     * @var
-     */
-    private $params;
+
 
     /**
      * Create a new notification instance.
-     *
-     * @param $params
      */
-    public function __construct($params, $threshold)
+    public function __construct(
+        public $params,
+        public $threshold
+    )
     {
-        $this->licenses = $params;
-        $this->threshold = $threshold;
     }
 
     /**
@@ -43,16 +41,21 @@ class ExpiringLicenseNotification extends Notification
      * Get the mail representation of the notification.
      *
      * @param  mixed  $asset
-     * @return \Illuminate\Notifications\Messages\MailMessage
+     * @return MailMessage
      */
     public function toMail()
     {
         $message = (new MailMessage)->markdown('notifications.markdown.report-expiring-licenses',
             [
-                'licenses'  => $this->licenses,
-                'threshold'  => $this->threshold,
+                'licenses' => $this->licenses,
+                'threshold' => $this->threshold,
             ])
-            ->subject(trans('mail.Expiring_Licenses_Report'));
+            ->subject('⏰'.trans('mail.Expiring_Licenses_Report'))
+            ->withSymfonyMessage(function (Email $message) {
+                $message->getHeaders()->addTextHeader(
+                    'X-System-Sender', 'Snipe-IT'
+                );
+            });
 
         return $message;
     }

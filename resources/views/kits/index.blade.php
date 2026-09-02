@@ -8,43 +8,23 @@
 @parent
 @stop
 
-@section('header_right')
-<a href="{{ route('kits.create') }}" class="btn btn-primary text-right">{{ trans('general.create') }}</a>
-@stop
-
-
 {{-- Content --}}
 @section('content')
-<div class="row">
-  <div class="col-md-12">
-    <div class="box box-default">
-      <div class="box-body">
-        <div class="table-responsive">
-            <table
-                data-cookie-id-table="kitsTable"
-                data-columns="{{ \App\Presenters\PredefinedKitPresenter::dataTableLayout() }}"
-                data-pagination="true"
-                data-search="true"
-                data-side-pagination="server"
-                data-show-columns="true"
-                data-show-fullscreen="true"
-                data-show-export="true"
-                data-show-refresh="true"
-                data-sort-order="asc"
-                data-sort-name="name"
-                id="kitsTable"
-                class="table table-striped snipe-table"
-                data-url="{{ route('api.kits.index') }}"
-                data-export-options='{
-        "fileName": "export-kits-{{ date('Y-m-d') }}",
-            "ignoreColumn": ["actions","image","change","checkbox","checkincheckout","icon"]
-            }'>
-          </table>
-        </div>
-      </div> <!--.box-body-->
-    </div> <!-- /.box.box-default-->
-  </div> <!-- .col-md-12-->
-</div>
+    <x-container>
+        <x-box name="kits" sr_only_title>
+
+            <x-slot:table_header>{{ trans('general.kits') }}</x-slot:table_header>
+
+            <x-table
+                :presenter="\App\Presenters\PredefinedKitPresenter::dataTableLayout()"
+                :fixed_number="1"
+                :fixed_right_number="2"
+                buttons="kitButtons"
+                api_url="{{ route('api.kits.index') }}"
+                export_filename="export-kits-{{ date('Y-m-d') }}"
+            />
+        </x-box>
+    </x-container>
 @stop
 @section('moar_scripts')
 @include ('partials.bootstrap-table', ['exportFile' => 'kits-export', 'search' => true])
