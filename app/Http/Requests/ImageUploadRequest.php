@@ -2,14 +2,16 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Traits\ConvertsBase64ToFiles;
 use App\Models\SnipeModel;
 use enshrined\svgSanitize\Sanitizer;
-use Intervention\Image\Facades\Image;
-use App\Http\Traits\ConvertsBase64ToFiles;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Intervention\Image\Exception\NotReadableException;
-
+use Intervention\Image\Facades\Image;
 
 class ImageUploadRequest extends Request
 {
@@ -32,19 +34,20 @@ class ImageUploadRequest extends Request
      */
     public function rules()
     {
-       
-            return [
-                'image' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp',
-                'avatar' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp',
-            ];
+
+        return [
+            'image' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,avif',
+            'avatar' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,avif',
+            'favicon' => 'mimes:png,gif,jpg,jpeg,svg,bmp,svg+xml,webp,image/x-icon,image/vnd.microsoft.icon,ico',
+        ];
     }
 
     public function response(array $errors)
     {
         return $this->redirector->back()->withInput()->withErrors($errors, $this->errorBag);
     }
-    
-    /** 
+
+    /**
      * Fields that should be traited from base64 to files
      */
     protected function base64FileKeys(): array
@@ -52,129 +55,165 @@ class ImageUploadRequest extends Request
         /**
          * image_source is here just legacy reasons. Api\AssetController
          * had it once to allow encoded image uploads.
-        */ 
+         */
         return [
+            'avatar' => 'auto',
             'image' => 'auto',
-            'image_source' => 'auto'
+            'image_source' => 'auto',
         ];
     }
 
     /**
      * Handle and store any images attached to request
-     * @param SnipeModel $item Item the image is associated with
-     * @param string $path  location for uploaded images, defaults to uploads/plural of item type.
-     * @return SnipeModel        Target asset is being checked out to.
+     *
+     * @param  SnipeModel  $item  Item the image is associated with
+     * @param  string  $path  location for uploaded images, defaults to uploads/plural of item type.
+     * @return SnipeModel Target asset is being checked out to.
      */
     public function handleImages($item, $w = 600, $form_fieldname = 'image', $path = null, $db_fieldname = 'image')
     {
 
-        $type = strtolower(class_basename(get_class($item)));
+        $type = class_basename(get_class($item));
 
         if (is_null($path)) {
 
-            $path = str_plural($type);
+            $path = strtolower(str_plural($type));
 
-            if ($type == 'assetmodel') {
+            if ($type == 'AssetModel') {
                 $path = 'models';
             }
 
             if ($type == 'user') {
                 $path = 'avatars';
             }
+
+        }
+
+        // SettingsController passes '' to mean "disk root".
+        // Normalize and use a single prefix so we never have a leading-slash
+        // key (S3 stores `/foo.png` and `foo.png` as distinct objects) and
+        // never HEAD an empty key (which S3's HeadObject validator rejects
+        // outright — the bug behind #18267).
+        $path = trim((string) $path, '/');
+        $prefix = $path === '' ? '' : $path.'/';
+
+        if ($path !== '' && ! Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->makeDirectory($path);
         }
 
         if ($this->offsetGet($form_fieldname) instanceof UploadedFile) {
-           $image = $this->offsetGet($form_fieldname);
-           \Log::debug('Image is an instance of UploadedFile');
+            $image = $this->offsetGet($form_fieldname);
         } elseif ($this->hasFile($form_fieldname)) {
             $image = $this->file($form_fieldname);
-            \Log::debug('Just use regular upload for '.$form_fieldname);
-        } else {
-            \Log::debug('No image found for form fieldname: '.$form_fieldname);
         }
 
-        if (isset($image)) {
+        if ((isset($image)) && ($image != '')) {
 
-            if (!config('app.lock_passwords')) {
+            $ext = $image->guessExtension();
+            $file_name = $type.'-'.$form_fieldname.($item->id ?? '-'.$item->id).'-'.str_random(10).'.'.$ext;
 
-                $ext = $image->getClientOriginalExtension();
-                $file_name = $type.'-'.$form_fieldname.'-'.$item->id.'-'.str_random(10).'.'.$ext;
+            // Track whether the new file actually landed on disk. Storage::put
+            // can return false without throwing (disks default to non-throwing
+            // mode). Before, the ordering was put -> deleteExistingImage ->
+            // reassign, all unconditional, so a failed put still destroyed
+            // the current image and left the model referencing a file that
+            // was never written. Keep the old image intact unless we confirm
+            // the new one is there.
+            $wroteNewFile = false;
 
-                \Log::info('File name will be: '.$file_name);
-                \Log::debug('File extension is: '.$ext);
+            if (($image->getMimeType() == 'image/vnd.microsoft.icon') || ($image->getMimeType() == 'image/x-icon') || ($image->getMimeType() == 'image/avif') || ($image->getMimeType() == 'image/webp')) {
+                // If the file is an icon, webp or avif, we need to just move it since gd doesn't support resizing
+                // icons or avif, and webp support and needs to be compiled into gd for resizing to be available
+                $wroteNewFile = (bool) Storage::disk('public')->put($prefix.$file_name, file_get_contents($image));
 
-                if (($image->getClientOriginalExtension() !== 'webp') && ($image->getClientOriginalExtension() !== 'svg')) {
+            } elseif ($image->getMimeType() == 'image/svg+xml') {
+                // If the file is an SVG, we need to clean it and NOT encode it
+                $sanitizer = new Sanitizer;
+                $dirtySVG = file_get_contents($image->getRealPath());
+                $cleanSVG = $sanitizer->sanitize($dirtySVG);
 
-                    \Log::debug('Not an SVG or webp - resize');
-                    \Log::debug('Trying to upload to: '.$path.'/'.$file_name);
+                try {
+                    $wroteNewFile = (bool) Storage::disk('public')->put($prefix.$file_name, $cleanSVG);
+                } catch (\Exception $e) {
+                    Log::debug($e);
+                }
+            } else {
 
-                    try {
-                        $upload = Image::make($image->getRealPath())->resize(null, $w, function ($constraint) {
-                            $constraint->aspectRatio();
-                            $constraint->upsize();
-                        });
-                    } catch(NotReadableException $e) {
-                        \Log::debug($e);
-                        $validator = \Validator::make([], []);
-                        $validator->errors()->add($form_fieldname, trans('general.unaccepted_image_type', ['mimetype' => $image->getClientMimeType()]));
+                try {
+                    $upload = Image::make($image->getRealPath())->setFileInfoFromPath($image->getRealPath())->resize(null, $w, function ($constraint) {
+                        $constraint->aspectRatio();
+                        $constraint->upsize();
+                    })->orientate();
 
-                        throw new \Illuminate\Validation\ValidationException($validator);
-                    }
+                } catch (NotReadableException $e) {
+                    Log::debug($e);
+                    $validator = Validator::make([], []);
+                    $validator->errors()->add($form_fieldname, trans('general.unaccepted_image_type', ['mimetype' => $image->getClientMimeType()]));
 
-                    // This requires a string instead of an object, so we use ($string)
-                    Storage::disk('public')->put($path.'/'.$file_name, (string) $upload->encode());
-
-                } else {
-                    // If the file is a webp, we need to just move it since webp support
-                    // needs to be compiled into gd for resizing to be available
-                    if ($image->getClientOriginalExtension() == 'webp') {
-                        \Log::debug('This is a webp, just move it');
-                        Storage::disk('public')->put($path.'/'.$file_name, file_get_contents($image));
-                    // If the file is an SVG, we need to clean it and NOT encode it
-                    } else {
-                        \Log::debug('This is an SVG');
-                        $sanitizer = new Sanitizer();
-                        $dirtySVG = file_get_contents($image->getRealPath());
-                        $cleanSVG = $sanitizer->sanitize($dirtySVG);
-
-                        try {
-                            \Log::debug('Trying to upload to: '.$path.'/'.$file_name);
-                            Storage::disk('public')->put($path.'/'.$file_name, $cleanSVG);
-                        } catch (\Exception $e) {
-                            \Log::debug('Upload no workie :( ');
-                            \Log::debug($e);
-                        }
-                    }
+                    throw new ValidationException($validator);
                 }
 
-                 // Remove Current image if exists
-                if (($item->{$form_fieldname}!='') && (Storage::disk('public')->exists($path.'/'.$item->{$db_fieldname}))) {
-                    \Log::debug('A file already exists that we are replacing - we should delete the old one.');
-                    try {
-                         Storage::disk('public')->delete($path.'/'.$item->{$form_fieldname});
-                         \Log::debug('Old file '.$path.'/'.$file_name.' has been deleted.');
-                    } catch (\Exception $e) {
-                        \Log::debug('Could not delete old file. '.$path.'/'.$file_name.' does not exist?');
-                    }
-                }
+                // This requires a string instead of an object, so we use ($string)
+                $wroteNewFile = (bool) Storage::disk('public')->put($prefix.$file_name, (string) $upload->encode());
 
+            }
+
+            if ($wroteNewFile) {
+                // Only touch the existing image and the model reference AFTER
+                // confirming the new file is on disk. deleteExistingImage
+                // itself now also refuses to null the model when the delete
+                // fails, so a partial cleanup does not leave the model
+                // pointing at a phantom file either way.
+                $item = $this->deleteExistingImage($item, $path, $db_fieldname);
                 $item->{$db_fieldname} = $file_name;
+            } else {
+                Log::warning('Image upload failed to write to disk; keeping existing image reference intact.', [
+                    'item_type' => $type,
+                    'item_id' => $item->id ?? null,
+                    'target_path' => $prefix.$file_name,
+                ]);
             }
 
-
-        // If the user isn't uploading anything new but wants to delete their old image, do so
+            // If the user isn't uploading anything new but wants to delete their old image, do so
         } elseif ($this->input('image_delete') == '1') {
-            \Log::debug('Deleting image');
-            try {
-                Storage::disk('public')->delete($path.'/'.$item->{$db_fieldname});
-                    $item->{$db_fieldname} = null;
-            } catch (\Exception $e) {
-                \Log::debug($e);
-            }
-
+            $item = $this->deleteExistingImage($item, $path, $db_fieldname);
         }
 
         return $item;
     }
-    
+
+    public function deleteExistingImage($item, $path = null, $db_fieldname = 'image')
+    {
+
+        if ($item->{$db_fieldname} != '') {
+            try {
+                // Same path normalization as handleImages. Branding callers
+                // pass '' for the disk root, and we don't want to produce a
+                // leading-slash key on S3.
+                $path = trim((string) $path, '/');
+                $key = $path === '' ? $item->{$db_fieldname} : $path.'/'.$item->{$db_fieldname};
+                $deleted = Storage::disk('public')->delete($key);
+
+                // Only null the model reference if the delete actually
+                // succeeded. Before, the field was cleared unconditionally
+                // even when Storage::delete returned false (silent-fail
+                // mode on the default local disk). The result was a model
+                // row that reported "no image" while the file remained on
+                // disk, orphaned.
+                if ($deleted) {
+                    $item->{$db_fieldname} = null;
+                } else {
+                    Log::warning('Storage delete returned false; keeping model reference so operators can retry.', [
+                        'item_type' => class_basename(get_class($item)),
+                        'item_id' => $item->id ?? null,
+                        'key' => $key,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::debug($e);
+            }
+        }
+
+        return $item;
+    }
 }

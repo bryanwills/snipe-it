@@ -1,0 +1,81 @@
+<?php
+
+return [
+
+    'update' => [
+        'error' => '갱신 중 오류가 발생했습니다. ',
+        'success' => '설정이 갱신되었습니다.',
+    ],
+    'backup' => [
+        'delete_confirm' => '이 백업 파일을 지우시겠습니까? 이 동작은 되돌리기가 되지 않습니다. ',
+        'file_deleted' => '백업 파일이 삭제 되었습니다. ',
+        'generated' => '새 백업 파일이 생성되었습니다.',
+        'file_not_found' => '지정한 백업 파일을 서버에서 찾을 수 없습니다.',
+        'restore_warning' => '예, 복원합니다. 이 작업이 현재 데이터베이스에 있는 기존 데이터를 덮어쓴다는 것을 확인합니다. 또한 사용자 본인을 포함한 모든 기존 사용자가 로그아웃됩니다.',
+        'restore_confirm' => ':filename에서 데이터베이스를 복원하시겠습니까?',
+        'delete_disabled_help' => 'Deleting backups is disabled. Contact your administrator if you wish to enable deleting backups.',
+    ],
+    'restore' => [
+        'success' => '시스템 백업이 복원되었습니다. 다시 로그인하세요.',
+        'archive_invalid' => 'The selected backup file (:filename) is not a valid zip archive. Restore aborted before touching the database.',
+        'zip_extension_missing' => 'PHP zip extension is not loaded on this server. Cannot validate the backup archive, and restore has been aborted to prevent data loss. Ask your server administrator to install ext-zip.',
+        'pre_backup_failed' => 'Could not create a pre-restore safety backup. Restore aborted so that the existing database is not destroyed without a recovery path.',
+        'failed_with_backup' => 'Restore failed. The pre-existing database was wiped as part of the restore attempt, but a pre-restore backup was saved to :backup and can be used to recover.',
+    ],
+    'purge' => [
+        'error' => '삭제중 오류가 발생하였습니다. ',
+        'validation_failed' => '삭제 확인 절차가 잘못되었습니다. 확인 상자에 "DELETE"를 입력해 주세요.',
+        'success' => '삭제된 기록들이 삭제되었습니다.',
+    ],
+    'mail' => [
+        'sending' => '테스트 이메일 전송 중...',
+        'success' => '메일 전송 완료!',
+        'error' => '메일을 전송할 수 없습니다.',
+        'additional' => '추가 오류 메시지가 없습니다. 메일 설정과 앱 로그를 확인하세요.',
+    ],
+    'ldap' => [
+        'testing' => 'LDAP 연결, 바인딩 및 쿼리 테스트 중 ...',
+        '500' => '500 서버 오류. 자세한 내용은 서버 로그를 확인하세요.',
+        'error' => '문제가 발생했습니다 :(',
+        'sync_success' => '설정에 따라 LDAP 서버에서 반환된 사용자 10명 샘플:',
+        'testing_authentication' => 'LDAP 인증 테스트 중...',
+        'authentication_success' => 'LDAP 인증 성공!',
+    ],
+    'labels' => [
+        'null_template' => '라벨 템플릿을 찾을 수 없습니다. 템플릿을 선택하세요.',
+    ],
+    'webhook' => [
+        'sending' => ':app 테스트 메시지 전송 중...',
+        'success' => ':webhook_name 통합이 작동합니다!',
+        'success_pt1' => '성공! 확인하세요 ',
+        'success_pt2' => ' 채널에서 테스트 메시지를 확인하고, 설정을 저장하려면 아래 저장을 클릭하세요.',
+        '500' => '500 서버 오류.',
+        'error' => '문제가 발생했습니다. :app 응답: :error_message',
+        'error_redirect' => '오류: 301/302 :endpoint 가 리디렉션을 반환합니다. 보안상의 이유로 리디렉션을 따르지 않습니다. 실제 엔드포인트를 사용하세요.',
+        'error_misc' => '문제가 발생했습니다. :( ',
+        'webhook_fail' => ' 웹훅 알림 실패: URL이 여전히 유효한지 확인하세요.',
+        'webhook_channel_not_found' => ' 웹훅 채널을 찾을 수 없습니다.',
+        'ms_teams_deprecation' => '선택한 Microsoft Teams 웹훅 URL은 2025년 12월 31일부터 지원이 중단됩니다. 워크플로 URL을 사용하세요. 워크플로 생성에 대한 Microsoft 문서는 <a href="https://support.microsoft.com/en-us/office/create-incoming-webhooks-with-workflows-for-microsoft-teams-8ae491c7-0394-4861-ba59-055e33f75498" target="_blank"> 여기</a>에서 확인할 수 있습니다.',
+    ],
+    'location_scoping' => [
+        'not_saved' => '설정이 저장되지 않았습니다.',
+        'mismatch' => '위치 범위 지정을 활성화하기 전에 확인이 필요한 항목이 데이터베이스에 :count개 있습니다.|위치 범위 지정을 활성화하기 전에 확인이 필요한 항목이 데이터베이스에 :count개 있습니다.',
+    ],
+    'oauth' => [
+        'token_revoked' => '개인 액세스 토큰이 성공적으로 취소되었습니다.',
+        'token_unrevoked' => '개인 액세스 토큰이 성공적으로 복원되었습니다.',
+        'token_not_found' => '해당 개인 액세스 토큰을 찾을 수 없습니다.',
+        'token_revoke_error' => '토큰 취소 중 오류가 발생했습니다.',
+        'token_unrevoke_error' => '토큰 복원 중 오류가 발생했습니다.',
+        'client_created' => 'OAuth 클라이언트가 성공적으로 생성되었습니다.',
+        'client_updated' => 'OAuth 클라이언트가 성공적으로 수정되었습니다.',
+        'client_deleted' => 'OAuth 클라이언트가 성공적으로 삭제되었습니다.',
+        'client_revoked' => 'OAuth 클라이언트가 성공적으로 취소되었습니다.',
+        'client_unrevoked' => 'OAuth 클라이언트가 성공적으로 복원되었습니다.',
+        'client_not_found' => '해당 OAuth 클라이언트를 찾을 수 없습니다.',
+        'token_deleted' => '토큰이 성공적으로 취소되었습니다.',
+        'client_delete_denied' => '이 클라이언트를 삭제할 권한이 없습니다.',
+        'client_edit_denied' => '이 클라이언트를 수정할 권한이 없습니다.',
+        'token_delete_denied' => '이 토큰을 취소할 권한이 없습니다.',
+    ],
+];

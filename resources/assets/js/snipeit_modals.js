@@ -11,14 +11,14 @@
 
  Create a Button looking like this:
 
- <a href='{{ route('modal.show', 'user') }}' data-toggle="modal"  data-target="#createModal" data-select='assigned_to' class="btn btn-sm btn-primary">New</a>
+ <a href='{{ route('modal.show', 'user') }}' data-toggle="modal"  data-target="#createModal" data-select='assigned_to' class="btn btn-sm btn-theme">New</a>
 
  If you don't have access to Blade commands (like {{ and }}, etc), you can hard-code a URL as the 'href'
 
  data-toggle="modal" - required for Bootstrap Modals
  data-target="#createModal" - fixed ID for the modal, do not change
  data-select="assigned_to" - What is the *ID* of the select-dropdown that you're going to be adding to, if the modal-create was a success? Be on the lookout for duplicate ID's, it will confuse this library!
- class="btn btn-sm btn-primary" - makes it look button-ey, feel free to change :)
+ class="btn btn-sm btn-theme" - makes it look button-ey, feel free to change :)
  
  If you want to pass additional variables to the modal (In the Category Create one, for example, you can pass category_id), you can encode them as URL variables in the href
  
@@ -39,18 +39,58 @@ $(function () {
       model = link.data("dependency");
       select = link.data("select");
       refreshSelector = link.data("refresh");
-      
+
       $('#createModal').load(link.attr('href'),function () {
+
+          // Focus the first visible, non-hidden input regardless of
+          // which modal partial was loaded (user, company, category,
+          // etc. all differ on which id the "first" field has). The
+          // legacy `#modal-name` selector worked for some modals and
+          // silently missed for others. A generic first-input selector
+          // covers every partial without per-modal code.
+          $('#createModal').find('input:visible:not([type=hidden])').first().focus();
+
+          // Wire up the password generator button when the loaded
+          // modal is one that includes it (user create). Relocated here
+          // from an inline <script> block in modals/user.blade.php as
+          // part of the Vite migration prep to remove per-partial
+          // inline JS. The setTimeout the inline version used to defer
+          // this is no longer needed because we're inside .load()'s
+          // completion callback, which fires AFTER the DOM is ready.
+          if ($('#modal-genPassword').length && $('#modal-password').length) {
+              $('#modal-genPassword').pGenerator({
+                  'bind': 'click',
+                  'passwordElement': '#modal-password',
+                  'passwordLength': 16,
+                  'uppercase': true,
+                  'lowercase': true,
+                  'numbers': true,
+                  'specialChars': true,
+                  'onPasswordGenerated': function () {
+                      $('#modal-password_confirmation').val($('#modal-password').val());
+                  }
+              });
+          }
+
         //do we need to re-select2 this, after load? Probably.
         $('#createModal').find('select.select2').select2();
         // Initialize the ajaxy select2 with images.
         // This is a copy/paste of the code from snipeit.js, would be great to only have this in one place.
-        $('.js-data-ajax').each( function (i,item) {
+
+        // Scoped to #createModal so re-initialization only touches newly-loaded
+        // modal selects, not every js-data-ajax on the host page. Unscoped
+        // .each() clobbers the trigger page's existing select2 state (e.g. the
+        // Location picker whose "New" button opened this modal).
+        $('#createModal .js-data-ajax').each( function (i,item) {
             var link = $(item);
             var endpoint = link.data("endpoint");
             var select = link.data("select");
 
             link.select2({
+                // Explicit width because the modal is mid-animation when
+                // this runs, so measuring the parent's computed width
+                // returns 0 and the widget renders zero-pixels wide.
+                width: '100%',
                 ajax: {
 
                     // the baseUrl includes a trailing slash
@@ -65,7 +105,7 @@ $(function () {
                         var data = {
                             search: params.term,
                             page: params.page || 1,
-                            assetStatusType: link.data("asset-status-type"),
+                            statusType: link.data("asset-status-type"),
                         };
                         return data;
                     },
@@ -93,9 +133,7 @@ $(function () {
 
   });
 
- 
-
-  $('#createModal').on('click','#modal-save', function () {
+    $('#createModal').on('click','#modal-save', function () {
     $.ajax({
         type: 'POST',
         url: $('.modal-body form').attr('action'),
@@ -116,10 +154,11 @@ $(function () {
                 $('#modal_error_msg').html(error_message).show();
                 return false;
             }
+
             var id = result.payload.id;
             var name = result.payload.name || (result.payload.first_name + " " + result.payload.last_name);
-            if(!id || !name) {
-                console.error("Could not find resulting name or ID from modal-create. Name: "+name+", id: "+id);
+            if (!id || !name) {
+                console.error("Could not find resulting name or ID from modal-create. Name: " + name + ", id: " + id);
                 return false;
             }
             $('#createModal').modal('hide');

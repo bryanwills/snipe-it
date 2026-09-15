@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 
 class ChangeLicenseNotesType extends Migration
 {
@@ -14,7 +13,7 @@ class ChangeLicenseNotesType extends Migration
     {
         //
         Schema::table('licenses', function ($table) {
-            $table->text('notes')->change();
+            $table->text('notes')->nullable()->change();
         });
     }
 
@@ -23,7 +22,5 @@ class ChangeLicenseNotesType extends Migration
      *
      * @return void
      */
-    public function down()
-    {
-    }
+    public function down() {}
 }

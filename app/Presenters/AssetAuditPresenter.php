@@ -3,7 +3,6 @@
 namespace App\Presenters;
 
 use App\Models\CustomField;
-use DateTime;
 
 /**
  * Class AssetPresenter
@@ -12,17 +11,22 @@ class AssetAuditPresenter extends Presenter
 {
     /**
      * Json Column Layout for bootstrap table
+     *
      * @return string
      */
     public static function dataTableLayout()
     {
         $layout = [
-             [
+            [
                 'field' => 'checkbox',
+                'scope' => 'col',
                 'checkbox' => true,
-             ],
-             [
+                'titleTooltip' => trans('general.select_all_none'),
+                'printIgnore' => true,
+            ],
+            [
                 'field' => 'id',
+                'scope' => 'col',
                 'searchable' => false,
                 'sortable' => true,
                 'switchable' => true,
@@ -30,6 +34,7 @@ class AssetAuditPresenter extends Presenter
                 'visible' => false,
             ], [
                 'field' => 'company',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'switchable' => true,
@@ -38,21 +43,25 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'assetCompanyObjFilterFormatter',
             ], [
                 'field' => 'name',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
-                'title' => trans('admin/hardware/form.name'),
+                // Match the import wizard's Name target label
+                'title' => trans('general.item_name_var', ['item' => trans('general.asset')]),
                 'visible' => true,
                 'formatter' => 'hardwareLinkFormatter',
             ], [
-                'field' => 'image',
+                'field' => 'file',
+                'scope' => 'col',
                 'searchable' => false,
                 'sortable' => true,
                 'switchable' => true,
-                'title' => trans('admin/hardware/table.image'),
+                'title' => trans('general.image'),
                 'visible' => false,
-                'formatter' => 'imageFormatter',
+                'formatter' => 'auditImageFormatter',
             ], [
                 'field' => 'asset_tag',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/hardware/table.asset_tag'),
@@ -60,6 +69,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'hardwareLinkFormatter',
             ], [
                 'field' => 'serial',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/hardware/form.serial'),
@@ -67,6 +77,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'hardwareLinkFormatter',
             ],  [
                 'field' => 'model',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/hardware/form.model'),
@@ -74,12 +85,14 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'modelsLinkObjFormatter',
             ], [
                 'field' => 'model_number',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/models/table.modelnumber'),
                 'visible' => false,
             ], [
                 'field' => 'category',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('general.category'),
@@ -87,6 +100,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'categoriesLinkObjFormatter',
             ], [
                 'field' => 'status_label',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/hardware/table.status'),
@@ -94,6 +108,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'statuslabelsLinkObjFormatter',
             ], [
                 'field' => 'assigned_to',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/hardware/form.checkedout_to'),
@@ -101,6 +116,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'polymorphicItemFormatter',
             ], [
                 'field' => 'location',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/hardware/table.location'),
@@ -108,6 +124,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'deployedLocationFormatter',
             ], [
                 'field' => 'rtd_location',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('admin/hardware/form.default_location'),
@@ -115,6 +132,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'deployedLocationFormatter',
             ], [
                 'field' => 'manufacturer',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'title' => trans('general.manufacturer'),
@@ -122,6 +140,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'manufacturersLinkObjFormatter',
             ], [
                 'field' => 'purchase_date',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'visible' => false,
@@ -129,6 +148,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'dateDisplayFormatter',
             ], [
                 'field' => 'purchase_cost',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'visible' => false,
@@ -137,6 +157,7 @@ class AssetAuditPresenter extends Presenter
                 'class' => 'text-right',
             ], [
                 'field' => 'order_number',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'visible' => false,
@@ -144,6 +165,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'orderNumberObjFilterFormatter',
             ], [
                 'field' => 'eol',
+                'scope' => 'col',
                 'searchable' => false,
                 'sortable' => false,
                 'visible' => false,
@@ -151,12 +173,14 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'dateDisplayFormatter',
             ], [
                 'field' => 'warranty_months',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'visible' => false,
                 'title' => trans('admin/hardware/form.warranty'),
             ], [
                 'field' => 'warranty_expires',
+                'scope' => 'col',
                 'searchable' => false,
                 'sortable' => false,
                 'visible' => false,
@@ -164,6 +188,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'dateDisplayFormatter',
             ], [
                 'field' => 'notes',
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'visible' => false,
@@ -171,6 +196,7 @@ class AssetAuditPresenter extends Presenter
 
             ], [
                 'field' => 'checkout_counter',
+                'scope' => 'col',
                 'searchable' => false,
                 'sortable' => true,
                 'visible' => false,
@@ -178,6 +204,7 @@ class AssetAuditPresenter extends Presenter
 
             ], [
                 'field' => 'checkin_counter',
+                'scope' => 'col',
                 'searchable' => false,
                 'sortable' => true,
                 'visible' => false,
@@ -185,6 +212,7 @@ class AssetAuditPresenter extends Presenter
 
             ], [
                 'field' => 'requests_counter',
+                'scope' => 'col',
                 'searchable' => false,
                 'sortable' => true,
                 'visible' => false,
@@ -192,6 +220,7 @@ class AssetAuditPresenter extends Presenter
 
             ], [
                 'field' => 'created_at',
+                'scope' => 'col',
                 'searchable' => false,
                 'sortable' => true,
                 'visible' => false,
@@ -199,6 +228,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'dateDisplayFormatter',
             ], [
                 'field' => 'updated_at',
+                'scope' => 'col',
                 'searchable' => false,
                 'sortable' => true,
                 'visible' => false,
@@ -206,6 +236,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'dateDisplayFormatter',
             ], [
                 'field' => 'last_checkout',
+                'scope' => 'col',
                 'searchable' => false,
                 'sortable' => true,
                 'visible' => false,
@@ -213,6 +244,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'dateDisplayFormatter',
             ], [
                 'field' => 'expected_checkin',
+                'scope' => 'col',
                 'searchable' => false,
                 'sortable' => true,
                 'visible' => false,
@@ -220,6 +252,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'dateDisplayFormatter',
             ], [
                 'field' => 'last_audit_date',
+                'scope' => 'col',
                 'searchable' => false,
                 'sortable' => true,
                 'visible' => true,
@@ -227,6 +260,7 @@ class AssetAuditPresenter extends Presenter
                 'formatter' => 'dateDisplayFormatter',
             ], [
                 'field' => 'next_audit_date',
+                'scope' => 'col',
                 'searchable' => false,
                 'sortable' => true,
                 'visible' => true,
@@ -249,6 +283,7 @@ class AssetAuditPresenter extends Presenter
         foreach ($fields as $field) {
             $layout[] = [
                 'field' => 'custom_fields.'.$field->db_column,
+                'scope' => 'col',
                 'searchable' => true,
                 'sortable' => true,
                 'visible' => false,
@@ -260,11 +295,14 @@ class AssetAuditPresenter extends Presenter
 
         $layout[] = [
             'field' => 'actions',
+            'scope' => 'col',
             'searchable' => false,
             'sortable' => false,
             'switchable' => false,
             'title' => trans('table.actions'),
             'formatter' => 'hardwareAuditFormatter',
+            'printIgnore' => true,
+            'class' => 'hidden-print',
         ];
 
         return json_encode($layout);
