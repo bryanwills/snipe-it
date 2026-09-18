@@ -2,7 +2,7 @@
 
 {{-- Page title --}}
 @section('title')
-    Attempted Logins
+    {{ trans('admin/settings/general.login') }}
     @parent
 @stop
 
@@ -16,13 +16,9 @@
 
                     <table
                             data-cookie-id-table="loginReport"
-                            data-pagination="true"
                             data-id-table="loginReport"
                             data-search="false"
                             data-side-pagination="server"
-                            data-show-columns="true"
-                            data-show-export="true"
-                            data-show-refresh="true"
                             data-sort-order="desc"
                             data-sort-name="created_at"
                             id="loginReport"
@@ -34,11 +30,11 @@
 
                         <thead>
                             <tr>
-                                <th class="col-sm-2" data-field="username" data-visible="true" data-sortable="true">{{ trans('mail.username') }}</th>
-                                <th class="col-sm-2" data-field="created_at" data-visible="true" data-sortable="true" data-formatter="dateDisplayFormatter">{{ trans('admin/settings/general.login_attempt') }}</th>
-                                <th class="col-sm-2" data-field="user_agent" data-visible="true" data-sortable="true">{{ trans('admin/settings/general.login_user_agent') }}</th>
-                                <th class="col-sm-2" data-field="remote_ip" data-visible="true" data-sortable="true">{{ trans('admin/settings/general.login_ip') }}</th>
-                                <th class="col-sm-2" data-field="successful" data-visible="true" data-formatter="trueFalseFormatter" data-sortable="true">{{ trans('admin/settings/general.login_success') }}</th>
+                                <th scope="col" class="col-sm-2" data-field="username" data-visible="true" data-sortable="true">{{ trans('mail.username') }}</th>
+                                <th scope="col" class="col-sm-2" data-field="created_at" data-visible="true" data-sortable="true" data-formatter="dateDisplayFormatter">{{ trans('admin/settings/general.login_attempt') }}</th>
+                                <th scope="col" class="col-sm-2" data-field="user_agent" data-visible="true" data-sortable="true">{{ trans('admin/settings/general.login_user_agent') }}</th>
+                                <th scope="col" class="col-sm-2" data-field="remote_ip" data-visible="true" data-sortable="true">{{ trans('admin/settings/general.login_ip') }}</th>
+                                <th scope="col" class="col-sm-2" data-field="successful" data-visible="true" data-formatter="trueFalseFormatter" data-sortable="true">{{ trans('admin/settings/general.login_success') }}</th>
                             </tr>
                         </thead>
                     </table>

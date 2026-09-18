@@ -1,0 +1,19 @@
+<?php
+
+return [
+    'component_name' => 'نام اجزا',
+    'checkin' => 'کامپوننت قفل های دسترسی',
+    'checkout' => 'کامپیوننت پرداخت',
+    'cost' => 'هزینه خرید',
+    'create' => 'ایجاد کامپیوننت',
+    'edit' => 'تغییر کامپیوننت',
+    'date' => 'تاریخ خرید',
+    'order' => 'شماره سفارش',
+    'remaining' => 'یاقیمانده',
+    'total' => 'مجموع',
+    'update' => 'بروزرسانی کامپیوننت',
+    'checkin_limit' => 'مقدار دریافت باید کمتر یا مساوی :assigned_qty باشد',
+    'exclude_deleted' => 'Exclude Deleted Components',
+    'include_deleted' => 'Include Deleted Components',
+    'only_deleted' => 'Only Deleted Components',
+];

@@ -1,10 +1,10 @@
 <?php
 
-return array(
-	'eula_text'      			=> 'Licencia',
-    'id'      					=> 'Identificación',
-    'parent'   					=> 'Padre',
-    'require_acceptance'      	=> 'Aceptación',
-    'title'      				=> 'Nombre de la Categoría de Activo',
+return [
+    'eula_text' => 'Acuerdo de uso',
+    'id' => 'ID',
+    'parent' => 'Ubicación padre',
+    'require_acceptance' => 'Aceptación',
+    'title' => 'Nombre de la categoría del activo',
 
-);
+];

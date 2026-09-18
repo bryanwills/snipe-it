@@ -17,38 +17,38 @@ class DepartmentSeeder extends Seeder
             $this->call(LocationSeeder::class);
         }
 
-        $locationIds = Location::all()->pluck('id');
+        $locationIds = Location::pluck('id');
 
         $admin = User::where('permissions->superuser', '1')->first() ?? User::factory()->firstAdmin()->create();
 
         Department::factory()->count(1)->hr()->create([
             'location_id' => $locationIds->random(),
-            'user_id' => $admin->id,
+            'created_by' => $admin->id,
         ]);
 
         Department::factory()->count(1)->engineering()->create([
             'location_id' => $locationIds->random(),
-            'user_id' => $admin->id,
+            'created_by' => $admin->id,
         ]);
 
         Department::factory()->count(1)->marketing()->create([
             'location_id' => $locationIds->random(),
-            'user_id' => $admin->id,
+            'created_by' => $admin->id,
         ]);
 
         Department::factory()->count(1)->client()->create([
             'location_id' => $locationIds->random(),
-            'user_id' => $admin->id,
+            'created_by' => $admin->id,
         ]);
 
         Department::factory()->count(1)->product()->create([
             'location_id' => $locationIds->random(),
-            'user_id' => $admin->id,
+            'created_by' => $admin->id,
         ]);
 
         Department::factory()->count(1)->silly()->create([
             'location_id' => $locationIds->random(),
-            'user_id' => $admin->id,
+            'created_by' => $admin->id,
         ]);
     }
 }

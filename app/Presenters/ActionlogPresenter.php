@@ -2,19 +2,22 @@
 
 namespace App\Presenters;
 
+use App\Enums\ActionType;
+
 /**
  * Class CompanyPresenter
  */
 class ActionlogPresenter extends Presenter
 {
-    public function admin()
+    public function adminuser()
     {
         if ($user = $this->model->user) {
             if (empty($user->deleted_at)) {
                 return $user->present()->nameUrl();
             }
+
             // The user was deleted
-            return '<del>'.$user->getFullNameAttribute().'</del> (deleted)';
+            return '<del>'.$user->display_name.'</del> (deleted)';
         }
 
         return '';
@@ -22,13 +25,11 @@ class ActionlogPresenter extends Presenter
 
     public function item()
     {
-        if ($this->action_type == 'uploaded') {
-            return (string) link_to_route('show/userfile', $this->model->filename, [$this->model->item->id, $this->model->id]);
-        }
         if ($item = $this->model->item) {
             if (empty($item->deleted_at)) {
                 return $this->model->item->present()->nameUrl();
             }
+
             // The item was deleted
             return '<del>'.$item->name.'</del> (deleted)';
         }
@@ -38,26 +39,119 @@ class ActionlogPresenter extends Presenter
 
     public function icon()
     {
-        $itemicon = 'fas fa-paperclip';
 
-        if ($this->itemType() == 'asset') {
-            return 'fas fa-barcode';
-        } elseif ($this->itemType() == 'accessory') {
-            return 'far fa-keyboard';
-        } elseif ($this->itemType() == 'consumable') {
-            return 'fas fa-tint';
-        } elseif ($this->itemType() == 'license') {
-            return 'far fa-save';
-        } elseif ($this->itemType() == 'component') {
-            return 'far fa-hdd';
-        } elseif ($this->itemType() == 'user') {
-            return 'fa-solid fa-people-arrows';
+        // User related icons
+        if ($this->itemType() == 'user') {
+
+            if ($this->action_type == '2fa reset') {
+                return 'fa-solid fa-mobile-screen';
+            }
+
+            if ($this->action_type == 'create') {
+                return 'fa-solid fa-user-plus';
+            }
+
+            if ($this->action_type == 'merged') {
+                return 'fa-solid fa-people-arrows';
+            }
+
+            if ($this->action_type == 'delete') {
+                return 'fa-solid fa-user-minus';
+            }
+
+            if ($this->action_type == 'upload deleted') {
+                return 'fa-solid fa-trash';
+            }
+
+            if ($this->action_type == 'update') {
+                return 'fa-solid fa-user-pen';
+            }
+
+            return 'fa-solid fa-user';
         }
+
+        // Everything else
+        if ($this->action_type == 'create') {
+            return 'fa-solid fa-plus';
+        }
+
+        if (($this->action_type == 'delete') || ($this->action_type == 'upload deleted')) {
+            return 'fa-solid fa-trash';
+        }
+
+        if ($this->action_type == 'update') {
+            return 'fa-solid fa-pen';
+        }
+
+        if ($this->action_type == 'restore') {
+            return 'fa-solid fa-trash-arrow-up';
+        }
+
+        if ($this->action_type == 'upload') {
+            return 'fas fa-paperclip';
+        }
+
+        if ($this->action_type == 'checkout') {
+            return 'fa-solid fa-rotate-left';
+        }
+
+        if ($this->action_type == 'checkin from') {
+            return 'fa-solid fa-rotate-right';
+        }
+
+        if ($this->action_type == 'note added') {
+            return 'fas fa-sticky-note';
+        }
+
+        if ($this->action_type == 'audit') {
+            return 'fas fa-clipboard-check';
+        }
+
+        // QuantityAdjust splits three ways by delta sign. Zero-delta is
+        // an audit-only confirmation (matches actionType()'s "confirmed
+        // quantity" label swap), so it shares the audit icon. Positive
+        // and negative deltas get plus / minus so the history row's
+        // icon telegraphs whether qty went up or down at a glance.
+        if ($this->action_type == ActionType::QuantityAdjust->value) {
+            $delta = (int) $this->quantity;
+            if ($delta > 0) {
+                return 'fa-solid fa-plus';
+            }
+            if ($delta < 0) {
+                return 'fa-solid fa-minus';
+            }
+
+            return 'fas fa-clipboard-check';
+        }
+
+        // License seat-count changes from the edit-form path (not the
+        // adjust-quantity flow) also want +/- icons so the history tab
+        // reads consistently regardless of which path added / removed
+        // the seats.
+        if ($this->action_type == ActionType::AddSeats->value) {
+            return 'fa-solid fa-plus';
+        }
+
+        if ($this->action_type == ActionType::DeleteSeats->value) {
+            return 'fa-solid fa-minus';
+        }
+
+        return 'fa-solid fa-rotate-right';
 
     }
 
     public function actionType()
     {
+        // Zero-delta QuantityAdjust entries are audit-only submissions.
+        // The operator counted the shelf and confirmed the on-hand qty
+        // matches the DB. Rendering these as "adjusted quantity" with a
+        // blank change column is confusing. Surface them as "confirmed
+        // quantity" instead. The underlying action_type value stays
+        // 'adjusted quantity' so filters and reports keep working.
+        if ($this->action_type === ActionType::QuantityAdjust->value && (int) $this->quantity === 0) {
+            return mb_strtolower(trans('general.confirmed_quantity'));
+        }
+
         return mb_strtolower(trans('general.'.str_replace(' ', '_', $this->action_type)));
     }
 
@@ -87,7 +181,7 @@ class ActionlogPresenter extends Presenter
                 return $target->present()->nameUrl();
             }
 
-            return '<del>'.$target->present()->name().'</del>';
+            return '<del>'.$target->display_name.'</del>';
         }
 
         return '';
