@@ -20,7 +20,7 @@
 
       <div class="box-header with-border">
         <h1 class="box-title">
-          <i class="fas fa-exclamation-triangle text-orange" aria-hidden="true"></i>
+          <x-icon type="warning" class="text-orange" />
           {{ trans('general.maintenance_mode_title') }}
         </h1>
       </div><!-- /.box-header -->
@@ -29,11 +29,11 @@
         <div class="col-md-12">
 
           <div class="col-md-2">
-            <img src="{{ url('/') }}/img/sad-panda.png" class="pull-right" style="width: 140px; height: 140px;">
+            <img src="{{ config('app.url') }}/img/sad-panda.png" class="pull-right" style="width: 140px; height: 140px;" alt="">
           </div>
-          <div class="alert alert-warning fade in">
+          <x-alert type="warning">
             <h2> {{ trans('general.maintenance_mode') }}</h2>
-          </div>
+          </x-alert>
 
         </div> <!-- /.div -->
       </div><!-- /.box-body -->

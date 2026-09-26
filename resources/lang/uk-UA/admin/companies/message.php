@@ -1,0 +1,22 @@
+<?php
+
+return [
+    'does_not_exist' => 'Компанія не існує.',
+    'deleted' => 'Видалена компанія',
+    'assoc_users' => 'Наразі ця компанія пов\'язана принаймні з однією моделлю і не може бути видалена. Будь ласка, оновіть ваші моделі, щоб більше не посилалися на цю компанію і спробуйте ще раз. ',
+    'create' => [
+        'error' => 'Компанія не була створена, будь ласка, спробуйте ще раз.',
+        'success' => 'Компанія успішно створена.',
+    ],
+    'update' => [
+        'error' => 'Компанія не була оновлена, будь ласка, спробуйте ще раз',
+        'success' => 'Компанія успішно оновлена.',
+    ],
+    'delete' => [
+        'confirm' => 'Ви дійсно бажаєте видалити цю компанію?',
+        'error' => 'Виникла проблема при видаленні компанії. Будь ласка, спробуйте ще раз.',
+        'success' => 'Компанія була успішно видалена.',
+        'bulk_success' => 'Company deleted successfully.|:count companies were deleted successfully.',
+        'partial_success' => 'Company deleted successfully. See additional information below. | :count companies were deleted successfully. See additional information below.',
+    ],
+];
