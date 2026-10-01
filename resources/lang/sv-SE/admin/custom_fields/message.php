@@ -1,63 +1,59 @@
 <?php
 
-return array(
+return [
 
-    'field' => array(
-        'invalid'   => 'Det fältet existerar inte.',
-        'already_added'   => 'Fält som redan lagts till',
+    'field' => [
+        'invalid' => 'Fältet existerar inte.',
+        'already_added' => 'Fältet har redan lagts till',
+        'none_selected' => 'Inget fält valt',
 
-        'create' => array(
-            'error'   => 'Fältet skapades inte, var vänlig försök igen.',
-            'success' => 'Fält skapat framgångsrikt.',
-            'assoc_success' => 'Fält med framgång tillfogas till fältet.'
-        ),
+        'create' => [
+            'error' => 'Fältet kunde inte skapas. Vänligen försök igen.',
+            'success' => 'Fält skapat.',
+            'assoc_success' => 'Fältet lades till i fältuppsättningen.',
+        ],
 
-        'update' => array(
-            'error'   => 'Fältet uppdaterades inte, var vänlig försök igen',
-            'success' => 'Fältet uppdateras framgångsrikt.'
-        ),
+        'update' => [
+            'error' => 'Fältet kunde inte uppdateras. Vänligen försök igen.',
+            'success' => 'Fältet uppdaterat.',
+        ],
 
-        'delete' => array(
-            'confirm'   	=> 'Är du säker på att du vill radera det här fältet?',
-            'error'   => 'Det gick inte att ta bort fältet. Var god försök igen.',
-            'success' => 'Fältet raderades framgångsrikt.',
-            'in_use'   => 'Fältet är fortfarande i bruk.',
-        )
+        'delete' => [
+            'confirm' => 'Är du säker på att du vill radera det här fältet?',
+            'error' => 'Kunde inte ta bort fältet. Vänligen försök igen.',
+            'success' => 'Fält raderat.',
+            'in_use' => 'Fältet är fortfarande i bruk.',
+        ],
 
-    ),
+    ],
 
-    'fieldset' => array(
+    'fieldset' => [
 
-        'does_not_exist' => 'Fieldset existerar inte',
+        'does_not_exist' => 'Fältuppsättningen existerar inte',
 
-        'create' => array(
-            'error'   => 'Fieldset skapades inte, försök igen.',
-            'success' => 'Fältet skapades framgångsrikt.'
-        ),
+        'create' => [
+            'error' => 'Fältuppsättningen kunde inte skapas. Vänligen försök igen.',
+            'success' => 'Fält skapat.',
+        ],
 
-        'update' => array(
-            'error'   => 'Fieldset uppdaterades inte, försök igen',
-            'success' => 'Fältet uppdateras framgångsrikt.'
-        ),
+        'update' => [
+            'error' => 'Fältuppsättningen kunde inte uppdateras. Vänligen försök igen.',
+            'success' => 'Fält uppdaterat.',
+        ],
 
-        'delete' => array(
-            'confirm'   	=> 'Är du säker på att du vill radera den här fältet?',
-            'error'   => 'Det gick inte att ta bort fältet. Var god försök igen.',
-            'success' => 'Fältet raderades framgångsrikt.',
-            'in_use'   => 'Fieldset är fortfarande i bruk.',
-        )
+        'delete' => [
+            'confirm' => 'Är du säker på att du vill radera det här fältet?',
+            'error' => 'Det gick inte att ta bort fältet. Vänligen försök igen.',
+            'success' => 'Fält raderat.',
+            'in_use' => 'Fältuppsättningen är fortfarande i bruk.',
+        ],
 
-    ),
+    ],
 
-    'fieldset_default_value' => array(
+    'fieldset_default_value' => [
 
-        'error' => 'Fel vid validering av standardvärden för fältsamlingen.',
+        'error' => 'Fel vid validering av standardvärden för för fältuppsättningen.',
 
-    ),
+    ],
 
-
-
-
-
-
-);
+];

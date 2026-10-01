@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
 
     /*
     |--------------------------------------------------------------------------
@@ -13,8 +13,8 @@ return array(
     |
     */
 
-    'failed' => 'Dessa uppgifter stämmer inte överens med vårt register.',
+    'failed' => 'Dessa uppgifter stämmer inte överens med våra register.',
     'password' => 'Det angivna lösenordet är felaktigt.',
-    'throttle' => 'För många inloggningsförsök. Vänligen försök igen om :seconds sekunder.',
+    'throttle' => 'För många inloggningsförsök. Försök igen om :minutes minut(er).',
 
-);
+];

@@ -1,7 +1,7 @@
 @extends('layouts/setup')
 {{-- Page title --}}
 @section('title')
-{{ trans('general.setup_migrations') }}
+{{ trans('admin/settings/general.setup_migrations') }}
 @parent
 @stop
 
@@ -10,17 +10,9 @@
 <div class="col-lg-12" style="padding-top: 20px;">
     @if (trim($output)=='Nothing to migrate.')
     <div class="col-md-12">
-        <div class="alert alert-warning">
-            <i class="fas fa-exclamation-triangle"></i>
+        <x-alert type="warning" icon="warning">
             {{ trans('general.setup_no_migrations') }}
-        </div>
-    </div>
-    @else
-    <div class="col-md-12">
-        <div class="alert alert-success">
-            <i class="fas fa-check"></i>
-            {{ trans('general.setup_successful_migrations') }}
-        </div>
+        </x-alert>
     </div>
 
     @endif
@@ -31,8 +23,11 @@
 @stop
 
 @section('button')
-  <form action="{{ route('setup.user') }}" method="GET">
-    <button class="btn btn-primary">{{ trans('general.setup_migrations_create_user') }}</button>
-  </form>
+
+    <a href="{{ route('setup.user') }}" class="btn btn-primary">
+        {{ trans('general.setup_next') }}:
+        {{ trans('general.setup_create_admin') }}
+        <i class="fa-solid fa-angles-right"></i>
+    </a>
 @parent
 @stop

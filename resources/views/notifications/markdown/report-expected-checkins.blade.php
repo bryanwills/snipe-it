@@ -8,9 +8,12 @@
 | ------------- | ------------- | ------------- |
 @foreach ($assets as $asset)
 @php
-$checkin = Helper::getFormattedDateObject($asset->expected_checkin, 'date');
+$checkin = Helper::getFormattedDateObject($asset->expected_checkin, 'datetime');
+
+$assignedToName = $asset->assignedTo ? $asset->assignedTo->present()->fullName : trans('general.unknown_user');
+$assignedToRoute = $asset->assignedTo ? route($asset->targetShowRoute().'.show', [$asset->assignedTo->id]) : '';
 @endphp
-| [{{ $asset->present()->name }}]({{ route('hardware.show', ['hardware' => $asset->id]) }}) | [{{ $asset->assigned->present()->fullName }}]({{ route($asset->targetShowRoute().'.show', [$asset->assigned->id]) }})  | {{ $checkin['formatted'] }}
+| [{{ $asset->display_name }}]({{ route('hardware.show', $asset) }}) | @if ($asset->assignedTo) [{{ $assignedToName }}]({{ $assignedToRoute }}) @else {{ $assignedToName }} @endif  | {{ $checkin['formatted'] }}
 @endforeach
 @endcomponent
 

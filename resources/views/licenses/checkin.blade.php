@@ -6,64 +6,68 @@
 @parent
 @stop
 
-
-@section('header_right')
-    <a href="{{ URL::previous() }}" class="btn btn-primary pull-right">
-        {{ trans('general.back') }}</a>
-@stop
-
 {{-- Page content --}}
 @section('content')
-    <div class="row">
-        <!-- left column -->
-        <div class="col-md-7">
-            <form class="form-horizontal" method="post" action="{{ route('licenses.checkin.save', ['licenseId'=>$licenseSeat->id, 'backTo'=>$backto] ) }}" autocomplete="off">
-                {{csrf_field()}}
 
-                <div class="box box-default">
-                    <div class="box-header with-border">
-                        <h2 class="box-title"> {{ $licenseSeat->license->name }}</h2>
-                    </div>
-                    <div class="box-body">
+<x-container class="col-md-7">
 
-            <!-- license name -->
-            <div class="form-group">
-                <label class="col-sm-2 control-label">{{ trans('admin/hardware/form.name') }}</label>
-                <div class="col-md-6">
-                    <p class="form-control-static">{{ $licenseSeat->license->name }}</p>
-                </div>
-            </div>
+    <x-form :route="route('licenses.checkin.save', ['licenseId' => $licenseSeat->id, 'backTo' => $backto])">
 
-            <!-- Serial -->
-            <div class="form-group">
-                <label class="col-sm-2 control-label">{{ trans('admin/hardware/form.serial') }}</label>
-                <div class="col-md-6">
-                    <p class="form-control-static">
-                        @can('viewKeys', $licenseSeat->license)
-                            {{ $licenseSeat->license->serial }}
-                        @else
-                            ------------
-                        @endcan
-                        </p>
-                </div>
-            </div>
+        <x-box header="{{ $licenseSeat->license->name }}">
 
-            <!-- Note -->
-            <div class="form-group {{ $errors->has('note') ? 'error' : '' }}">
-                <label for="note" class="col-md-2 control-label">{{ trans('admin/hardware/form.notes') }}</label>
-                <div class="col-md-7">
-                    <textarea class="col-md-6 form-control" id="note" name="note">{{ old('note', $licenseSeat->note) }}</textarea>
-                    {!! $errors->first('note', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
-                </div>
-            </div>
-                        <div class="box-footer">
-                            <a class="btn btn-link" href="{{ route('licenses.index') }}">{{ trans('button.cancel') }}</a>
-                            <button type="submit" class="btn btn-primary pull-right"><i class="fas fa-check icon-white" aria-hidden="true"></i> {{ trans('general.checkin') }}</button>
-                        </div>
-                    </div> <!-- /.box-->
-            </form>
-        </div> <!-- /.col-md-7-->
-    </div>
+            <x-form.static :label="trans('general.name')">{{ $licenseSeat->license->name }}</x-form.static>
 
+            @if ($licenseSeat->license->company)
+                <x-form.static :label="trans('general.company')">
+                    {!! $licenseSeat->license->company->present()->formattedNameLink !!}
+                </x-form.static>
+            @endif
+
+            @if ($licenseSeat->license->category)
+                <x-form.static :label="trans('general.category')">
+                    <x-icon type="category" class="fa-fw" style="{{ $licenseSeat->license->category->tag_color ? 'color: '.e($licenseSeat->license->category->tag_color).';' : '' }}" />
+                    {{ $licenseSeat->license->category->name }}
+                </x-form.static>
+            @endif
+
+            <x-checkin.checked-out-from
+                :target="$licenseSeat->user ?? $licenseSeat->asset"
+                :checkout-date="$checkoutLog?->created_at"
+                :checkout-by="$checkoutLog?->adminuser"
+            />
+
+            @if ($licenseSeat->license->serial)
+                @can('viewKeys', $licenseSeat->license)
+                    <x-form.static :label="trans('admin/licenses/form.license_key')">
+                        <x-copy-to-clipboard copy_what="license_key">
+                            <code>{!! nl2br(e($licenseSeat->license->serial)) !!}</code>
+                        </x-copy-to-clipboard>
+                    </x-form.static>
+                @endcan
+            @endif
+
+            <x-form.row
+                :label="trans('general.checkin_note')"
+                name="notes"
+                type="textarea"
+            />
+
+            <x-slot:customfooter>
+                <x-redirect_submit_options
+                    index_route="licenses.index"
+                    :button_label="trans('general.checkin')"
+                    :options="[
+                        'index' => trans('admin/hardware/form.redirect_to_all', ['type' => trans('general.licenses')]),
+                        'item' => trans('admin/hardware/form.redirect_to_type', ['type' => trans('general.license')]),
+                        'target' => trans('admin/hardware/form.redirect_to_type', ['type' => trans('general.user')]),
+                    ]"
+                />
+            </x-slot:customfooter>
+
+        </x-box>
+
+    </x-form>
+
+</x-container>
 
 @stop

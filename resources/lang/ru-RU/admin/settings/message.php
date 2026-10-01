@@ -1,0 +1,81 @@
+<?php
+
+return [
+
+    'update' => [
+        'error' => 'При обновлении произошла ошибка. ',
+        'success' => 'Настройки успешно обновлены.',
+    ],
+    'backup' => [
+        'delete_confirm' => 'Вы уверены, что хотите удалить резервную копию? Это действие нельзя отменить. ',
+        'file_deleted' => 'Резервная копия успешно удалена. ',
+        'generated' => 'Новая резервная копия успешно создана.',
+        'file_not_found' => 'Эта резервная копия не найдена на сервере.',
+        'restore_warning' => 'Да, восстановить. Я осознаю, что это перезапишет все существующие данные в базе данных. Это также выйдет из учетных записей всех ваших существующих пользователей (включая вас).',
+        'restore_confirm' => 'Вы уверены, что хотите восстановить базу данных из :filename?',
+        'delete_disabled_help' => 'Deleting backups is disabled. Contact your administrator if you wish to enable deleting backups.',
+    ],
+    'restore' => [
+        'success' => 'Ваша резервная копия была восстановлена. Пожалуйста, войдите в систему снова.',
+        'archive_invalid' => 'The selected backup file (:filename) is not a valid zip archive. Restore aborted before touching the database.',
+        'zip_extension_missing' => 'PHP zip extension is not loaded on this server. Cannot validate the backup archive, and restore has been aborted to prevent data loss. Ask your server administrator to install ext-zip.',
+        'pre_backup_failed' => 'Could not create a pre-restore safety backup. Restore aborted so that the existing database is not destroyed without a recovery path.',
+        'failed_with_backup' => 'Restore failed. The pre-existing database was wiped as part of the restore attempt, but a pre-restore backup was saved to :backup and can be used to recover.',
+    ],
+    'purge' => [
+        'error' => 'Возникла ошибка при попытке очистки. ',
+        'validation_failed' => 'Ваш текст подтверждения очистки неверен. Пожалуйста, наберите слово "DELETE" в поле подтверждения.',
+        'success' => 'Удаленные записи успешно очищены.',
+    ],
+    'mail' => [
+        'sending' => 'Отправляется тестовое электронное письмо...',
+        'success' => 'Письмо отправлено!',
+        'error' => 'Не удалось отправить электронное письмо.',
+        'additional' => 'Нет дополнительных сообщений об ошибке. Проверьте настройки почты и журнал вашего приложения.',
+    ],
+    'ldap' => [
+        'testing' => 'Тестирование подключения к LDAP, привязка & запрос ...',
+        '500' => 'Ошибка в 500 сервере. Пожалуйста, проверьте журналы сервера для получения дополнительной информации.',
+        'error' => 'Что-то пошло не так :(',
+        'sync_success' => 'Пример 10 пользователей, полученных с заданного LDAP сервера:',
+        'testing_authentication' => 'Тестирование LDAP аутентификации...',
+        'authentication_success' => 'Пользователь успешно аутентифицирован с LDAP!',
+    ],
+    'labels' => [
+        'null_template' => 'Label template not found. Please select a template.',
+    ],
+    'webhook' => [
+        'sending' => 'Отправка тестового сообщения в :app...',
+        'success' => 'Ваша интеграция :webhook_name работает!',
+        'success_pt1' => 'Успех! Проверьте ',
+        'success_pt2' => ' канал для вашего тестового сообщения и не забудьте нажать СОХРАНИТЬ ниже, чтобы сохранить ваши настройки.',
+        '500' => '500 Ошибка на сервера.',
+        'error' => 'Что-то пошло не так. :app ответил: :error_message',
+        'error_redirect' => 'ОШИБКА: 301/302 :endpoint возвращает редирект. По соображениям безопасности мы не переходим по редиректам. Пожалуйста, используйте фактическую конечную точку.',
+        'error_misc' => 'Что-то пошло не так. :( ',
+        'webhook_fail' => ' cбой уведомления webhook: Проверьте, действителен ли URL-адрес.',
+        'webhook_channel_not_found' => ' канал webhook не найден.',
+        'ms_teams_deprecation' => 'Выбранный URL-адрес webhook Microsoft Teams будет устаревшим 31 декабря 2025 года. Пожалуйста, используйте URL-адрес рабочего процесса. Документацию Microsoft по созданию рабочего процесса можно найти  <a href="https://support.microsoft.com/en-us/office/create-incoming-webhooks-with-workflows-for-microsoft-teams-8ae491c7-0394-4861-ba59-055e33f75498" target="_blank"> здесь.</a>',
+    ],
+    'location_scoping' => [
+        'not_saved' => 'Ваши настройки не были сохранены.',
+        'mismatch' => 'Прежде чем вы сможете включить определение местоположения, обратите внимание на 1 элемент в базе данных.|В базе данных есть :count элементов, которые требуют вашего внимания, прежде чем вы сможете включить определение местоположения.',
+    ],
+    'oauth' => [
+        'token_revoked' => 'Персональный токен доступа успешно отозван.',
+        'token_unrevoked' => 'Персональный токен доступа успешно восстановлен.',
+        'token_not_found' => 'Этот токен личного доступа не удалось найти.',
+        'token_revoke_error' => 'Произошла ошибка при отзыве токена.',
+        'token_unrevoke_error' => 'Произошла ошибка при восстановлении токена.',
+        'client_created' => 'Клиент OAuth успешно создан.',
+        'client_updated' => 'Клиент OAuth успешно обновлен.',
+        'client_deleted' => 'Клиент OAuth успешно удален.',
+        'client_revoked' => 'Клиент OAuth успешно отозван.',
+        'client_unrevoked' => 'Клиент OAuth успешно восстановлен.',
+        'client_not_found' => 'Не удалось найти этот клиент OAuth.',
+        'token_deleted' => 'Токен успешно отозван.',
+        'client_delete_denied' => 'У вас нет прав на удаление этого клиента.',
+        'client_edit_denied' => 'У вас нет прав на редактирование этого клиента.',
+        'token_delete_denied' => 'Вы не имеете права отозвать этот токен.',
+    ],
+];

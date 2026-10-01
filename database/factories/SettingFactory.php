@@ -29,18 +29,13 @@ class SettingFactory extends Factory
             'alerts_enabled' => true,
             'brand' => 1,
             'default_currency' => $this->faker->currencyCode(),
-            'locale' => 'en',
+            'locale' => 'en-US',
             'pwd_secure_min' => 10, // Match web setup
-            'email_domain' => 'test.com',
+            'email_domain' => 'example.org',
+            'header_color' => '#3c8dbc',
+            'link_dark_color' => '#5fa4cc',
+            'link_light_color' => '#296282;',
+            'nav_link_color' => '#FFFFFF',
         ];
-    }
-
-    public function withMultipleFullCompanySupport()
-    {
-        return $this->state(function () {
-            return [
-                'full_multiple_companies_support' => 1,
-            ];
-        });
     }
 }

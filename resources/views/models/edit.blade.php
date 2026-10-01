@@ -1,63 +1,118 @@
-@extends('layouts/edit-form', [
-    'createText' => trans('admin/models/table.create') ,
-    'updateText' => trans('admin/models/table.update'),
-    'topSubmit' => true,
-    'helpPosition' => 'right',
-    'helpText' => trans('admin/models/general.about_models_text'),
-    'formAction' => (isset($item->id)) ? route('models.update', ['model' => $item->id]) : route('models.store'),
-])
+@extends('layouts/default')
+
+{{-- Page title --}}
+@section('title')
+    @if ($item->id)
+        {{ trans('admin/models/table.update') }}
+    @else
+        {{ trans('admin/models/table.create') }}
+    @endif
+    @parent
+@stop
 
 {{-- Page content --}}
-@section('inputFields')
+@section('content')
 
-@include ('partials.forms.edit.name', ['translated_name' => trans('admin/models/table.name'), 'required' => 'true'])
-@include ('partials.forms.edit.category-select', ['translated_name' => trans('admin/categories/general.category_name'), 'fieldname' => 'category_id', 'required' => 'true', 'category_type' => 'asset'])
-@include ('partials.forms.edit.manufacturer-select', ['translated_name' => trans('general.manufacturer'), 'fieldname' => 'manufacturer_id'])
-@include ('partials.forms.edit.model_number')
-@include ('partials.forms.edit.depreciation')
+    <x-container class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 col-sm-12 col-sm-offset-0">
 
-<!-- EOL -->
+        <x-form :$item route="{{ ($item->id) ? route('models.update', ['model' => $item->id]) : route('models.store') }}">
 
-<div class="form-group {{ $errors->has('eol') ? ' has-error' : '' }}">
-    <label for="eol" class="col-md-3 control-label">{{ trans('general.eol') }}</label>
-    <div class="col-md-2">
-        <div class="input-group">
-            <input class="col-md-1 form-control" type="text" name="eol" id="eol" value="{{ Request::old('eol', isset($item->eol)) ? $item->eol : ''  }}" />
-            <span class="input-group-addon">
-                {{ trans('general.months') }}
-            </span>
-        </div>
-    </div>
-    <div class="col-md-9 col-md-offset-3">
-        {!! $errors->first('eol', '<span class="alert-msg" aria-hidden="true"><br><i class="fas fa-times"></i> :message</span>') !!}
-    </div>
-</div>
+            <x-box top_submit>
+                @if ($item->id)
+                    <x-slot:header>{{ $item->name }}</x-slot:header>
+                @endif
 
-<!-- Custom Fieldset -->
-@livewire('custom-field-set-default-values-for-model',["model_id" => $item->id])
+                <x-form.row
+                    :label="trans('admin/models/table.name')"
+                    :$item
+                    name="name"
+                    required
+                />
 
-@include ('partials.forms.edit.notes')
-@include ('partials.forms.edit.requestable', ['requestable_text' => trans('admin/models/general.requestable')])
+                <x-input.category-select
+                    :label="trans('admin/categories/general.category_name')"
+                    name="category_id"
+                    :selected="old('category_id', $item->category_id)"
+                    required
+                    categoryType="asset"
+                />
 
-<!-- Image -->
-@if (($item->image) && ($item->image!=''))
-    <div class="form-group{{ $errors->has('image_delete') ? ' has-error' : '' }}">
-        <div class="col-md-9 col-md-offset-3">
-            <label for="image_delete">
-                {{ Form::checkbox('image_delete', '1', old('image_delete'), ['class'=>'minimal','aria-label'=>'image_delete']) }}
-                {{ trans('general.image_delete') }}
-                {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-            </label>
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="col-md-9 col-md-offset-3">
-            <img src="{{ Storage::disk('public')->url(app('models_upload_path').e($item->image)) }}" class="img-responsive">
-            {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-        </div>
-    </div>
-@endif
+                <x-input.manufacturer-select
+                    :label="trans('general.manufacturer')"
+                    name="manufacturer_id"
+                    :selected="old('manufacturer_id', $item->manufacturer_id)"
+                />
 
-@include ('partials.forms.edit.image-upload')
+                <x-form.row
+                    :label="trans('general.model_no')"
+                    :$item
+                    name="model_number"
+                    input_div_class="col-md-7"
+                />
+
+                <x-form.row
+                    :label="trans('general.depreciation')"
+                    name="depreciation_id"
+                    input_div_class="col-md-7"
+                >
+                    <x-slot:input>
+                        <x-input.select
+                            name="depreciation_id"
+                            id="depreciation_id"
+                            :options="$depreciation_list"
+                            :selected="old('depreciation_id', $item->depreciation_id)"
+                            style="width:350px;"
+                            aria-label="depreciation_id"
+                        />
+                    </x-slot:input>
+                </x-form.row>
+
+                <x-input.minimum-quantity :item="$item" />
+
+                <x-form.checkbox-row
+                    name="require_serial"
+                    :label="trans('admin/hardware/general.require_serial')"
+                    :item="$item"
+                    :info_tooltip_text="trans('admin/hardware/general.require_serial_help')"
+                />
+
+                <x-form.row
+                    :label="trans('general.eol')"
+                    name="eol"
+                    input_div_class="col-md-3 col-sm-4 col-xs-7"
+                >
+                    <x-slot:input>
+                        <div class="input-group">
+                            <input class="form-control" type="text" name="eol" id="eol" value="{{ old('eol', $item->eol ?? '') }}" aria-label="eol" />
+                            <span class="input-group-addon">{{ trans('general.months') }}</span>
+                        </div>
+                    </x-slot:input>
+                </x-form.row>
+
+                {{-- Custom Fieldset --}}
+                {{-- If $item->id is null we are cloning the model and we need the $model_id variable --}}
+                @livewire('custom-field-set-default-values-for-model', ['model_id' => $item->id ?? $model_id ?? null])
+
+                <x-form.row
+                    :label="trans('general.notes')"
+                    :$item
+                    name="notes"
+                    type="textarea"
+                    input_div_class="col-md-7 col-sm-12"
+                />
+
+                <x-form.checkbox-row
+                    name="requestable"
+                    :label="trans('admin/models/general.requestable')"
+                    :item="$item"
+                />
+
+                <x-input.image-upload :item="$item" :imagePath="app('models_upload_path')" :clonedModel="$cloned_model ?? null" />
+
+            </x-box>
+
+        </x-form>
+
+    </x-container>
 
 @stop

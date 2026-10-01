@@ -1,136 +1,107 @@
-@extends('layouts/edit-form', [
-    'createText' => trans('admin/categories/general.create') ,
-    'updateText' => trans('admin/categories/general.update'),
-    'helpPosition'  => 'right',
-    'helpText' => trans('help.categories'),
-    'topSubmit'  => 'true',
-    'formAction' => (isset($item->id)) ? route('categories.update', ['category' => $item->id]) : route('categories.store'),
-])
+@extends('layouts/default')
 
-@section('inputFields')
-
-@include ('partials.forms.edit.name', ['translated_name' => trans('admin/categories/general.name')])
-
-<!-- Type -->
-<div class="form-group {{ $errors->has('category_type') ? ' has-error' : '' }}">
-    <label for="category_type" class="col-md-3 control-label">{{ trans('general.type') }}</label>
-    <div class="col-md-7 required">
-        {{ Form::select('category_type', $category_types , old('category_type', $item->category_type), array('class'=>'select2', 'style'=>'min-width:350px', 'aria-label'=>'category_type', ($item->category_type!='') || ($item->itemCount() > 0) ? 'disabled' : '')) }}
-        {!! $errors->first('category_type', '<span class="alert-msg" aria-hidden="true"><i class="fas fa-times" aria-hidden="true"></i> :message</span>') !!}
-    </div>
-    <div class="col-md-7 col-md-offset-3">
-        <p class="help-block">{!! trans('admin/categories/message.update.cannot_change_category_type') !!} </p>
-    </div>
-</div>
-
-
-
-<!-- EULA text -->
-<div class="form-group {{ $errors->has('eula_text') ? 'error' : '' }}">
-    <label for="eula_text" class="col-md-3 control-label">{{ trans('admin/categories/general.eula_text') }}</label>
-    <div class="col-md-7">
-        {{ Form::textarea('eula_text', old('eula_text', $item->eula_text), array('class' => 'form-control', 'aria-label'=>'eula_text')) }}
-        <p class="help-block">{!! trans('admin/categories/general.eula_text_help') !!} </p>
-        <p class="help-block">{!! trans('admin/settings/general.eula_markdown') !!} </p>
-
-        {!! $errors->first('eula_text', '<span class="alert-msg" aria-hidden="true">:message</span>') !!}
-    </div>
-</div>
-
-<!-- Use default checkbox -->
-<div class="form-group">
-    <div class="col-md-3">
-    </div>
-    <div class="col-md-9">
-        @if ($snipeSettings->default_eula_text!='')
-            <label for="use_default_eula">
-            {{ Form::checkbox('use_default_eula', '1', old('use_default_eula', $item->use_default_eula), ['class'=>'minimal', 'aria-label'=>'use_default_eula']) }}
-            {!! trans('admin/categories/general.use_default_eula') !!}
-            </label>
-        @else
-            <div class="icheckbox disabled">
-                <label for="use_default_eula">
-                {{ Form::checkbox('use_default_eula', '0', old('use_default_eula'), ['class'=>'disabled minimal','disabled' => 'disabled', 'aria-label'=>'use_default_eula']) }}
-                {!! trans('admin/categories/general.use_default_eula_disabled') !!}
-                </label>
-            </div>
-        @endif
-    </div>
-</div>
-
-
-<!-- Require Acceptance -->
-<div class="form-group">
-    <div class="col-md-3">
-    </div>
-    <div class="col-md-9">
-        <label for="require_acceptance">
-        {{ Form::checkbox('require_acceptance', '1', old('require_acceptance', $item->require_acceptance), ['class'=>'minimal', 'aria-label'=>'require_acceptance']) }}
-        {{ trans('admin/categories/general.require_acceptance') }}
-        </label>
-    </div>
-</div>
-
-
-<!-- Email on Checkin -->
-<div class="form-group">
-    <div class="col-md-9 col-md-offset-3">
-        <label for="checkin_email">
-        {{ Form::checkbox('checkin_email', '1', old('checkin_email', $item->checkin_email), ['class'=>'minimal','aria-label'=>'checkin_email']) }}
-        {{ trans('admin/categories/general.checkin_email') }}
-        </label>
-    </div>
-</div>
-
-
-
-<!-- Image -->
-@if (($item->image) && ($item->image!=''))
-    <div class="form-group{{ $errors->has('image_delete') ? ' has-error' : '' }}">
-        <div class="col-md-9 col-md-offset-3">
-            <label for="image_delete">
-                {{ Form::checkbox('image_delete', '1', old('image_delete'), ['class'=>'minimal','aria-label'=>'image_delete']) }}
-                {{ trans('general.image_delete') }}
-                {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-            </label>
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="col-md-9 col-md-offset-3">
-            <img src="{{ Storage::disk('public')->url(app('companies_upload_path').e($item->image)) }}" class="img-responsive">
-            {!! $errors->first('image_delete', '<span class="alert-msg">:message</span>') !!}
-        </div>
-    </div>
-@endif
-
-@include ('partials.forms.edit.image-upload')
-
+{{-- Page title --}}
+@section('title')
+    @if ($item->id)
+        {{ trans('admin/categories/general.update') }}
+    @else
+        {{ trans('admin/categories/general.create') }}
+    @endif
+    @parent
 @stop
 
+{{-- Page content --}}
 @section('content')
-@parent
 
+    <x-container class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 col-sm-12 col-sm-offset-0">
 
-@if ($snipeSettings->default_eula_text!='')
-<!-- Modal -->
-<div class="modal fade" id="eulaModal" tabindex="-1" role="dialog" aria-labelledby="eulaModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h2 class="modal-title" id="eulaModalLabel">{{ trans('admin/settings/general.default_eula_text') }}</h2>
-            </div>
-            <div class="modal-body">
-                {{ \App\Models\Setting::getDefaultEula() }}
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">{{ trans('button.cancel') }}</button>
+        <x-form :$item route="{{ ($item->id) ? route('categories.update', ['category' => $item->id]) : route('categories.store') }}">
+
+            <x-box top_submit>
+                @if ($item->id)
+                    <x-slot:header>{{ $item->name }}</x-slot:header>
+                @endif
+
+                <x-form.row
+                    :label="trans('general.name')"
+                    :$item
+                    name="name"
+                />
+
+                <x-form.row
+                    :label="trans('general.type')"
+                    name="category_type"
+                    input_div_class="col-md-7 required"
+                    :help_text="trans('admin/categories/message.update.cannot_change_category_type')"
+                >
+                    <x-slot:input>
+                        <x-input.select
+                            name="category_type"
+                            :options="$category_types"
+                            :selected="old('category_type', $item->category_type)"
+                            :disabled="$item->category_type != '' || $item->itemCount() > 0"
+                            style="min-width:350px"
+                            aria-label="category_type"
+                        />
+                    </x-slot:input>
+                </x-form.row>
+
+                <livewire:category-edit-form
+                    :alert-on-response="(bool) old('alert_on_response', $item->alert_on_response)"
+                    :default-eula-text="$snipeSettings->default_eula_text"
+                    :eula-text="old('eula_text', $item->eula_text)"
+                    :require-acceptance="(bool) old('require_acceptance', $item->require_acceptance)"
+                    :send-check-in-email="(bool) old('checkin_email', $item->checkin_email)"
+                    :use-default-eula="(bool) old('use_default_eula', $item->use_default_eula)"
+                />
+
+                <x-input.image-upload :item="$item" :imagePath="app('categories_upload_path')" />
+
+                <x-form.row
+                    :label="trans('general.notes')"
+                    :$item
+                    name="notes"
+                    type="textarea"
+                    :rows="5"
+                    :placeholder="trans('general.placeholders.notes')"
+                />
+
+                <fieldset name="color-preferences">
+                    <x-form.legend help_text="{{ trans('general.tag_color_help') }}">
+                        {{ trans('general.tag_color') }}
+                    </x-form.legend>
+                    <x-form.row
+                        :label="trans('general.tag_color')"
+                        :$item
+                        name="tag_color"
+                        type="colorpicker"
+                    />
+                </fieldset>
+
+            </x-box>
+
+        </x-form>
+
+    </x-container>
+
+    @if ($snipeSettings->default_eula_text != '')
+        {{-- EULA preview modal --}}
+        <div class="modal fade" id="eulaModal" tabindex="-1" role="dialog" aria-labelledby="eulaModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h2 class="modal-title" id="eulaModalLabel">{{ trans('admin/settings/general.default_eula_text') }}</h2>
+                    </div>
+                    <div class="modal-body">
+                        {{ \App\Models\Setting::getDefaultEula() }}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">{{ trans('button.cancel') }}</button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-@endif
-
-
+    @endif
 
 @stop
